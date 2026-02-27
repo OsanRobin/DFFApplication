@@ -1,0 +1,11 @@
+.page{padding:40px;background:#f6f7fb;min-height:100vh}
+    .back{border:0;background:transparent;font-weight:900;margin-bottom:20px;cursor:pointer}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+    h1{margin:0 0 6px}
+    .sub{color:#64748b;font-weight:700}
+    .badge{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:900}
+    .badge.active{background:#dcfce7;color:#166534}
+    .tabs{display:flex;gap:8px;margin-bottom:20px}
+    .tabs button{border:1px solid #e5e7eb;background:#fff;padding:8px 14px;border-radius:999px;font-weight:900;cursor:pointer}
+    .tabs button.on{background:#111827;color:#fff}
+    .card{background:#fff;padding:20px;border-radius:16px;box-shadow:0 14px 30px rgba(18,24,40,0.08)}

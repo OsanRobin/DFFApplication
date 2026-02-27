@@ -1,0 +1,51 @@
+<div class="page">
+      <button class="back" (click)="goBack()">← Back to Customers</button>
+
+      <div class="header">
+        <div>
+          <h1>St. Mary's Hospital Network</h1>
+          <div class="sub">Customer ID: C001</div>
+        </div>
+        <span class="badge active">Active</span>
+      </div>
+
+      <div class="tabs">
+        <button [class.on]="activeTab==='overview'" (click)="activeTab='overview'">Overview</button>
+        <button [class.on]="activeTab==='attributes'" (click)="activeTab='attributes'">Attributes</button>
+        <button [class.on]="activeTab==='users'" (click)="activeTab='users'">Users</button>
+        <button [class.on]="activeTab==='segments'" (click)="activeTab='segments'">Segments</button>
+      </div>
+
+      @if (activeTab==='overview') {
+        <div class="card">
+          <h3>Basic Information</h3>
+          <p><strong>Customer Type:</strong> Cluster</p>
+          <p><strong>Segment:</strong> Enterprise</p>
+          <p><strong>Locations:</strong> 12</p>
+        </div>
+      }
+
+      @if (activeTab==='attributes') {
+        <div class="card">
+          <h3>Attributes</h3>
+          <p>Cluster Type: Hospital Network</p>
+          <p>Billing Model: Centralized</p>
+        </div>
+      }
+
+      @if (activeTab==='users') {
+        <div class="card">
+          <h3>Users</h3>
+          <p>Anna Jacobs - Admin</p>
+          <p>Tom Vermeulen - Authorization manager</p>
+        </div>
+      }
+
+      @if (activeTab==='segments') {
+        <div class="card">
+          <h3>Segments</h3>
+          <p>Enterprise</p>
+          <p>Healthcare</p>
+        </div>
+      }
+    </div>
