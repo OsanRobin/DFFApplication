@@ -1,0 +1,53 @@
+<div class="page">
+  <app-header class="component"></app-header>
+
+  <main class="content">
+    <div class="crumb">
+      Home <span class="sep">›</span> <span class="current">Jobs</span>
+    </div>
+
+    <div class="header-row">
+      <div>
+        <h1 class="title">Job Overview</h1>
+        <p class="subtitle">Monitor bulk actions and system jobs</p>
+      </div>
+    </div>
+
+    <section class="card panel">
+      <div class="panel-title">All Jobs</div>
+      <div class="panel-sub">Click on a job to view detailed execution logs</div>
+
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Job ID</th>
+              <th>Type</th>
+              <th>Triggered By</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th class="col-actions"></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (job of jobs; track job.id) {
+              <tr>
+                <td class="job-id">{{ job.id }}</td>
+                <td>{{ job.type }}</td>
+                <td>{{ job.triggeredBy }}</td>
+                <td>{{ job.date }}</td>
+                <td>
+                  <span [class]="statusClass(job.status)">{{ job.status }}</span>
+                </td>
+                <td class="col-actions">
+                  <button class="link" type="button" (click)="onViewDetails(job)">View Details</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
