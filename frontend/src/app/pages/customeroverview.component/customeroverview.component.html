@@ -1,188 +1,151 @@
 <div class="page">
-   
-      <header class="topbar">
-        <div class="topbar-inner">
-          <div class="brand">
-            <div class="brand-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/>
-              </svg>
-            </div>
-            <div class="brand-title">Intershop Customer Governance</div>
-          </div>
-
-          <nav class="nav">
-            <a class="nav-item active" href="javascript:void(0)">Customers</a>
-            <a class="nav-item" href="javascript:void(0)">Attributes</a>
-            <a class="nav-item" href="javascript:void(0)">Segments</a>
-            <a class="nav-item" href="javascript:void(0)">Jobs</a>
-          </nav>
-
-          <div class="user">
-            <div class="avatar" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/>
-              </svg>
-            </div>
-            <div class="user-meta">
-              <div class="user-name">Sarah Mitchell</div>
-              <div class="user-role">Admin</div>
-            </div>
-            <div class="chev" aria-hidden="true">▾</div>
-          </div>
-        </div>
-      </header>
-
-      <main class="content">
-        <div class="crumb">
-          Home <span class="sep">›</span> <span class="current">Customers</span>
-        </div>
-
-        <h1 class="title">Customer Overview</h1>
-
-        <div class="layout">
-        
-          <aside class="side card">
-            <div class="side-title">Saved Searches</div>
-
-            <button class="saved">
-              <span class="caret">›</span>
-              <span>Active Enterprise Customers</span>
-            </button>
-            <button class="saved">
-              <span class="caret">›</span>
-              <span>Pending Approvals</span>
-            </button>
-            <button class="saved">
-              <span class="caret">›</span>
-              <span>Healthcare Clusters</span>
-            </button>
-          </aside>
-
-      
-          <section class="main card">
-            <div class="toolbar">
-              <input
-                class="search"
-                type="text"
-                placeholder="Search customers..."
-                [(ngModel)]="query"
-              />
-
-              <select class="select" [(ngModel)]="typeFilter">
-                <option value="">Type</option>
-                <option>Cluster</option>
-                <option>Subcustomer</option>
-              </select>
-
-              <select class="select" [(ngModel)]="segmentFilter">
-                <option value="">Segment</option>
-                <option>Enterprise</option>
-                <option>Premium</option>
-                <option>Standard</option>
-                <option>Basic</option>
-              </select>
-
-              <select class="select" [(ngModel)]="statusFilter">
-                <option value="">Status</option>
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Pending</option>
-              </select>
-
-              <button class="btn-outline" type="button">Save Search</button>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th class="col-check"><input type="checkbox" [checked]="allSelected" (change)="toggleAll()" /></th>
-                    <th>Customer Name</th>
-                    <th>Type</th>
-                    <th>Segment</th>
-                    <th>Status</th>
-                    <th>Locations</th>
-                    <th class="col-actions"></th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  @for (row of visibleRows(); track row.id) {
-                    <tr>
-                      <td class="col-check">
-                        <input type="checkbox" [checked]="isSelected(row.id)" (change)="toggleRow(row.id)" />
-                      </td>
-
-                      <td>
-                        <div class="name-cell" [class.sub]="row.level === 1">
-                          @if (row.level === 1) {
-                            <span class="tree" aria-hidden="true">
-                              <span class="tree-v"></span>
-                              <span class="tree-h"></span>
-                            </span>
-                          }
-                          <span class="name">{{ row.name }}</span>
-                        </div>
-                      </td>
-
-                      <td>{{ row.type }}</td>
-                      <td>{{ row.segment }}</td>
-
-                      <td>
-                        <span class="badge"
-                              [class.active]="row.status === 'Active'"
-                              [class.inactive]="row.status === 'Inactive'"
-                              [class.pending]="row.status === 'Pending'">
-                          {{ row.status }}
-                        </span>
-                      </td>
-
-                      <td>{{ row.locations }}</td>
-
-                      <td class="col-actions">
-                        <button class="link" type="button">
-                          View Details <span class="chev-r" aria-hidden="true">›</span>
-                        </button>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-
-            <div class="bottom-pad"></div>
-          </section>
-        </div>
-
-       
-        <div class="bulk" [class.show]="selectedIds.size > 0">
-          <div class="bulk-inner">
-            <div class="bulk-left">
-              <div class="bulk-count">{{ selectedIds.size }} customers selected</div>
-
-              <div class="bulk-actions">
-                <div class="dropdown">
-                  <button class="dropdown-btn" type="button" (click)="bulkOpen = !bulkOpen">
-                    Choose bulk action…
-                    <span class="down" aria-hidden="true">▾</span>
-                  </button>
-
-                  @if (bulkOpen) {
-                    <div class="menu" (mouseleave)="bulkOpen = false">
-                      <button type="button" class="menu-item">Add Attribute</button>
-                      <button type="button" class="menu-item">Update Attribute</button>
-                      <button type="button" class="menu-item">Assign to Segment</button>
-                    </div>
-                  }
-                </div>
-              </div>
-            </div>
-
-            <button class="bulk-clear" type="button" (click)="clearSelection()">Clear Selection</button>
-          </div>
-        </div>
-      </main>
+  <app-header class="component"></app-header>
+  <main class="content">
+    <div class="crumb">
+      Home <span class="sep">›</span> <span class="current">Customers</span>
     </div>
+
+    <h1 class="title">Customer Overview</h1>
+
+    <div class="layout">
+      <aside class="side card">
+        <div class="side-title">Saved Searches</div>
+
+        <button class="saved" type="button">
+          <span class="caret">›</span>
+          <span>Active Enterprise Customers</span>
+        </button>
+        <button class="saved" type="button">
+          <span class="caret">›</span>
+          <span>Pending Approvals</span>
+        </button>
+        <button class="saved" type="button">
+          <span class="caret">›</span>
+          <span>Healthcare Clusters</span>
+        </button>
+      </aside>
+
+      <section class="main card">
+        <div class="toolbar">
+          <input class="search" type="text" placeholder="Search customers..." [(ngModel)]="query" />
+
+          <select class="select" [(ngModel)]="typeFilter">
+            <option value="">Type</option>
+            <option>Cluster</option>
+            <option>Subcustomer</option>
+          </select>
+
+          <select class="select" [(ngModel)]="segmentFilter">
+            <option value="">Segment</option>
+            <option>Enterprise</option>
+            <option>Premium</option>
+            <option>Standard</option>
+            <option>Basic</option>
+          </select>
+
+          <select class="select" [(ngModel)]="statusFilter">
+            <option value="">Status</option>
+            <option>Active</option>
+            <option>Inactive</option>
+            <option>Pending</option>
+          </select>
+
+          <button class="btn-outline" type="button">Save Search</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th class="col-check">
+                  <input type="checkbox" [checked]="allSelected" (change)="toggleAll()" />
+                </th>
+                <th>Customer Name</th>
+                <th>Type</th>
+                <th>Segment</th>
+                <th>Status</th>
+                <th>Locations</th>
+                <th class="col-actions"></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (row of visibleRows(); track row.id) {
+                <tr>
+                  <td class="col-check">
+                    <input type="checkbox" [checked]="isSelected(row.id)" (change)="toggleRow(row.id)" />
+                  </td>
+
+                  <td>
+                    <div class="name-cell" [class.sub]="row.level === 1">
+                      @if (row.level === 1) {
+                        <span class="tree" aria-hidden="true">
+                          <span class="tree-v"></span>
+                          <span class="tree-h"></span>
+                        </span>
+                      }
+                      <span class="name">{{ row.name }}</span>
+                    </div>
+                  </td>
+
+                  <td>{{ row.type }}</td>
+                  <td>{{ row.segment }}</td>
+
+                  <td>
+                    <span
+                      class="badge"
+                      [class.active]="row.status === 'Active'"
+                      [class.inactive]="row.status === 'Inactive'"
+                      [class.pending]="row.status === 'Pending'"
+                    >
+                      {{ row.status }}
+                    </span>
+                  </td>
+
+                  <td>{{ row.locations }}</td>
+
+                  <td class="col-actions">
+                    <a class="link" [routerLink]="['/customers', row.id]">
+                      View Details <span class="chev-r" aria-hidden="true">›</span>
+                    </a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="bottom-pad"></div>
+      </section>
+    </div>
+
+    <div class="bulk" [class.show]="selectedIds.size > 0">
+      <div class="bulk-inner">
+        <div class="bulk-left">
+          <div class="bulk-count">{{ selectedIds.size }} customers selected</div>
+
+          <div class="bulk-actions">
+            <div class="dropdown">
+              <button class="dropdown-btn" type="button" (click)="bulkOpen = !bulkOpen">
+                Choose bulk action…
+                <span class="down" aria-hidden="true">▾</span>
+              </button>
+
+              @if (bulkOpen) {
+                <div class="menu" (mouseleave)="bulkOpen = false">
+                  <button type="button" class="menu-item">Add Attribute</button>
+                  <button type="button" class="menu-item">Update Attribute</button>
+                  <button type="button" class="menu-item">Assign to Segment</button>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <button class="bulk-clear" type="button" (click)="clearSelection()">Clear Selection</button>
+      </div>
+    </div>
+  </main>
+</div>

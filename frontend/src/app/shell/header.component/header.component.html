@@ -1,0 +1,42 @@
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" routerLink="/dashboard">
+      <div class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" />
+        </svg>
+      </div>
+      <div class="brand-title">Intershop Customer Governance</div>
+    </a>
+
+    <nav class="nav">
+      <a class="nav-item" routerLink="/customers" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        Customers
+      </a>
+      <a class="nav-item" routerLink="/attributes" routerLinkActive="active">
+        Attributes
+      </a>
+      <a class="nav-item" routerLink="/segments" routerLinkActive="active">
+        Segments
+      </a>
+      <a class="nav-item" routerLink="/jobs" routerLinkActive="active">
+        Jobs
+      </a>
+    </nav>
+
+    <div class="user">
+      <div class="avatar" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"
+          />
+        </svg>
+      </div>
+      <div class="user-meta">
+        <div class="user-name">Sarah Mitchell</div>
+        <div class="user-role">Admin</div>
+      </div>
+      <div class="chev" aria-hidden="true">▾</div>
+    </div>
+  </div>
+</header>

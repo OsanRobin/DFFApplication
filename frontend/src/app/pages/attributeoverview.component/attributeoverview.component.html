@@ -1,0 +1,52 @@
+<div class="page">
+  <app-header class="component"></app-header>
+
+  <main class="content">
+    <div class="crumb">
+      Home <span class="sep">›</span> <span class="current">Attributes</span>
+    </div>
+
+    <div class="header-row">
+      <div>
+        <h1 class="title">Attribute Overview</h1>
+        <p class="subtitle">Manage customer attributes and view usage statistics</p>
+      </div>
+
+      <button class="primary" type="button" (click)="onCreate()">Create Attribute</button>
+    </div>
+
+    <section class="card panel">
+      <div class="panel-title">All Attributes</div>
+      <div class="panel-sub">Click on an attribute to view details and frequency data</div>
+
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Attribute Name</th>
+              <th>Type</th>
+              <th>Usage Count</th>
+              <th>Unique Values</th>
+              <th>Linked Segments</th>
+              <th class="col-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows; track row.name) {
+              <tr>
+                <td class="name">{{ row.name }}</td>
+                <td><span [class]="badgeClass(row.type)">{{ row.type }}</span></td>
+                <td>{{ row.usageCount }}</td>
+                <td>{{ row.uniqueValues }}</td>
+                <td>{{ row.linkedSegments }}</td>
+                <td class="col-actions">
+                  <button class="link" type="button" (click)="onViewDetails(row)">View Details</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>

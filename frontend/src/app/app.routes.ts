@@ -3,6 +3,7 @@ import { LoginComponent } from './pages/login.component/login.component';
 import { DashboardComponent } from './pages/dashboard.component/dashboard.component';
 import { CustomeroverviewComponent } from './pages/customeroverview.component/customeroverview.component';
 import { CustomerdetailComponent } from './pages/customerdetail.component/customerdetail.component';
+import { AttributeoverviewComponent } from './pages/attributeoverview.component/attributeoverview.component';
 
 export const routes: Routes = [
      { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -11,6 +12,6 @@ export const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent },
    { path: 'customers', component: CustomeroverviewComponent },
    {path: 'customers/:id', component: CustomerdetailComponent },
-
+{ path: 'attributes', component: AttributeoverviewComponent },
   { path: '**', redirectTo: 'login' }
 ];

@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { HeaderComponent } from '../../shell/header.component/header.component';
 type Activity = {
   title: string;
   by: string;
@@ -6,7 +7,7 @@ type Activity = {
 };
 @Component({
   selector: 'app-dashboard.component',
-  imports: [],
+  imports: [HeaderComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })

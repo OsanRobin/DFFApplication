@@ -1,51 +1,169 @@
 <div class="page">
-      <button class="back" (click)="goBack()">← Back to Customers</button>
+  <app-header class="component"></app-header>
 
-      <div class="header">
-        <div>
-          <h1>St. Mary's Hospital Network</h1>
-          <div class="sub">Customer ID: C001</div>
-        </div>
-        <span class="badge active">Active</span>
-      </div>
-
-      <div class="tabs">
-        <button [class.on]="activeTab==='overview'" (click)="activeTab='overview'">Overview</button>
-        <button [class.on]="activeTab==='attributes'" (click)="activeTab='attributes'">Attributes</button>
-        <button [class.on]="activeTab==='users'" (click)="activeTab='users'">Users</button>
-        <button [class.on]="activeTab==='segments'" (click)="activeTab='segments'">Segments</button>
-      </div>
-
-      @if (activeTab==='overview') {
-        <div class="card">
-          <h3>Basic Information</h3>
-          <p><strong>Customer Type:</strong> Cluster</p>
-          <p><strong>Segment:</strong> Enterprise</p>
-          <p><strong>Locations:</strong> 12</p>
-        </div>
-      }
-
-      @if (activeTab==='attributes') {
-        <div class="card">
-          <h3>Attributes</h3>
-          <p>Cluster Type: Hospital Network</p>
-          <p>Billing Model: Centralized</p>
-        </div>
-      }
-
-      @if (activeTab==='users') {
-        <div class="card">
-          <h3>Users</h3>
-          <p>Anna Jacobs - Admin</p>
-          <p>Tom Vermeulen - Authorization manager</p>
-        </div>
-      }
-
-      @if (activeTab==='segments') {
-        <div class="card">
-          <h3>Segments</h3>
-          <p>Enterprise</p>
-          <p>Healthcare</p>
-        </div>
-      }
+  <main class="content">
+    <div class="crumb">
+      Home <span class="sep">›</span> Customers <span class="sep">›</span>
+      <span class="current">Customer Detail</span>
     </div>
+
+    <button class="back" type="button" (click)="goBack()">
+      <span class="back-ico" aria-hidden="true">←</span>
+      Back to Customers
+    </button>
+
+    <div class="header-row">
+      <div>
+        <h1 class="title">St. Mary's Hospital Network</h1>
+        <div class="sub">Customer ID: <strong>C001</strong></div>
+      </div>
+
+      <span class="badge active">Active</span>
+    </div>
+
+    <div class="tabs">
+      <button class="tab" [class.on]="activeTab==='overview'" (click)="activeTab='overview'">Overview</button>
+      <button class="tab" [class.on]="activeTab==='attributes'" (click)="activeTab='attributes'">Attributes</button>
+      <button class="tab" [class.on]="activeTab==='users'" (click)="activeTab='users'">Users</button>
+      <button class="tab" [class.on]="activeTab==='segments'" (click)="activeTab='segments'">Segments</button>
+    </div>
+
+    @if (activeTab === 'overview') {
+      <section class="grid2">
+        <div class="card panel">
+          <div class="panel-title">Basic Information</div>
+
+          <div class="kv">
+            <div class="k">Customer Type</div>
+            <div class="v">Cluster</div>
+          </div>
+
+          <div class="kv">
+            <div class="k">Segment</div>
+            <div class="v">Enterprise</div>
+          </div>
+
+          <div class="kv">
+            <div class="k">Locations</div>
+            <div class="v">12</div>
+          </div>
+
+          <div class="kv">
+            <div class="k">Status</div>
+            <div class="v"><span class="badge active">Active</span></div>
+          </div>
+        </div>
+
+        <div class="card panel">
+          <div class="panel-title">Subcustomers</div>
+          <div class="panel-sub">2 subcustomer(s)</div>
+
+          <div class="sublist">
+            <div class="subitem">
+              <div class="submain">
+                <div class="subname">St. Mary's Hospital - Downtown</div>
+                <div class="subid">C002</div>
+              </div>
+              <span class="badge active">Active</span>
+            </div>
+
+            <div class="subitem">
+              <div class="submain">
+                <div class="subname">St. Mary's Hospital - North Branch</div>
+                <div class="subid">C003</div>
+              </div>
+              <span class="badge active">Active</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    }
+
+    @if (activeTab === 'attributes') {
+      <section class="card panel wide">
+        <div class="panel-title">Attributes</div>
+        <div class="panel-sub">Hardcoded example attributes</div>
+
+        <div class="attr-grid">
+          <div class="attr">
+            <div class="k">Cluster Type</div>
+            <div class="v">Hospital Network</div>
+          </div>
+          <div class="attr">
+            <div class="k">Billing Model</div>
+            <div class="v">Centralized</div>
+          </div>
+          <div class="attr">
+            <div class="k">Delivery Window</div>
+            <div class="v">Morning</div>
+          </div>
+          <div class="attr">
+            <div class="k">Contract Level</div>
+            <div class="v">Gold</div>
+          </div>
+        </div>
+      </section>
+    }
+
+    @if (activeTab === 'users') {
+      <section class="card panel wide">
+        <div class="panel-title">Users</div>
+        <div class="panel-sub">Users linked to this customer</div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Locations</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Anna Jacobs</td>
+                <td>anna.jacobs@hospital.com</td>
+                <td>Admin</td>
+                <td>All (12)</td>
+                <td><span class="badge active">Active</span></td>
+              </tr>
+              <tr>
+                <td>Tom Vermeulen</td>
+                <td>tom.vermeulen@hospital.com</td>
+                <td>Authorization manager</td>
+                <td>Downtown (3)</td>
+                <td><span class="badge active">Active</span></td>
+              </tr>
+              <tr>
+                <td>Sarah Peeters</td>
+                <td>sarah.peeters@hospital.com</td>
+                <td>Authorization manager</td>
+                <td>North Branch (2)</td>
+                <td><span class="badge pending">Pending</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    @if (activeTab === 'segments') {
+      <section class="card panel wide">
+        <div class="panel-title">Segments</div>
+        <div class="panel-sub">Current segment assignments</div>
+
+        <div class="chips">
+          <span class="chip">Enterprise</span>
+          <span class="chip">Healthcare</span>
+          <span class="chip">Auto-update: ON</span>
+        </div>
+
+        <div class="hint">
+          Rules example: <strong>if</strong> clusterType = "Hospital Network" <strong>then</strong> segment = "Healthcare".
+        </div>
+      </section>
+    }
+  </main>
+</div>

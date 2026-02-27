@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { HeaderComponent } from '../../shell/header.component/header.component';
 
 type Status = 'Active' | 'Inactive' | 'Pending';
 
@@ -17,7 +19,7 @@ type CustomerRow = {
 
 @Component({
   selector: 'app-customeroverview.component',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent],
   templateUrl: './customeroverview.component.html',
   styleUrl: './customeroverview.component.css',
 })
