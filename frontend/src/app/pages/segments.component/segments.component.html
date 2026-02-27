@@ -1,0 +1,76 @@
+<div class="page">
+  <app-header class="component"></app-header>
+
+  <main class="content">
+    <div class="crumb">
+      Home <span class="sep">›</span> <span class="current">Segments</span>
+    </div>
+
+    <div class="header-row">
+      <div>
+        <h1 class="title">Segment Management</h1>
+        <p class="subtitle">View and manage customer segments and rules</p>
+      </div>
+
+      <button class="primary" type="button" (click)="onCreateSegment()">Create Segment</button>
+    </div>
+
+    <div class="grid">
+      <section class="left">
+        @for (segment of segments; track segment.name) {
+          <div class="card panel segment-card">
+            <div class="segment-top">
+              <div class="segment-title">{{ segment.name }}</div>
+              <span class="pill green">Auto Updated</span>
+            </div>
+
+            <div class="rule">
+              {{ segment.rule }}
+            </div>
+
+            <div class="segment-bottom">
+              <div class="meta">
+                <div class="metric">
+                  <div class="label">Matched Customers</div>
+                  <div class="value">{{ segment.matchedCustomers }}</div>
+                </div>
+
+                <div class="metric">
+                  <div class="label">Last Updated</div>
+                  <div class="date">{{ segment.lastUpdated }}</div>
+                </div>
+              </div>
+
+              <div class="actions">
+                <button class="secondary" type="button" (click)="onViewCustomers(segment)">View Customers</button>
+                <button class="secondary" type="button" (click)="onEditRules(segment)">Edit Rules</button>
+              </div>
+            </div>
+          </div>
+        }
+      </section>
+
+      <aside class="right">
+        <section class="card panel log-card">
+          <div class="panel-title">System Update Log</div>
+          <div class="panel-sub">Real-time segment changes</div>
+
+          <div class="log-list">
+            @for (item of logItems; track item.id) {
+              <div class="log-item">
+                <div class="log-icon" [class.up]="item.direction === 'up'" [class.down]="item.direction === 'down'">
+                  @if (item.direction === 'up') { ↑ } @else { ↓ }
+                </div>
+
+                <div class="log-text">
+                  <div class="log-msg">{{ item.message }}</div>
+                  <div class="log-date">{{ item.timestamp }}</div>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
