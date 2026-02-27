@@ -1,0 +1,37 @@
+<div class="page">
+      <div class="card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M7 3h7l3 3v15a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3zm7 1.5V7h2.5L14 4.5zM8 10.5h8v1.5H8v-1.5zm0 3.5h8v1.5H8V14zm0 3.5h5.5V19H8v-1.5z"
+            />
+          </svg>
+        </div>
+
+        <h1>Intershop Governance</h1>
+        <p class="subtitle">Sign in to access the admin dashboard</p>
+
+        <form class="form" (submit)="$event.preventDefault()">
+          <label>
+            <span>Email</span>
+            <input type="email" value="admin@intershop.com" readonly />
+          </label>
+
+          <label>
+            <span>Password</span>
+            <input type="password" value="admin123" readonly />
+          </label>
+
+          <button type="submit">Sign In</button>
+        </form>
+
+        <div class="divider"></div>
+
+        <div class="demo">
+          <div class="demo-title">Demo credentials:</div>
+          <div class="demo-row"><strong>Admin:</strong> admin@intershop.com / admin123</div>
+          <div class="demo-row"><strong>Manager:</strong> manager@intershop.com / manager123</div>
+          <div class="demo-row"><strong>Viewer:</strong> viewer@intershop.com / viewer123</div>
+        </div>
+      </div>
+    </div>
