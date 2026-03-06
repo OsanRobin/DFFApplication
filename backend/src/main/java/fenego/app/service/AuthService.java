@@ -1,34 +1,26 @@
 package fenego.app.service;
 
-import org.springframework.beans.factory.annotation.Value;
+import fenego.app.dto.IntershopLoginResult;
+import fenego.app.dto.LoginRequest;
+import fenego.app.intershop.IntershopClient;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService
 {
-    private final String baseUrl;
-    private final String username;
-    private final String password;
-    private final String organization;
+    private final IntershopClient intershopClient;
 
-    public AuthService(
-            @Value("${intershop.baseUrl}") String baseUrl,
-            @Value("${intershop.username}") String username,
-            @Value("${intershop.password}") String password,
-            @Value("${intershop.organization}") String organization)
+    public AuthService(IntershopClient intershopClient)
     {
-        this.baseUrl = baseUrl;
-        this.username = username;
-        this.password = password;
-        this.organization = organization;
+        this.intershopClient = intershopClient;
     }
 
-    public boolean login()
+    public IntershopLoginResult login(LoginRequest request)
     {
-        System.out.println("Base URL: " + baseUrl);
-        System.out.println("Username: " + username);
-        System.out.println("Organization: " + organization);
-
-        return true;
+        return intershopClient.loginAdmin(
+                request.getUsername(),
+                request.getPassword(),
+                request.getOrganization()
+        );
     }
 }

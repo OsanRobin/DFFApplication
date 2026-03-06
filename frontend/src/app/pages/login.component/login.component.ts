@@ -23,7 +23,7 @@ export class LoginComponent {
   form = this.fb.nonNullable.group({
     username: ['admin', Validators.required],
     password: ['!InterShop00!', Validators.required],
-    organization: ['DailyFreshFood-B1-Site', Validators.required]
+    organization: ['DailyFreshFood', Validators.required]
   });
 
   onSubmit(): void {
@@ -35,16 +35,15 @@ export class LoginComponent {
     this.loading = true;
     this.errorMessage = '';
 
-    this.authService.login().subscribe({
-  next: () => {
-    this.authService.getCurrentUser().subscribe(() => {
-      this.router.navigateByUrl('/dashboard');
+    this.authService.login(this.form.getRawValue()).subscribe({
+      next: () => {
+        this.loading = false;
+        this.router.navigateByUrl('/dashboard');
+      },
+      error: (error: HttpErrorResponse) => {
+        this.loading = false;
+        this.errorMessage = typeof error.error === 'string' ? error.error : 'Login failed';
+      }
     });
-  },
-  error: () => {
-    this.loading = false;
-    this.errorMessage = 'Login failed';
-  }
-});
   }
 }

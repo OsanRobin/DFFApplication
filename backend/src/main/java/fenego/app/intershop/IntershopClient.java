@@ -1,97 +1,85 @@
 package fenego.app.intershop;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
-import java.util.Base64;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
+import fenego.app.dto.IntershopLoginResult;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.List;
 
 @Service
 public class IntershopClient
 {
-    @Value("${intershop.base-url}")
-    private String baseUrl;
+    private final RestTemplate restTemplate;
 
-    @Value("${intershop.username}")
-    private String username;
+    @Value("${intershop.validation-url}")
+    private String validationUrl;
 
-    @Value("${intershop.password}")
-    private String password;
+    @Value("${intershop.accept-header}")
+    private String acceptHeader;
 
-    @Value("${intershop.organization:Operations}")
-    private String organization;
+    public IntershopClient(RestTemplate restTemplate)
+    {
+        this.restTemplate = restTemplate;
+    }
 
-    public boolean login()
+    public IntershopLoginResult loginAdmin(String username, String password, String organization)
     {
         try
         {
-            HttpClient client = createUnsafeHttpClient();
+            System.out.println("validationUrl = " + validationUrl);
+            System.out.println("acceptHeader = " + acceptHeader);
+            System.out.println("username = " + username);
+            System.out.println("organization = " + organization);
 
-            String credentials = username + ":" + password;
             String basicAuth = Base64.getEncoder()
-                    .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+                    .encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/login"))
-                    .POST(HttpRequest.BodyPublishers.noBody())
-                    .header("Authorization", "Basic " + basicAuth)
-                    .header("Accept", "application/json")
-                    .header("UserOrganization", organization)
-                    .build();
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Basic " + basicAuth);
+            headers.set("Accept", acceptHeader);
+            headers.set("UserOrganization", organization);
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-            return response.statusCode() >= 200 && response.statusCode() < 300;
+            ResponseEntity<String> response = restTemplate.exchange(
+                    validationUrl,
+                    HttpMethod.GET,
+                    entity,
+                    String.class
+            );
+
+            System.out.println("Intershop status = " + response.getStatusCode().value());
+            System.out.println("Intershop auth token header = " + response.getHeaders().getFirst("authentication-token"));
+
+            String authenticationToken = response.getHeaders().getFirst("authentication-token");
+
+            if (authenticationToken == null || authenticationToken.isBlank())
+            {
+                throw new RuntimeException("Intershop validation succeeded but no authentication-token was returned");
+            }
+
+            return new IntershopLoginResult(username, organization, authenticationToken);
         }
-        catch (Exception e)
+        catch (HttpStatusCodeException ex)
         {
-            throw new RuntimeException("Intershop login failed", e);
+            int status = ex.getStatusCode().value();
+
+            if (status == 401 || status == 403)
+            {
+                throw new RuntimeException("Invalid username, password or organization");
+            }
+
+            throw new RuntimeException("Intershop validation failed: " + status + " - " + ex.getResponseBodyAsString(), ex);
         }
-    }
-
-    private HttpClient createUnsafeHttpClient() throws Exception
-    {
-        TrustManager[] trustAllCerts = new TrustManager[]{
-                new X509TrustManager()
-                {
-                    @Override
-                    public void checkClientTrusted(X509Certificate[] chain, String authType)
-                    {
-                    }
-
-                    @Override
-                    public void checkServerTrusted(X509Certificate[] chain, String authType)
-                    {
-                    }
-
-                    @Override
-                    public X509Certificate[] getAcceptedIssuers()
-                    {
-                        return new X509Certificate[0];
-                    }
-                }
-        };
-
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, trustAllCerts, new SecureRandom());
-
-        SSLParameters sslParameters = new SSLParameters();
-        sslParameters.setEndpointIdentificationAlgorithm("");
-
-        return HttpClient.newBuilder()
-                .sslContext(sslContext)
-                .sslParameters(sslParameters)
-                .build();
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+            throw new RuntimeException("Intershop validation failed: " + ex.getClass().getName() + " - " + ex.getMessage(), ex);
+        }
     }
 }

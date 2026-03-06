@@ -13,22 +13,27 @@ import javax.net.ssl.X509TrustManager;
 import java.security.cert.X509Certificate;
 
 @Configuration
-public class RestTemplateConfig {
-
+public class RestTemplateConfig
+{
     @Bean
-    public RestTemplate restTemplate() throws Exception {
+    public RestTemplate restTemplate() throws Exception
+    {
         TrustManager[] trustAllCerts = new TrustManager[]{
-                new X509TrustManager() {
+                new X509TrustManager()
+                {
                     @Override
-                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                    public void checkClientTrusted(X509Certificate[] chain, String authType)
+                    {
                     }
 
                     @Override
-                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                    public void checkServerTrusted(X509Certificate[] chain, String authType)
+                    {
                     }
 
                     @Override
-                    public X509Certificate[] getAcceptedIssuers() {
+                    public X509Certificate[] getAcceptedIssuers()
+                    {
                         return new X509Certificate[0];
                     }
                 }

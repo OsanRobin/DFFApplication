@@ -7,19 +7,21 @@ export interface CurrentUser {
   organization: string;
 }
 
+export interface LoginPayload {
+  username: string;
+  password: string;
+  organization: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-
   private http = inject(HttpClient);
+  private apiUrl = 'http://localhost:8081/api/auth';
 
-  login(): Observable<string> {
-    return this.http.post('http://localhost:8081/api/auth/login', {}, { responseType: 'text' });
-  }
-
-  getCurrentUser(): Observable<CurrentUser> {
-    return this.http.get<CurrentUser>('http://localhost:8081/api/auth/me').pipe(
+  login(payload: LoginPayload): Observable<CurrentUser> {
+    return this.http.post<CurrentUser>(`${this.apiUrl}/login`, payload, { withCredentials: true }).pipe(
       tap(user => {
         localStorage.setItem('user', user.user);
         localStorage.setItem('organization', user.organization);
@@ -27,8 +29,19 @@ export class AuthService {
     );
   }
 
-  logout(): void {
-    localStorage.clear();
+  getCurrentUser(): Observable<CurrentUser> {
+    return this.http.get<CurrentUser>(`${this.apiUrl}/me`, { withCredentials: true }).pipe(
+      tap(user => {
+        localStorage.setItem('user', user.user);
+        localStorage.setItem('organization', user.organization);
+      })
+    );
+  }
+
+  logout(): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/logout`, {}, { withCredentials: true }).pipe(
+      tap(() => localStorage.clear())
+    );
   }
 
   getUser(): string {

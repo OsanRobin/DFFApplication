@@ -1,17 +1,17 @@
 package fenego.app.controller;
 
+import fenego.app.dto.CurrentUserResponse;
+import fenego.app.dto.IntershopLoginResult;
+import fenego.app.dto.LoginRequest;
 import fenego.app.service.AuthService;
-
-import java.util.HashMap;
-import java.util.Map;
-
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 public class AuthController
 {
     private final AuthService authService;
@@ -22,22 +22,45 @@ public class AuthController
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login()
+    public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpSession session)
     {
-        boolean success = authService.login();
-
-        if (success)
+        try
         {
-            return ResponseEntity.ok("Login successful");
+            IntershopLoginResult result = authService.login(request);
+
+            session.setAttribute("authenticated", true);
+            session.setAttribute("user", result.getUser());
+            session.setAttribute("organization", result.getOrganization());
+            session.setAttribute("intershopToken", result.getAuthenticationToken());
+
+            return ResponseEntity.ok(new CurrentUserResponse(result.getUser(), result.getOrganization()));
+        }
+        catch (RuntimeException ex)
+        {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> me(HttpSession session)
+    {
+        Boolean authenticated = (Boolean) session.getAttribute("authenticated");
+
+        if (authenticated == null || !authenticated)
+        {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
         }
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Login failed");
+        String user = (String) session.getAttribute("user");
+        String organization = (String) session.getAttribute("organization");
+
+        return ResponseEntity.ok(new CurrentUserResponse(user, organization));
     }
-    @GetMapping("/me")
-public Map<String, String> me() {
-    Map<String, String> user = new HashMap<>();
-    user.put("user", "admin");
-    user.put("organization", "DailyFreshFood-B1-Site");
-    return user;
-}
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpSession session)
+    {
+        session.invalidate();
+        return ResponseEntity.noContent().build();
+    }
 }
