@@ -1,6 +1,10 @@
 package fenego.app.controller;
 
 import fenego.app.service.AuthService;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,4 +33,11 @@ public class AuthController
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Login failed");
     }
+    @GetMapping("/me")
+public Map<String, String> me() {
+    Map<String, String> user = new HashMap<>();
+    user.put("user", "admin");
+    user.put("organization", "DailyFreshFood-B1-Site");
+    return user;
+}
 }

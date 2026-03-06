@@ -36,15 +36,15 @@ export class LoginComponent {
     this.errorMessage = '';
 
     this.authService.login().subscribe({
-      next: () => {
-        this.loading = false;
-        this.authService.saveSession();
-        this.router.navigateByUrl('/dashboard');
-      },
-      error: (error: HttpErrorResponse) => {
-        this.loading = false;
-        this.errorMessage = typeof error.error === 'string' ? error.error : 'Login failed';
-      }
+  next: () => {
+    this.authService.getCurrentUser().subscribe(() => {
+      this.router.navigateByUrl('/dashboard');
     });
+  },
+  error: () => {
+    this.loading = false;
+    this.errorMessage = 'Login failed';
+  }
+});
   }
 }

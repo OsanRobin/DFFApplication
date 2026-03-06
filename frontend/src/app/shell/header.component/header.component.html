@@ -24,7 +24,7 @@
       </a>
     </nav>
 
-    <div class="user">
+    <div class="user" (click)="toggleMenu()">
       <div class="avatar" aria-hidden="true">
         <svg viewBox="0 0 24 24">
           <path
@@ -32,11 +32,20 @@
           />
         </svg>
       </div>
+
       <div class="user-meta">
-        <div class="user-name">Sarah Mitchell</div>
+        <div class="user-name">{{ userName }}</div>
         <div class="user-role">Admin</div>
       </div>
+
       <div class="chev" aria-hidden="true">▾</div>
+
+      @if (dropdownOpen) {
+        <div class="user-dropdown">
+          <button (click)="logout()">Logout</button>
+        </div>
+      }
     </div>
+
   </div>
 </header>
