@@ -371,6 +371,15 @@ input[type='checkbox'] {
 .bulk-clear:hover {
   background: rgba(255, 255, 255, 0.14);
 }
+.state {
+  padding: 24px;
+  font-size: 14px;
+  color: #475467;
+}
+
+.state.error {
+  color: #b42318;
+}
 
 @media (max-width: 1100px) {
   .layout {

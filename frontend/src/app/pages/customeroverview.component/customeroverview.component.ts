@@ -1,20 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { HeaderComponent } from '../../shell/header.component/header.component';
+import { CustomerApiService, CustomerDto } from '../../core/api/customer-api.service';
+import { AuthService } from '../../core/auth/auth.service';
 
-type Status = 'Active' | 'Inactive' | 'Pending';
+type Status = 'Active' | 'Inactive';
 
 type CustomerRow = {
   id: string;
   name: string;
-  type: 'Cluster' | 'Subcustomer';
-  segment: 'Enterprise' | 'Premium' | 'Standard' | 'Basic';
+  type: string;
+  segment: string;
   status: Status;
   locations: number;
-  level: 0 | 1;       
-  parentId?: string;   
+  level: 0 | 1;
+  parentId?: string;
 };
 
 @Component({
@@ -24,7 +26,11 @@ type CustomerRow = {
   styleUrl: './customeroverview.component.css',
 })
 export class CustomeroverviewComponent {
-   query = '';
+  private customerApi = inject(CustomerApiService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  query = '';
   typeFilter = '';
   segmentFilter = '';
   statusFilter = '';
@@ -32,38 +38,100 @@ export class CustomeroverviewComponent {
   bulkOpen = false;
   selectedIds = new Set<string>();
 
-  rows: CustomerRow[] = [
-    { id: 'c1', name: "St. Mary's Hospital Network", type: 'Cluster', segment: 'Enterprise', status: 'Active', locations: 12, level: 0 },
-    { id: 'c1-1', name: "St. Mary's Hospital - Downtown", type: 'Subcustomer', segment: 'Premium', status: 'Active', locations: 3, level: 1, parentId: 'c1' },
-    { id: 'c1-2', name: "St. Mary's Hospital - North Branch", type: 'Subcustomer', segment: 'Premium', status: 'Active', locations: 2, level: 1, parentId: 'c1' },
+  loading = false;
+  error = '';
 
-    { id: 'c2', name: 'Sunshine Care Homes Group', type: 'Cluster', segment: 'Premium', status: 'Active', locations: 8, level: 0 },
-    { id: 'c2-1', name: 'Sunshine Care - Riverside', type: 'Subcustomer', segment: 'Standard', status: 'Active', locations: 1, level: 1, parentId: 'c2' },
+  rows: CustomerRow[] = [];
 
-    { id: 'c3', name: 'Green Valley Medical Center', type: 'Cluster', segment: 'Enterprise', status: 'Active', locations: 15, level: 0 },
-    { id: 'c4', name: 'Community Health Clinic', type: 'Cluster', segment: 'Basic', status: 'Inactive', locations: 2, level: 0 },
-    { id: 'c5', name: 'Royal Care Nursing Homes', type: 'Cluster', segment: 'Premium', status: 'Pending', locations: 6, level: 0 },
-    { id: 'c6', name: 'Metro Hospital Group', type: 'Cluster', segment: 'Enterprise', status: 'Active', locations: 20, level: 0 },
-  ];
+  constructor() {
+    this.loadCustomers();
+  }
 
-  isSelected(id: string) {
+  loadCustomers(): void {
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken) {
+      this.error = 'No authentication token found. Please log in first.';
+      return;
+    }
+
+    this.loading = true;
+    this.error = '';
+
+    this.customerApi.getCustomers(authenticationToken, 0, 100).subscribe({
+      next: (response) => {
+        this.rows = response.data.map(customer => this.mapCustomerToRow(customer));
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error(err);
+
+        if (err.status === 401 || err.status === 403) {
+          this.error = 'Your session expired. Please log in again.';
+          this.loading = false;
+          this.router.navigate(['/login']);
+          return;
+        }
+
+        this.error = 'Failed to load customers.';
+        this.loading = false;
+      }
+    });
+  }
+
+  mapCustomerToRow(customer: CustomerDto): CustomerRow {
+    return {
+      id: customer.id,
+      name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
+      type: this.mapCustomerType(customer.customerType),
+      segment: 'Standard',
+      status: customer.active ? 'Active' : 'Inactive',
+      locations: 1,
+      level: 0
+    };
+  }
+
+  mapCustomerType(customerType: string): string {
+    if (!customerType) {
+      return 'Customer';
+    }
+
+    const normalized = customerType.toLowerCase();
+
+    if (normalized.includes('smb') || normalized.includes('business')) {
+      return 'Cluster';
+    }
+
+    if (normalized.includes('private')) {
+      return 'Subcustomer';
+    }
+
+    return customerType;
+  }
+
+  isSelected(id: string): boolean {
     return this.selectedIds.has(id);
   }
 
-  toggleRow(id: string) {
-    if (this.selectedIds.has(id)) this.selectedIds.delete(id);
-    else this.selectedIds.add(id);
-
+  toggleRow(id: string): void {
+    if (this.selectedIds.has(id)) {
+      this.selectedIds.delete(id);
+    } else {
+      this.selectedIds.add(id);
+    }
   }
 
-  get allSelected() {
+  get allSelected(): boolean {
     const ids = this.visibleRows().map(r => r.id);
     return ids.length > 0 && ids.every(id => this.selectedIds.has(id));
   }
 
-  toggleAll() {
+  toggleAll(): void {
     const ids = this.visibleRows().map(r => r.id);
-    if (ids.length === 0) return;
+
+    if (ids.length === 0) {
+      return;
+    }
 
     if (ids.every(id => this.selectedIds.has(id))) {
       ids.forEach(id => this.selectedIds.delete(id));
@@ -72,13 +140,12 @@ export class CustomeroverviewComponent {
     }
   }
 
-  clearSelection() {
+  clearSelection(): void {
     this.selectedIds.clear();
     this.bulkOpen = false;
   }
 
   visibleRows(): CustomerRow[] {
-
     const q = this.query.trim().toLowerCase();
 
     return this.rows.filter(r => {
@@ -86,8 +153,8 @@ export class CustomeroverviewComponent {
       const matchesType = !this.typeFilter || r.type === this.typeFilter;
       const matchesSeg = !this.segmentFilter || r.segment === this.segmentFilter;
       const matchesStatus = !this.statusFilter || r.status === this.statusFilter;
+
       return matchesQuery && matchesType && matchesSeg && matchesStatus;
     });
   }
-
 }

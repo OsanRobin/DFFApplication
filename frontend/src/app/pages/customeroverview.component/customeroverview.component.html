@@ -1,5 +1,6 @@
 <div class="page">
   <app-header class="component"></app-header>
+
   <main class="content">
     <div class="crumb">
       Home <span class="sep">›</span> <span class="current">Customers</span>
@@ -33,6 +34,7 @@
             <option value="">Type</option>
             <option>Cluster</option>
             <option>Subcustomer</option>
+            <option>Customer</option>
           </select>
 
           <select class="select" [(ngModel)]="segmentFilter">
@@ -47,7 +49,6 @@
             <option value="">Status</option>
             <option>Active</option>
             <option>Inactive</option>
-            <option>Pending</option>
           </select>
 
           <button class="btn-outline" type="button">Save Search</button>
@@ -55,67 +56,76 @@
 
         <div class="divider"></div>
 
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th class="col-check">
-                  <input type="checkbox" [checked]="allSelected" (change)="toggleAll()" />
-                </th>
-                <th>Customer Name</th>
-                <th>Type</th>
-                <th>Segment</th>
-                <th>Status</th>
-                <th>Locations</th>
-                <th class="col-actions"></th>
-              </tr>
-            </thead>
+        @if (loading) {
+          <div class="state">Loading customers...</div>
+        }
 
-            <tbody>
-              @for (row of visibleRows(); track row.id) {
+        @if (error) {
+          <div class="state error">{{ error }}</div>
+        }
+
+        @if (!loading && !error) {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
                 <tr>
-                  <td class="col-check">
-                    <input type="checkbox" [checked]="isSelected(row.id)" (change)="toggleRow(row.id)" />
-                  </td>
-
-                  <td>
-                    <div class="name-cell" [class.sub]="row.level === 1">
-                      @if (row.level === 1) {
-                        <span class="tree" aria-hidden="true">
-                          <span class="tree-v"></span>
-                          <span class="tree-h"></span>
-                        </span>
-                      }
-                      <span class="name">{{ row.name }}</span>
-                    </div>
-                  </td>
-
-                  <td>{{ row.type }}</td>
-                  <td>{{ row.segment }}</td>
-
-                  <td>
-                    <span
-                      class="badge"
-                      [class.active]="row.status === 'Active'"
-                      [class.inactive]="row.status === 'Inactive'"
-                      [class.pending]="row.status === 'Pending'"
-                    >
-                      {{ row.status }}
-                    </span>
-                  </td>
-
-                  <td>{{ row.locations }}</td>
-
-                  <td class="col-actions">
-                    <a class="link" [routerLink]="['/customers', row.id]">
-                      View Details <span class="chev-r" aria-hidden="true">›</span>
-                    </a>
-                  </td>
+                  <th class="col-check">
+                    <input type="checkbox" [checked]="allSelected" (change)="toggleAll()" />
+                  </th>
+                  <th>Customer Name</th>
+                  <th>Type</th>
+                  <th>Segment</th>
+                  <th>Status</th>
+                  <th>Locations</th>
+                  <th class="col-actions"></th>
                 </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+              </thead>
+
+              <tbody>
+                @for (row of visibleRows(); track row.id) {
+                  <tr>
+                    <td class="col-check">
+                      <input type="checkbox" [checked]="isSelected(row.id)" (change)="toggleRow(row.id)" />
+                    </td>
+
+                    <td>
+                      <div class="name-cell" [class.sub]="row.level === 1">
+                        @if (row.level === 1) {
+                          <span class="tree" aria-hidden="true">
+                            <span class="tree-v"></span>
+                            <span class="tree-h"></span>
+                          </span>
+                        }
+                        <span class="name">{{ row.name }}</span>
+                      </div>
+                    </td>
+
+                    <td>{{ row.type }}</td>
+                    <td>{{ row.segment }}</td>
+
+                    <td>
+                      <span
+                        class="badge"
+                        [class.active]="row.status === 'Active'"
+                        [class.inactive]="row.status === 'Inactive'"
+                      >
+                        {{ row.status }}
+                      </span>
+                    </td>
+
+                    <td>{{ row.locations }}</td>
+
+                    <td class="col-actions">
+                      <a class="link" [routerLink]="['/customers', row.id]">
+                        View Details <span class="chev-r" aria-hidden="true">›</span>
+                      </a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
 
         <div class="bottom-pad"></div>
       </section>

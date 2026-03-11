@@ -1,15 +1,19 @@
 package fenego.app.intershop;
 
+import fenego.app.dto.CustomerListResponse;
 import fenego.app.dto.IntershopLoginResult;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class IntershopClient
@@ -21,6 +25,9 @@ public class IntershopClient
 
     @Value("${intershop.accept-header}")
     private String acceptHeader;
+
+    @Value("${intershop.customers-url}")
+    private String customersUrl;
 
     public IntershopClient(RestTemplate restTemplate)
     {
@@ -80,6 +87,51 @@ public class IntershopClient
         {
             ex.printStackTrace();
             throw new RuntimeException("Intershop validation failed: " + ex.getClass().getName() + " - " + ex.getMessage(), ex);
+        }
+    }
+
+    public CustomerListResponse getCustomers(String authenticationToken, int offset, int limit, String customerNo, String email)
+    {
+        try
+        {
+            String url = UriComponentsBuilder
+                    .fromUriString(customersUrl)
+                    .queryParam("offset", offset)
+                    .queryParam("limit", limit)
+                    .queryParamIfPresent("customerNo",
+                            StringUtils.hasText(customerNo) ? Optional.of(customerNo) : Optional.empty())
+                    .queryParamIfPresent("email",
+                            StringUtils.hasText(email) ? Optional.of(email) : Optional.empty())
+                    .toUriString();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+            headers.set("authentication-token", authenticationToken);
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<CustomerListResponse> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    CustomerListResponse.class
+            );
+
+            if (response.getBody() == null)
+            {
+                throw new RuntimeException("Intershop returned an empty customer response");
+            }
+
+            return response.getBody();
+        }
+        catch (HttpStatusCodeException ex)
+        {
+            int status = ex.getStatusCode().value();
+            throw new RuntimeException("Fetching customers failed: " + status + " - " + ex.getResponseBodyAsString(), ex);
+        }
+        catch (Exception ex)
+        {
+            throw new RuntimeException("Fetching customers failed: " + ex.getMessage(), ex);
         }
     }
 }
