@@ -8,6 +8,7 @@ public class CustomerDTO
     private String displayName;
     private String companyName;
     private String email;
+    private String segment;
     private boolean active;
 
     public String getId()
@@ -68,6 +69,16 @@ public class CustomerDTO
     public void setEmail(String email)
     {
         this.email = email;
+    }
+
+    public String getSegment()
+    {
+        return segment;
+    }
+
+    public void setSegment(String segment)
+    {
+        this.segment = segment;
     }
 
     public boolean isActive()

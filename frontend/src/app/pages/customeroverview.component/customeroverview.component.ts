@@ -11,6 +11,8 @@ type Status = 'Active' | 'Inactive';
 type CustomerRow = {
   id: string;
   name: string;
+  customerNo: string;
+  email: string;
   type: string;
   segment: string;
   status: Status;
@@ -31,6 +33,7 @@ export class CustomeroverviewComponent {
   private router = inject(Router);
 
   query = '';
+  customerNoFilter = '';
   typeFilter = '';
   segmentFilter = '';
   statusFilter = '';
@@ -58,7 +61,12 @@ export class CustomeroverviewComponent {
     this.loading = true;
     this.error = '';
 
-    this.customerApi.getCustomers(authenticationToken, 0, 100).subscribe({
+    this.customerApi.getCustomers(
+      authenticationToken,
+      0,
+      100,
+      this.customerNoFilter
+    ).subscribe({
       next: (response) => {
         this.rows = response.data.map(customer => this.mapCustomerToRow(customer));
         this.loading = false;
@@ -83,8 +91,10 @@ export class CustomeroverviewComponent {
     return {
       id: customer.id,
       name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
+      customerNo: customer.customerNo ?? '',
+      email: customer.email ?? '',
       type: this.mapCustomerType(customer.customerType),
-      segment: 'Standard',
+      segment: customer.segment ?? 'Standard',
       status: customer.active ? 'Active' : 'Inactive',
       locations: 1,
       level: 0
@@ -106,7 +116,44 @@ export class CustomeroverviewComponent {
       return 'Subcustomer';
     }
 
-    return customerType;
+    return 'Customer';
+  }
+
+  visibleRows(): CustomerRow[] {
+    const q = this.query.trim().toLowerCase();
+
+    return this.rows.filter((row) => {
+      const matchesQuery =
+        !q ||
+        row.name.toLowerCase().includes(q) ||
+        row.customerNo.toLowerCase().includes(q);
+
+      const matchesType =
+        !this.typeFilter || row.type === this.typeFilter;
+
+      const matchesSegment =
+        !this.segmentFilter || row.segment === this.segmentFilter;
+
+      const matchesStatus =
+        !this.statusFilter || row.status === this.statusFilter;
+
+      return matchesQuery && matchesType && matchesSegment && matchesStatus;
+    });
+  }
+
+  onApplyFilters(): void {
+    this.loadCustomers();
+    this.clearSelection();
+  }
+
+  onClearFilters(): void {
+    this.query = '';
+    this.customerNoFilter = '';
+    this.typeFilter = '';
+    this.segmentFilter = '';
+    this.statusFilter = '';
+    this.loadCustomers();
+    this.clearSelection();
   }
 
   isSelected(id: string): boolean {
@@ -122,39 +169,26 @@ export class CustomeroverviewComponent {
   }
 
   get allSelected(): boolean {
-    const ids = this.visibleRows().map(r => r.id);
-    return ids.length > 0 && ids.every(id => this.selectedIds.has(id));
+    const ids = this.visibleRows().map((r) => r.id);
+    return ids.length > 0 && ids.every((id) => this.selectedIds.has(id));
   }
 
   toggleAll(): void {
-    const ids = this.visibleRows().map(r => r.id);
+    const ids = this.visibleRows().map((r) => r.id);
 
     if (ids.length === 0) {
       return;
     }
 
-    if (ids.every(id => this.selectedIds.has(id))) {
-      ids.forEach(id => this.selectedIds.delete(id));
+    if (ids.every((id) => this.selectedIds.has(id))) {
+      ids.forEach((id) => this.selectedIds.delete(id));
     } else {
-      ids.forEach(id => this.selectedIds.add(id));
+      ids.forEach((id) => this.selectedIds.add(id));
     }
   }
 
   clearSelection(): void {
     this.selectedIds.clear();
     this.bulkOpen = false;
-  }
-
-  visibleRows(): CustomerRow[] {
-    const q = this.query.trim().toLowerCase();
-
-    return this.rows.filter(r => {
-      const matchesQuery = !q || r.name.toLowerCase().includes(q);
-      const matchesType = !this.typeFilter || r.type === this.typeFilter;
-      const matchesSeg = !this.segmentFilter || r.segment === this.segmentFilter;
-      const matchesStatus = !this.statusFilter || r.status === this.statusFilter;
-
-      return matchesQuery && matchesType && matchesSeg && matchesStatus;
-    });
   }
 }

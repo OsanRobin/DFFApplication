@@ -27,31 +27,71 @@
       </aside>
 
       <section class="main card">
+        <div class="filters-head">
+          <div class="filters-title">Filter customers</div>
+          <div class="filters-meta">Search and refine your customer list</div>
+        </div>
+
         <div class="toolbar">
-          <input class="search" type="text" placeholder="Search customers..." [(ngModel)]="query" />
+          <div class="field">
+            <label class="field-label">Search</label>
+            <input
+              class="search"
+              type="text"
+              placeholder="Search by name or customer no..."
+              [(ngModel)]="query"
+            />
+          </div>
 
-          <select class="select" [(ngModel)]="typeFilter">
-            <option value="">Type</option>
-            <option>Cluster</option>
-            <option>Subcustomer</option>
-            <option>Customer</option>
-          </select>
+          <div class="field">
+            <label class="field-label">Customer number</label>
+            <input
+              class="search"
+              type="text"
+              placeholder="Customer number..."
+              [(ngModel)]="customerNoFilter"
+            />
+          </div>
 
-          <select class="select" [(ngModel)]="segmentFilter">
-            <option value="">Segment</option>
-            <option>Enterprise</option>
-            <option>Premium</option>
-            <option>Standard</option>
-            <option>Basic</option>
-          </select>
+          <div class="field">
+            <label class="field-label">Type</label>
+            <select class="select" [(ngModel)]="typeFilter">
+              <option value="">All types</option>
+              <option value="Cluster">Cluster</option>
+              <option value="Subcustomer">Subcustomer</option>
+              <option value="Customer">Customer</option>
+            </select>
+          </div>
 
-          <select class="select" [(ngModel)]="statusFilter">
-            <option value="">Status</option>
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
+          <div class="field">
+            <label class="field-label">Segment</label>
+            <select class="select" [(ngModel)]="segmentFilter">
+              <option value="">All segments</option>
+              <option value="Enterprise">Enterprise</option>
+              <option value="Premium">Premium</option>
+              <option value="Standard">Standard</option>
+              <option value="Basic">Basic</option>
+            </select>
+          </div>
 
-          <button class="btn-outline" type="button">Save Search</button>
+          <div class="field">
+            <label class="field-label">Status</label>
+            <select class="select" [(ngModel)]="statusFilter">
+              <option value="">All statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+
+          <div class="toolbar-actions">
+            <button class="btn-primary" type="button" (click)="onApplyFilters()">
+              Apply
+            </button>
+
+            <button class="btn-outline" type="button" (click)="onClearFilters()">
+              Clear
+            </button>
+          </div>
         </div>
 
         <div class="divider"></div>
@@ -73,6 +113,7 @@
                     <input type="checkbox" [checked]="allSelected" (change)="toggleAll()" />
                   </th>
                   <th>Customer Name</th>
+                  <th>Customer No</th>
                   <th>Type</th>
                   <th>Segment</th>
                   <th>Status</th>
@@ -85,7 +126,11 @@
                 @for (row of visibleRows(); track row.id) {
                   <tr>
                     <td class="col-check">
-                      <input type="checkbox" [checked]="isSelected(row.id)" (change)="toggleRow(row.id)" />
+                      <input
+                        type="checkbox"
+                        [checked]="isSelected(row.id)"
+                        (change)="toggleRow(row.id)"
+                      />
                     </td>
 
                     <td>
@@ -100,6 +145,7 @@
                       </div>
                     </td>
 
+                    <td>{{ row.customerNo }}</td>
                     <td>{{ row.type }}</td>
                     <td>{{ row.segment }}</td>
 

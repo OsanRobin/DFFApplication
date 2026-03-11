@@ -9,6 +9,7 @@ export interface CustomerDto {
   displayName: string;
   companyName: string | null;
   email: string | null;
+  segment: string | null;
   active: boolean;
 }
 
@@ -48,6 +49,7 @@ export interface CustomerDetailResponse {
   preferredInvoiceToAddress: CustomerAddressDto;
   preferredShipToAddress: CustomerAddressDto;
 }
+
 export interface CustomerUserDto {
   name: string;
   login: string;
@@ -71,6 +73,7 @@ export interface CustomerUserListResponse {
   limit: number;
   sortKeys: string[];
 }
+
 @Injectable({
   providedIn: 'root'
 })
@@ -82,8 +85,7 @@ export class CustomerApiService {
     authenticationToken: string,
     offset = 0,
     limit = 50,
-    customerNo?: string,
-    email?: string
+    customerNo?: string
   ): Observable<CustomerListResponse> {
     let params = new HttpParams()
       .set('offset', offset)
@@ -91,10 +93,6 @@ export class CustomerApiService {
 
     if (customerNo?.trim()) {
       params = params.set('customerNo', customerNo.trim());
-    }
-
-    if (email?.trim()) {
-      params = params.set('email', email.trim());
     }
 
     const headers = new HttpHeaders({
@@ -116,13 +114,14 @@ export class CustomerApiService {
       headers
     });
   }
-  getCustomerUsers(authenticationToken: string, customerId: string): Observable<CustomerUserListResponse> {
-  const headers = new HttpHeaders({
-    'authentication-token': authenticationToken
-  });
 
-  return this.http.get<CustomerUserListResponse>(`${this.baseUrl}/${customerId}/users`, {
-    headers
-  });
-}
+  getCustomerUsers(authenticationToken: string, customerId: string): Observable<CustomerUserListResponse> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    return this.http.get<CustomerUserListResponse>(`${this.baseUrl}/${customerId}/users`, {
+      headers
+    });
+  }
 }
