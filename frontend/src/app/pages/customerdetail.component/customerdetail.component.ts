@@ -1,7 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HeaderComponent } from '../../shell/header.component/header.component';
+import { CustomerApiService, CustomerDetailResponse } from '../../core/api/customer-api.service';
+import { AuthService } from '../../core/auth/auth.service';
+
 type TabKey = 'overview' | 'attributes' | 'users' | 'segments';
+
 @Component({
   selector: 'app-customerdetail.component',
   imports: [CommonModule, HeaderComponent],
@@ -9,10 +14,126 @@ type TabKey = 'overview' | 'attributes' | 'users' | 'segments';
   styleUrl: './customerdetail.component.css',
 })
 export class CustomerdetailComponent {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private customerApi = inject(CustomerApiService);
+  private authService = inject(AuthService);
+
   activeTab: TabKey = 'overview';
 
-  goBack() {
+  loading = false;
+  error = '';
+
+  customerId = '';
+  customer: CustomerDetailResponse | null = null;
+
+  constructor() {
+    this.customerId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.loadCustomer();
+  }
+
+  goBack(): void {
     history.back();
   }
 
+  loadCustomer(): void {
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken) {
+      this.error = 'No authentication token found. Please log in first.';
+      return;
+    }
+
+    if (!this.customerId) {
+      this.error = 'No customer id found in route.';
+      return;
+    }
+
+    this.loading = true;
+    this.error = '';
+
+    this.customerApi.getCustomerById(authenticationToken, this.customerId).subscribe({
+      next: (response) => {
+        this.customer = response;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error(err);
+
+        if (err.status === 401 || err.status === 403) {
+          this.error = 'Your session expired. Please log in again.';
+          this.loading = false;
+          this.router.navigate(['/login']);
+          return;
+        }
+
+        if (err.status === 404) {
+          this.error = 'Customer not found.';
+          this.loading = false;
+          return;
+        }
+
+        this.error = 'Failed to load customer details.';
+        this.loading = false;
+      }
+    });
+  }
+
+  customerTitle(): string {
+    if (!this.customer) {
+      return 'Customer Detail';
+    }
+
+    return this.customer.companyName || this.customer.customerNo || 'Customer Detail';
+  }
+
+  customerTypeLabel(): string {
+    if (!this.customer?.customerType) {
+      return '-';
+    }
+
+    const normalized = this.customer.customerType.toLowerCase();
+
+    if (normalized.includes('smb') || normalized.includes('business')) {
+      return 'Cluster';
+    }
+
+    if (normalized.includes('private')) {
+      return 'Subcustomer';
+    }
+
+    return this.customer.customerType;
+  }
+
+  statusLabel(): string {
+    return 'Active';
+  }
+
+  invoiceAddressLines(): string[] {
+    const address = this.customer?.preferredInvoiceToAddress;
+    if (!address) {
+      return [];
+    }
+
+    return [
+      address.company || address.companyName1,
+      address.addressLine1 || address.street,
+      `${address.postalCode} ${address.city}`.trim(),
+      address.country
+    ].filter(Boolean) as string[];
+  }
+
+  shippingAddressLines(): string[] {
+    const address = this.customer?.preferredShipToAddress;
+    if (!address) {
+      return [];
+    }
+
+    return [
+      address.company || address.companyName1,
+      address.addressLine1 || address.street,
+      `${address.postalCode} ${address.city}`.trim(),
+      address.country
+    ].filter(Boolean) as string[];
+  }
 }

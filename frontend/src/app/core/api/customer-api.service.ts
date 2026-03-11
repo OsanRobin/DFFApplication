@@ -19,6 +19,36 @@ export interface CustomerListResponse {
   data: CustomerDto[];
 }
 
+export interface CustomerAddressDto {
+  id: string;
+  addressName: string;
+  firstName: string;
+  lastName: string;
+  companyName1: string;
+  addressLine1: string;
+  postalCode: string;
+  country: string;
+  countryCode: string;
+  city: string;
+  street: string;
+  shipFromAddress: boolean;
+  serviceToAddress: boolean;
+  installToAddress: boolean;
+  invoiceToAddress: boolean;
+  shipToAddress: boolean;
+  company: string;
+}
+
+export interface CustomerDetailResponse {
+  customerNo: string;
+  companyName: string;
+  customerType: string;
+  budgetPriceType: string;
+  type: string;
+  preferredInvoiceToAddress: CustomerAddressDto;
+  preferredShipToAddress: CustomerAddressDto;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -52,6 +82,16 @@ export class CustomerApiService {
     return this.http.get<CustomerListResponse>(this.baseUrl, {
       headers,
       params
+    });
+  }
+
+  getCustomerById(authenticationToken: string, customerId: string): Observable<CustomerDetailResponse> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    return this.http.get<CustomerDetailResponse>(`${this.baseUrl}/${customerId}`, {
+      headers
     });
   }
 }
