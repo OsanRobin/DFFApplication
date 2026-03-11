@@ -2,6 +2,7 @@ package fenego.app.controller;
 
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerListResponse;
+import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.service.CustomerService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,5 +37,10 @@ public class CustomerController
 public CustomerDetailResponse getCustomerById(@PathVariable String customerId)
 {
     return customerService.getCustomerById(customerId);
+}
+@GetMapping("/{customerId}/users")
+public CustomerUserListResponse getCustomerUsers(@PathVariable String customerId)
+{
+    return customerService.getCustomerUsers(customerId);
 }
 }

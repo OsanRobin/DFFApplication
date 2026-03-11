@@ -35,10 +35,10 @@
       </div>
 
       <div class="tabs">
-        <button class="tab" [class.on]="activeTab==='overview'" (click)="activeTab='overview'">Overview</button>
-        <button class="tab" [class.on]="activeTab==='attributes'" (click)="activeTab='attributes'">Attributes</button>
-        <button class="tab" [class.on]="activeTab==='users'" (click)="activeTab='users'">Users</button>
-        <button class="tab" [class.on]="activeTab==='segments'" (click)="activeTab='segments'">Segments</button>
+        <button class="tab" [class.on]="activeTab==='overview'" (click)="setTab('overview')">Overview</button>
+        <button class="tab" [class.on]="activeTab==='attributes'" (click)="setTab('attributes')">Attributes</button>
+        <button class="tab" [class.on]="activeTab==='users'" (click)="setTab('users')">Users</button>
+        <button class="tab" [class.on]="activeTab==='segments'" (click)="setTab('segments')">Segments</button>
       </div>
 
       @if (activeTab === 'overview') {
@@ -178,11 +178,52 @@
       @if (activeTab === 'users') {
         <section class="card panel wide">
           <div class="panel-title">Users</div>
-          <div class="panel-sub">Mock placeholder tab</div>
+          <div class="panel-sub">Users linked to this customer</div>
 
-          <div class="empty-state">
-            No linked users available in this mock response yet.
-          </div>
+          @if (usersLoading) {
+            <div class="empty-state">Loading users...</div>
+          }
+
+          @if (usersError) {
+            <div class="state error">{{ usersError }}</div>
+          }
+
+          @if (!usersLoading && !usersError && users.length === 0) {
+            <div class="empty-state">No users found for this customer.</div>
+          }
+
+          @if (!usersLoading && !usersError && users.length > 0) {
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Login</th>
+                    <th>Role</th>
+                    <th>Business Partner No</th>
+                    <th>Budget Period</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (user of users; track user.login) {
+                    <tr>
+                      <td>{{ user.name }}</td>
+                      <td>{{ user.login }}</td>
+                      <td>{{ displayRoles(user) }}</td>
+                      <td>{{ user.businessPartnerNo }}</td>
+                      <td>{{ user.budgetPeriod }}</td>
+                      <td>
+                        <span class="badge" [class.active]="user.active" [class.inactive]="!user.active">
+                          {{ displayStatus(user) }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </section>
       }
 

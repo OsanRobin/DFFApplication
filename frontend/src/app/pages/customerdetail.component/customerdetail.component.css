@@ -266,6 +266,10 @@ tbody tr:last-child td {
   padding: 12px 14px;
   background: #fbfdff;
 }
+.badge.inactive {
+  background: #f2f4f7;
+  color: #344054;
+}
 
 @media (max-width: 980px) {
   .grid2 {

@@ -48,7 +48,29 @@ export interface CustomerDetailResponse {
   preferredInvoiceToAddress: CustomerAddressDto;
   preferredShipToAddress: CustomerAddressDto;
 }
+export interface CustomerUserDto {
+  name: string;
+  login: string;
+  firstName: string;
+  lastName: string;
+  active: boolean;
+  businessPartnerNo: string;
+  roleIds: string[];
+  roleNames: string[];
+  budgetPeriod: string;
+  pendingOneTimeRequisitionsCount: number;
+  pendingRecurringRequisitionsCount: number;
+}
 
+export interface CustomerUserListResponse {
+  type: string;
+  name: string;
+  amount: number;
+  elements: CustomerUserDto[];
+  offset: number;
+  limit: number;
+  sortKeys: string[];
+}
 @Injectable({
   providedIn: 'root'
 })
@@ -94,4 +116,13 @@ export class CustomerApiService {
       headers
     });
   }
+  getCustomerUsers(authenticationToken: string, customerId: string): Observable<CustomerUserListResponse> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  return this.http.get<CustomerUserListResponse>(`${this.baseUrl}/${customerId}/users`, {
+    headers
+  });
+}
 }

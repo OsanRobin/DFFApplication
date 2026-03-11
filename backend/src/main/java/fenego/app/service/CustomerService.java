@@ -5,6 +5,8 @@ import fenego.app.dto.CustomerDTO;
 import fenego.app.dto.CustomerDetailResponse;
 
 import fenego.app.dto.CustomerListResponse;
+import fenego.app.dto.CustomerUserDTO;
+import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.intershop.IntershopClient;
 import org.springframework.stereotype.Service;
 
@@ -49,6 +51,22 @@ public class CustomerService
 
         throw new RuntimeException("Customer not found: " + customerId);
     }
+    public CustomerUserListResponse getCustomerUsers(String customerId)
+{
+    if ("10776".equals(customerId))
+    {
+        return buildUsersFor10776();
+    }
+
+    CustomerUserListResponse response = new CustomerUserListResponse();
+    response.setType("UserLinkCollection");
+    response.setName("users");
+    response.setAmount(0);
+    response.setOffset(0);
+    response.setLimit(50);
+    response.setSortKeys(List.of("name"));
+    return response;
+}
 
     private CustomerListResponse getMockCustomers(int offset, int limit, String customerNo, String email)
     {
@@ -183,4 +201,113 @@ public class CustomerService
         address.setCompany("Testaccount eCommerce");
         return address;
     }
+    private CustomerUserListResponse buildUsersFor10776()
+{
+    CustomerUserListResponse response = new CustomerUserListResponse();
+    response.setType("UserLinkCollection");
+    response.setName("users");
+    response.setOffset(0);
+    response.setLimit(50);
+    response.setSortKeys(List.of("name"));
+
+    List<CustomerUserDTO> users = List.of(
+            createUser("Harm Huijbregts", "harm.h", "Harm", "Huijbregts", true,
+                    "0hdOKU4x6XcAAAFp8z4oPJaM",
+                    List.of("APP_B2B_ACCOUNT_OWNER"),
+                    List.of("Account Admin"),
+                    "none", 0, 0),
+
+            createUser("Iris Golsteijn", "iris.g", "Iris", "Golsteijn", true,
+                    "markusgroenholm",
+                    List.of(),
+                    List.of(),
+                    "none", 0, 0),
+
+            createUser("Jeroen Nijs", "nijsj", "Jeroen", "Nijs", false,
+                    "00000015",
+                    List.of("APP_B2B_BUYER"),
+                    List.of("Buyer"),
+                    "none", 0, 0),
+
+            createUser("JeroenDemo NijsDemo", "nijsjdemo", "JeroenDemo", "NijsDemo", false,
+                    "00000016",
+                    List.of("APP_B2B_BUYER"),
+                    List.of("Buyer"),
+                    "none", 0, 0),
+
+            createUser("Mark Cox", "markcox", "Mark", "Cox", true,
+                    "XpROKU4xOkUAAAFwvEdKeTSt",
+                    List.of(),
+                    List.of(),
+                    "none", 0, 0),
+
+            createUser("Mirjam Smetsers", "mirjam.s", "Mirjam", "Smetsers", true,
+                    "mirjam.smetsers2",
+                    List.of(),
+                    List.of(),
+                    "none", 0, 0),
+
+            createUser("Roel Buyer", "dessertbuyer2", "Roel", "Buyer", true,
+                    "cSVOKU4xb4IAAAGMDTpotIHp",
+                    List.of(),
+                    List.of(),
+                    "none", 0, 0),
+
+            createUser("Testaccount MyDaily", "willy", "Testaccount", "MyDaily", true,
+                    "willy",
+                    List.of("APP_DFF_BUYER", "APP_DFF_QUICK_ORDER_BUYER", "APP_DFF_ACCOUNT_OWNER", "APP_B2B_BUYER", "APP_B2B_ACCOUNT_OWNER"),
+                    List.of("DFF Buyer", "DFF Quick Order Buyer", "DFF Account Owner", "Buyer", "Account Admin"),
+                    "none", 0, 0),
+
+            createUser("Testaccount eCommerce Personeel GROEP", "s10776", "Testaccount eCommerce", "Personeel GROEP", true,
+                    "s10776",
+                    List.of(),
+                    List.of(),
+                    "none", 0, 0),
+
+            createUser("Willy Van Rijzingen", "willy.r", "Willy", "Van Rijzingen", true,
+                    "qtBOKU4xT8oAAAFpOIAXnZXz",
+                    List.of("APP_DFF_QUICK_ORDER_BUYER", "APP_DFF_ACCOUNT_OWNER", "APP_B2B_BUYER"),
+                    List.of("DFF Quick Order Buyer", "DFF Account Owner", "Buyer"),
+                    "none", 0, 0),
+
+            createUser("Zuyderland Ariba", "d10776", "Zuyderland", "Ariba", true,
+                    "d10776",
+                    List.of("APP_B2B_ACCOUNT_OWNER"),
+                    List.of("Account Admin"),
+                    "none", 0, 0)
+    );
+
+    response.setElements(users);
+    response.setAmount(users.size());
+
+    return response;
+}
+
+private CustomerUserDTO createUser(String name,
+                                   String login,
+                                   String firstName,
+                                   String lastName,
+                                   boolean active,
+                                   String businessPartnerNo,
+                                   List<String> roleIds,
+                                   List<String> roleNames,
+                                   String budgetPeriod,
+                                   int pendingOneTimeRequisitionsCount,
+                                   int pendingRecurringRequisitionsCount)
+{
+    CustomerUserDTO user = new CustomerUserDTO();
+    user.setName(name);
+    user.setLogin(login);
+    user.setFirstName(firstName);
+    user.setLastName(lastName);
+    user.setActive(active);
+    user.setBusinessPartnerNo(businessPartnerNo);
+    user.setRoleIds(roleIds);
+    user.setRoleNames(roleNames);
+    user.setBudgetPeriod(budgetPeriod);
+    user.setPendingOneTimeRequisitionsCount(pendingOneTimeRequisitionsCount);
+    user.setPendingRecurringRequisitionsCount(pendingRecurringRequisitionsCount);
+    return user;
+}
 }
