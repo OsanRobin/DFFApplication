@@ -3,7 +3,12 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HeaderComponent } from '../../shell/header.component/header.component';
-import { CustomerApiService, CustomerDto } from '../../core/api/customer-api.service';
+import {
+  CustomerApiService,
+  CustomerDto,
+  SavedCustomerSearchDto,
+  SaveCustomerSearchRequest
+} from '../../core/api/customer-api.service';
 import { AuthService } from '../../core/auth/auth.service';
 
 type Status = 'Active' | 'Inactive';
@@ -31,7 +36,7 @@ export class CustomeroverviewComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-private domainName = 'DailyFreshFood-B1-Anonymous';
+  private domainName = 'DailyFreshFood-B1-Anonymous';
 
   query = '';
   customerNoFilter = '';
@@ -43,11 +48,15 @@ private domainName = 'DailyFreshFood-B1-Anonymous';
 
   loading = false;
   error = '';
+  saveSearchError = '';
+  saveSearchSuccess = '';
 
   rows: CustomerRow[] = [];
+  savedSearches: SavedCustomerSearchDto[] = [];
 
   constructor() {
     this.loadCustomers();
+    this.loadSavedSearches();
   }
 
   loadCustomers(): void {
@@ -86,6 +95,98 @@ private domainName = 'DailyFreshFood-B1-Anonymous';
         this.loading = false;
       }
     });
+  }
+
+  loadSavedSearches(): void {
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken) {
+      return;
+    }
+
+    this.customerApi.getSavedSearches(authenticationToken, this.domainName).subscribe({
+      next: (response) => {
+        this.savedSearches = response.data ?? [];
+      },
+      error: (err) => {
+        console.error('Failed to load saved searches', err);
+      }
+    });
+  }
+
+  saveCurrentSearch(): void {
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken) {
+      this.saveSearchError = 'No authentication token found. Please log in first.';
+      return;
+    }
+
+    this.saveSearchError = '';
+    this.saveSearchSuccess = '';
+
+    const name = window.prompt('Enter a name for this search');
+    if (!name || !name.trim()) {
+      this.saveSearchError = 'Search name is required.';
+      return;
+    }
+
+    const request: SaveCustomerSearchRequest = {
+      domainName: this.domainName,
+      name: name.trim(),
+      query: this.query.trim(),
+      customerNo: this.customerNoFilter.trim(),
+      typeFilter: this.typeFilter,
+      statusFilter: this.statusFilter,
+      overwrite: false
+    };
+
+    this.customerApi.saveSearch(authenticationToken, request).subscribe({
+      next: () => {
+        this.saveSearchSuccess = 'Search saved successfully.';
+        this.loadSavedSearches();
+      },
+      error: (err) => {
+        const backendMessage = err?.error?.message ?? '';
+
+        if (backendMessage.toLowerCase().includes('already exists')) {
+          const overwrite = window.confirm('A saved search with this name already exists. Overwrite it?');
+
+          if (!overwrite) {
+            this.saveSearchError = 'Search was not overwritten.';
+            return;
+          }
+
+          this.customerApi.saveSearch(authenticationToken, {
+            ...request,
+            overwrite: true
+          }).subscribe({
+            next: () => {
+              this.saveSearchSuccess = 'Search overwritten successfully.';
+              this.loadSavedSearches();
+            },
+            error: (overwriteErr) => {
+              console.error(overwriteErr);
+              this.saveSearchError = overwriteErr?.error?.message ?? 'Failed to overwrite saved search.';
+            }
+          });
+
+          return;
+        }
+
+        console.error(err);
+        this.saveSearchError = backendMessage || 'Failed to save search.';
+      }
+    });
+  }
+
+  applySavedSearch(savedSearch: SavedCustomerSearchDto): void {
+    this.query = savedSearch.query ?? '';
+    this.customerNoFilter = savedSearch.customerNo ?? '';
+    this.typeFilter = savedSearch.typeFilter ?? '';
+    this.statusFilter = savedSearch.statusFilter ?? '';
+
+    this.onApplyFilters();
   }
 
   mapCustomerToRow(customer: CustomerDto): CustomerRow {
@@ -148,6 +249,8 @@ private domainName = 'DailyFreshFood-B1-Anonymous';
     this.customerNoFilter = '';
     this.typeFilter = '';
     this.statusFilter = '';
+    this.saveSearchError = '';
+    this.saveSearchSuccess = '';
     this.loadCustomers();
     this.clearSelection();
   }

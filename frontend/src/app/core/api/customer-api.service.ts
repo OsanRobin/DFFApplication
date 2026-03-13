@@ -74,12 +74,38 @@ export interface CustomerUserListResponse {
   sortKeys: string[];
 }
 
+export interface SavedCustomerSearchDto {
+  id: number;
+  domainName: string;
+  name: string;
+  query: string;
+  customerNo: string;
+  typeFilter: string;
+  statusFilter: string;
+}
+
+export interface SavedCustomerSearchListResponse {
+  count: number;
+  data: SavedCustomerSearchDto[];
+}
+
+export interface SaveCustomerSearchRequest {
+  domainName: string;
+  name: string;
+  query: string;
+  customerNo: string;
+  typeFilter: string;
+  statusFilter: string;
+  overwrite: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class CustomerApiService {
   private http = inject(HttpClient);
   private baseUrl = 'http://localhost:8081/api/customers';
+  private savedSearchBaseUrl = 'http://localhost:8081/api/customer-searches';
 
   getCustomers(
     authenticationToken: string,
@@ -125,5 +151,26 @@ export class CustomerApiService {
     return this.http.get<CustomerUserListResponse>(`${this.baseUrl}/${customerId}/users`, {
       headers
     });
+  }
+
+  getSavedSearches(authenticationToken: string, domain: string): Observable<SavedCustomerSearchListResponse> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    const params = new HttpParams().set('domain', domain);
+
+    return this.http.get<SavedCustomerSearchListResponse>(this.savedSearchBaseUrl, {
+      headers,
+      params
+    });
+  }
+
+  saveSearch(authenticationToken: string, request: SaveCustomerSearchRequest): Observable<void> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    return this.http.post<void>(this.savedSearchBaseUrl, request, { headers });
   }
 }

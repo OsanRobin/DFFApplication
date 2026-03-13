@@ -12,25 +12,37 @@
       <aside class="side card">
         <div class="side-title">Saved Searches</div>
 
-        <button class="saved" type="button">
-          <span class="caret">›</span>
-          <span>Active Enterprise Customers</span>
-        </button>
-        <button class="saved" type="button">
-          <span class="caret">›</span>
-          <span>Pending Approvals</span>
-        </button>
-        <button class="saved" type="button">
-          <span class="caret">›</span>
-          <span>Healthcare Clusters</span>
-        </button>
+        @if (savedSearches.length === 0) {
+          <div class="saved-empty">No saved searches yet.</div>
+        }
+
+        @for (savedSearch of savedSearches; track savedSearch.id) {
+          <button class="saved" type="button" (click)="applySavedSearch(savedSearch)">
+            <span class="caret">›</span>
+            <span>{{ savedSearch.name }}</span>
+          </button>
+        }
       </aside>
 
       <section class="main card">
         <div class="filters-head">
-          <div class="filters-title">Filter customers</div>
-          <div class="filters-meta">Search and refine your customer list</div>
+          <div>
+            <div class="filters-title">Filter customers</div>
+            <div class="filters-meta">Search and refine your customer list</div>
+          </div>
+
+          <button class="btn-outline" type="button" (click)="saveCurrentSearch()">
+            Save Search
+          </button>
         </div>
+
+        @if (saveSearchSuccess) {
+          <div class="state success">{{ saveSearchSuccess }}</div>
+        }
+
+        @if (saveSearchError) {
+          <div class="state error">{{ saveSearchError }}</div>
+        }
 
         <div class="toolbar">
           <div class="field">

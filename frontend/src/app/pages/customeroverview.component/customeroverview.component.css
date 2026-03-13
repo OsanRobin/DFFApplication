@@ -418,7 +418,28 @@ input[type='checkbox'] {
 .bulk-count {
   font-weight: 900;
 }
+.saved-empty {
+  color: #64748b;
+  font-size: 14px;
+  padding: 10px 4px;
+}
 
+.filters-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.state.success {
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
 .dropdown {
   position: relative;
 }
