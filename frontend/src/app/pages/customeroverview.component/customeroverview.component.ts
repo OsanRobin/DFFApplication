@@ -290,4 +290,55 @@ export class CustomeroverviewComponent {
     this.selectedIds.clear();
     this.bulkOpen = false;
   }
+  deleteSavedSearch(searchId: number) {
+
+  const authenticationToken = this.authService.getAuthenticationToken();
+
+  if (!authenticationToken) {
+    return;
+  }
+
+  const confirmDelete = window.confirm("Delete this saved search?");
+
+  if (!confirmDelete) {
+    return;
+  }
+
+  this.customerApi.deleteSavedSearch(authenticationToken, searchId)
+    .subscribe({
+      next: () => {
+        this.loadSavedSearches();
+      },
+      error: err => {
+        console.error(err);
+      }
+    });
+}
+editSavedSearchName(search: SavedCustomerSearchDto) {
+
+  const authenticationToken = this.authService.getAuthenticationToken();
+
+  if (!authenticationToken) {
+    return;
+  }
+
+  const newName = window.prompt("Edit search name", search.name);
+
+  if (!newName || !newName.trim()) {
+    return;
+  }
+
+  this.customerApi.updateSavedSearchName(
+    authenticationToken,
+    search.id,
+    newName.trim()
+  ).subscribe({
+    next: () => {
+      this.loadSavedSearches();
+    },
+    error: err => {
+      console.error(err);
+    }
+  });
+}
 }

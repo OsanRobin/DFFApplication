@@ -109,6 +109,31 @@ public class SavedCustomerSearchRepository
 
         jdbcTemplate.update(sql, toParams(request));
     }
+    public void deleteById(Long id)
+{
+    String sql = """
+        delete from saved_customer_search
+        where id = :id
+        """;
+
+    jdbcTemplate.update(sql, new MapSqlParameterSource("id", id));
+}
+
+public void updateName(Long id, String newName)
+{
+    String sql = """
+        update saved_customer_search
+        set name = :name
+        where id = :id
+        """;
+
+    jdbcTemplate.update(
+        sql,
+        new MapSqlParameterSource()
+            .addValue("id", id)
+            .addValue("name", newName)
+    );
+}
 
     private MapSqlParameterSource toParams(SaveCustomerSearchRequest request)
     {

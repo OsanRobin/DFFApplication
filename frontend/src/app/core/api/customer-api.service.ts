@@ -173,4 +173,19 @@ export class CustomerApiService {
 
     return this.http.post<void>(this.savedSearchBaseUrl, request, { headers });
   }
+  deleteSavedSearch(authenticationToken: string, id: number) {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  return this.http.delete(`${this.savedSearchBaseUrl}/${id}`, { headers });
+}
+
+updateSavedSearchName(authenticationToken: string, id: number, name: string) {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  return this.http.put(`${this.savedSearchBaseUrl}/${id}/name`, name, { headers });
+}
 }

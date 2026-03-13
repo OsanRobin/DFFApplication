@@ -27,4 +27,18 @@ public class SavedCustomerSearchController
     {
         savedCustomerSearchService.saveSearch(request);
     }
+    @DeleteMapping("/{id}")
+public void deleteSearch(@PathVariable Long id)
+{
+    savedCustomerSearchService.deleteSearch(id);
+}
+
+@PutMapping("/{id}/name")
+public void updateSearchName(
+        @PathVariable Long id,
+        @RequestBody String name
+)
+{
+    savedCustomerSearchService.updateSearchName(id, name);
+}
 }

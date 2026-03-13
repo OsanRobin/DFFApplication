@@ -50,4 +50,18 @@ public class SavedCustomerSearchService
 
         repository.insert(request);
     }
+    public void deleteSearch(Long id)
+{
+    repository.deleteById(id);
+}
+
+public void updateSearchName(Long id, String name)
+{
+    if (name == null || name.isBlank())
+    {
+        throw new RuntimeException("Search name is required");
+    }
+
+    repository.updateName(id, name);
+}
 }

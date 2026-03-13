@@ -59,8 +59,22 @@
   margin-bottom: 10px;
 }
 
+.saved-empty {
+  color: #64748b;
+  font-size: 14px;
+  padding: 10px 4px;
+}
+
+.saved-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 .saved {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -80,9 +94,58 @@
   transform: translateX(2px);
 }
 
+.saved-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.saved-action-btn {
+  min-width: 68px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #d9e1ea;
+  background: #fff;
+  color: #334155;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.saved-action-btn:hover {
+  background: #f8fafc;
+  border-color: #cfd8e3;
+  transform: translateY(-1px);
+}
+
+.saved-action-btn.danger {
+  color: #b42318;
+  border-color: #fecaca;
+  background: #fff;
+}
+
+.saved-action-btn.danger:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
 .caret {
   color: #64748b;
   font-size: 18px;
+  flex-shrink: 0;
 }
 
 .main {
@@ -93,8 +156,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .filters-title {
@@ -418,18 +481,15 @@ input[type='checkbox'] {
 .bulk-count {
   font-weight: 900;
 }
-.saved-empty {
-  color: #64748b;
+
+.state {
+  padding: 24px;
   font-size: 14px;
-  padding: 10px 4px;
+  color: #475467;
 }
 
-.filters-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
+.state.error {
+  color: #b42318;
 }
 
 .state.success {
@@ -440,6 +500,7 @@ input[type='checkbox'] {
   padding: 10px 12px;
   margin-bottom: 14px;
 }
+
 .dropdown {
   position: relative;
 }
@@ -502,16 +563,6 @@ input[type='checkbox'] {
 
 .bulk-clear:hover {
   background: rgba(255, 255, 255, 0.14);
-}
-
-.state {
-  padding: 24px;
-  font-size: 14px;
-  color: #475467;
-}
-
-.state.error {
-  color: #b42318;
 }
 
 @media (max-width: 1200px) {
@@ -578,5 +629,14 @@ input[type='checkbox'] {
   .menu {
     width: 100%;
     min-width: 0;
+  }
+
+  .saved-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .saved-actions {
+    justify-content: flex-end;
   }
 }

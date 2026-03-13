@@ -17,10 +17,30 @@
         }
 
         @for (savedSearch of savedSearches; track savedSearch.id) {
-          <button class="saved" type="button" (click)="applySavedSearch(savedSearch)">
-            <span class="caret">›</span>
-            <span>{{ savedSearch.name }}</span>
-          </button>
+          <div class="saved-row">
+            <button class="saved" type="button" (click)="applySavedSearch(savedSearch)">
+              <span class="caret">›</span>
+              <span class="saved-name">{{ savedSearch.name }}</span>
+            </button>
+
+            <div class="saved-actions">
+              <button
+                type="button"
+                class="saved-action-btn"
+                (click)="editSavedSearchName(savedSearch); $event.stopPropagation()"
+              >
+                Edit
+              </button>
+
+              <button
+                type="button"
+                class="saved-action-btn danger"
+                (click)="deleteSavedSearch(savedSearch.id); $event.stopPropagation()"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         }
       </aside>
 
