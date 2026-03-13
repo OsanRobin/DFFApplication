@@ -19,7 +19,7 @@ public class CustomerService
         this.customerRepository = customerRepository;
     }
 
-    public CustomerListResponse getCustomers(String domainName, int offset, int limit, String customerNo, String email)
+    public CustomerListResponse getCustomers(String domainName, int offset, int limit, String customerNo)
     {
         CustomerListResponse response = new CustomerListResponse();
         response.setOffset(offset);
@@ -29,10 +29,17 @@ public class CustomerService
         return response;
     }
 
-    public CustomerDetailResponse getCustomerById(String customerId)
+  public CustomerDetailResponse getCustomerById(String customerId)
+{
+    CustomerDetailResponse detail = customerRepository.findCustomerDetailByCustomerNo(customerId);
+
+    if (detail == null)
     {
-        throw new UnsupportedOperationException("Customer detail not implemented yet.");
+        throw new RuntimeException("Customer not found: " + customerId);
     }
+
+    return detail;
+}
 
     public CustomerUserListResponse getCustomerUsers(String customerId)
     {

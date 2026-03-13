@@ -1,6 +1,8 @@
 package fenego.app.repository;
 
+import fenego.app.dto.CustomerAddressDTO;
 import fenego.app.dto.CustomerDTO;
+import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerUserDTO;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -25,13 +27,21 @@ public class CustomerRepository
                 c.CUSTOMERNO as id,
                 c.CUSTOMERNO as customerNo,
                 'SMB' as customerType,
-                coalesce(ca.COMPANYNAME1, ca.ADDRESSNAME, c.CUSTOMERNO) as displayName,
-                coalesce(ca.COMPANYNAME1, ca.ADDRESSNAME, c.CUSTOMERNO) as companyName,
-                ca.EMAIL as email,
+                coalesce(addr.COMPANYNAME1, addr.ADDRESSNAME, c.CUSTOMERNO) as displayName,
+                coalesce(addr.COMPANYNAME1, addr.ADDRESSNAME, c.CUSTOMERNO) as companyName,
+                addr.EMAIL as email,
                 cast(1 as bit) as active
             from DOMAININFORMATION di
             join CUSTOMER c on di.DOMAINID = c.DOMAINID
-            left join CUSTOMERADDRESS ca on ca.CUSTOMERID = c.UUID
+            outer apply (
+                select top 1
+                    ca.COMPANYNAME1,
+                    ca.ADDRESSNAME,
+                    ca.EMAIL
+                from CUSTOMERADDRESS ca
+                where ca.CUSTOMERID = c.UUID
+                order by ca.UUID
+            ) addr
             where di.DOMAINNAME = :domainName
               and (:customerNo is null or c.CUSTOMERNO like '%' + :customerNo + '%')
             order by c.CUSTOMERNO
@@ -60,10 +70,9 @@ public class CustomerRepository
     public int countCustomersByDomain(String domainName, String customerNo)
     {
         String sql = """
-            select count(distinct c.UUID)
+            select count(*)
             from DOMAININFORMATION di
             join CUSTOMER c on di.DOMAINID = c.DOMAINID
-            left join CUSTOMERADDRESS ca on ca.CUSTOMERID = c.UUID
             where di.DOMAINNAME = :domainName
               and (:customerNo is null or c.CUSTOMERNO like '%' + :customerNo + '%')
             """;
@@ -75,6 +84,81 @@ public class CustomerRepository
         Integer result = jdbcTemplate.queryForObject(sql, params, Integer.class);
         return result == null ? 0 : result;
     }
+
+   public CustomerDetailResponse findCustomerDetailByCustomerNo(String customerId)
+{
+    String sql = """
+        select top 1
+            c.CUSTOMERNO as customerNo,
+            coalesce(addr.COMPANYNAME1, addr.ADDRESSNAME, c.CUSTOMERNO) as companyName
+        from CUSTOMER c
+        outer apply (
+            select top 1
+                ca.COMPANYNAME1,
+                ca.ADDRESSNAME
+            from CUSTOMERADDRESS ca
+            where ca.CUSTOMERID = c.UUID
+        ) addr
+        where c.CUSTOMERNO = :customerId
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("customerId", customerId);
+
+    List<CustomerDetailResponse> result = jdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        CustomerDetailResponse dto = new CustomerDetailResponse();
+        dto.setCustomerNo(rs.getString("customerNo"));
+        dto.setCompanyName(rs.getString("companyName"));
+        dto.setCustomerType("SMB");
+        dto.setBudgetPriceType("gross");
+        dto.setType("SMBCustomer");
+
+        CustomerAddressDTO emptyInvoice = new CustomerAddressDTO();
+        emptyInvoice.setId("");
+        emptyInvoice.setAddressName("");
+        emptyInvoice.setFirstName("");
+        emptyInvoice.setLastName("");
+        emptyInvoice.setCompanyName1(rs.getString("companyName"));
+        emptyInvoice.setAddressLine1("");
+        emptyInvoice.setPostalCode("");
+        emptyInvoice.setCountry("");
+        emptyInvoice.setCountryCode("");
+        emptyInvoice.setCity("");
+        emptyInvoice.setStreet("");
+        emptyInvoice.setShipFromAddress(false);
+        emptyInvoice.setServiceToAddress(false);
+        emptyInvoice.setInstallToAddress(false);
+        emptyInvoice.setInvoiceToAddress(false);
+        emptyInvoice.setShipToAddress(false);
+        emptyInvoice.setCompany(rs.getString("companyName"));
+
+        CustomerAddressDTO emptyShip = new CustomerAddressDTO();
+        emptyShip.setId("");
+        emptyShip.setAddressName("");
+        emptyShip.setFirstName("");
+        emptyShip.setLastName("");
+        emptyShip.setCompanyName1(rs.getString("companyName"));
+        emptyShip.setAddressLine1("");
+        emptyShip.setPostalCode("");
+        emptyShip.setCountry("");
+        emptyShip.setCountryCode("");
+        emptyShip.setCity("");
+        emptyShip.setStreet("");
+        emptyShip.setShipFromAddress(false);
+        emptyShip.setServiceToAddress(false);
+        emptyShip.setInstallToAddress(false);
+        emptyShip.setInvoiceToAddress(false);
+        emptyShip.setShipToAddress(false);
+        emptyShip.setCompany(rs.getString("companyName"));
+
+        dto.setPreferredInvoiceToAddress(emptyInvoice);
+        dto.setPreferredShipToAddress(emptyShip);
+
+        return dto;
+    });
+
+    return result.isEmpty() ? null : result.get(0);
+}
 
     public List<CustomerUserDTO> findUsersByCustomerId(String customerId)
     {
@@ -105,5 +189,58 @@ public class CustomerRepository
             dto.setPendingRecurringRequisitionsCount(0);
             return dto;
         });
+    }
+
+    private CustomerAddressDTO mapAddress(
+            String id,
+            String addressName,
+            String firstName,
+            String lastName,
+            String companyName1,
+            String addressLine1,
+            String postalCode,
+            String countryCode,
+            String city,
+            String street,
+            boolean invoiceToAddress,
+            boolean shipToAddress
+    )
+    {
+        if (id == null || id.isBlank())
+        {
+            return null;
+        }
+
+        CustomerAddressDTO address = new CustomerAddressDTO();
+        address.setId(id);
+        address.setAddressName(addressName);
+        address.setFirstName(firstName);
+        address.setLastName(lastName);
+        address.setCompanyName1(companyName1);
+        address.setAddressLine1(addressLine1);
+        address.setPostalCode(postalCode);
+        address.setCountry(countryCode);
+        address.setCountryCode(countryCode);
+        address.setCity(city);
+        address.setStreet(street);
+        address.setShipFromAddress(false);
+        address.setServiceToAddress(false);
+        address.setInstallToAddress(false);
+        address.setInvoiceToAddress(invoiceToAddress);
+        address.setShipToAddress(shipToAddress);
+        address.setCompany(companyName1);
+        return address;
+    }
+
+    private String firstNonBlank(String... values)
+    {
+        for (String value : values)
+        {
+            if (value != null && !value.isBlank())
+            {
+                return value;
+            }
+        }
+        return null;
     }
 }

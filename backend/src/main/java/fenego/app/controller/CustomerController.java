@@ -6,7 +6,6 @@ import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.service.CustomerService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,14 +23,13 @@ public class CustomerController
 
     @GetMapping
     public CustomerListResponse getCustomers(
-            @RequestHeader(value = "authentication-token", required = false) String authenticationToken,
             @RequestParam String domain,
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(defaultValue = "50") int limit,
             @RequestParam(required = false) String customerNo
     )
     {
-        return customerService.getCustomers(domain, offset, limit, customerNo, null);
+        return customerService.getCustomers(domain, offset, limit, customerNo);
     }
 
     @GetMapping("/{customerId}")
