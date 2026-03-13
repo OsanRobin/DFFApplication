@@ -85,7 +85,7 @@ export class CustomerdetailComponent {
         }
 
         if (err.status === 404) {
-          this.error = 'Customer not found.';
+          this.error = 'Customer detail is not available yet for this customer.';
           this.loading = false;
           return;
         }
@@ -115,6 +115,14 @@ export class CustomerdetailComponent {
       },
       error: (err) => {
         console.error(err);
+
+        if (err.status === 401 || err.status === 403) {
+          this.usersError = 'Your session expired. Please log in again.';
+          this.usersLoading = false;
+          this.router.navigate(['/login']);
+          return;
+        }
+
         this.usersError = 'Failed to load users.';
         this.usersLoading = false;
       }
@@ -122,11 +130,19 @@ export class CustomerdetailComponent {
   }
 
   customerTitle(): string {
-    if (!this.customer) {
-      return 'Customer Detail';
+    if (this.customer?.companyName) {
+      return this.customer.companyName;
     }
 
-    return this.customer.companyName || this.customer.customerNo || 'Customer Detail';
+    if (this.customer?.customerNo) {
+      return this.customer.customerNo;
+    }
+
+    return this.customerId || 'Customer Detail';
+  }
+
+  customerNumber(): string {
+    return this.customer?.customerNo || this.customerId || '-';
   }
 
   customerTypeLabel(): string {

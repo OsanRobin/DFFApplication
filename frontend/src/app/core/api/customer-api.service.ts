@@ -83,11 +83,13 @@ export class CustomerApiService {
 
   getCustomers(
     authenticationToken: string,
+    domain: string,
     offset = 0,
     limit = 50,
     customerNo?: string
   ): Observable<CustomerListResponse> {
     let params = new HttpParams()
+      .set('domain', domain)
       .set('offset', offset)
       .set('limit', limit);
 

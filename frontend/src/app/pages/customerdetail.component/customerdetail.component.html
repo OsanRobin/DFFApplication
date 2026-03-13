@@ -18,17 +18,11 @@
       </div>
     }
 
-    @if (error) {
-      <div class="card panel wide">
-        <div class="state error">{{ error }}</div>
-      </div>
-    }
-
-    @if (!loading && !error && customer) {
+    @if (!loading) {
       <div class="header-row">
         <div>
           <h1 class="title">{{ customerTitle() }}</h1>
-          <div class="sub">Customer ID: <strong>{{ customer.customerNo }}</strong></div>
+          <div class="sub">Customer ID: <strong>{{ customerNumber() }}</strong></div>
         </div>
 
         <span class="badge active">{{ statusLabel() }}</span>
@@ -42,136 +36,147 @@
       </div>
 
       @if (activeTab === 'overview') {
-        <section class="grid2">
-          <div class="card panel">
-            <div class="panel-title">Basic Information</div>
+        @if (error) {
+          <section class="card panel wide">
+            <div class="state error">{{ error }}</div>
+          </section>
+        }
 
-            <div class="kv">
-              <div class="k">Customer Type</div>
-              <div class="v">{{ customerTypeLabel() }}</div>
+        @if (!error && customer) {
+          <section class="grid2">
+            <div class="card panel">
+              <div class="panel-title">Basic Information</div>
+
+              <div class="kv">
+                <div class="k">Customer Type</div>
+                <div class="v">{{ customerTypeLabel() }}</div>
+              </div>
+
+              <div class="kv">
+                <div class="k">Customer Type Code</div>
+                <div class="v">{{ customer.customerType }}</div>
+              </div>
+
+              <div class="kv">
+                <div class="k">Object Type</div>
+                <div class="v">{{ customer.type }}</div>
+              </div>
+
+              <div class="kv">
+                <div class="k">Budget Price Type</div>
+                <div class="v">{{ customer.budgetPriceType }}</div>
+              </div>
+
+              <div class="kv">
+                <div class="k">Status</div>
+                <div class="v"><span class="badge active">{{ statusLabel() }}</span></div>
+              </div>
             </div>
 
-            <div class="kv">
-              <div class="k">Customer Type Code</div>
-              <div class="v">{{ customer.customerType }}</div>
+            <div class="card panel">
+              <div class="panel-title">Company</div>
+
+              <div class="kv">
+                <div class="k">Company Name</div>
+                <div class="v">{{ customer.companyName }}</div>
+              </div>
+
+              <div class="kv">
+                <div class="k">Customer No</div>
+                <div class="v">{{ customer.customerNo }}</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="grid2">
+            <div class="card panel">
+              <div class="panel-title">Preferred Invoice Address</div>
+
+              @for (line of invoiceAddressLines(); track $index) {
+                <div class="address-line">{{ line }}</div>
+              }
+
+              <div class="kv compact">
+                <div class="k">Address ID</div>
+                <div class="v">{{ customer.preferredInvoiceToAddress.id }}</div>
+              </div>
+
+              <div class="kv compact">
+                <div class="k">Address Name</div>
+                <div class="v">{{ customer.preferredInvoiceToAddress.addressName }}</div>
+              </div>
+
+              <div class="kv compact">
+                <div class="k">Invoice Address</div>
+                <div class="v">{{ customer.preferredInvoiceToAddress.invoiceToAddress ? 'Yes' : 'No' }}</div>
+              </div>
+
+              <div class="kv compact">
+                <div class="k">Ship To Address</div>
+                <div class="v">{{ customer.preferredInvoiceToAddress.shipToAddress ? 'Yes' : 'No' }}</div>
+              </div>
             </div>
 
-            <div class="kv">
-              <div class="k">Object Type</div>
-              <div class="v">{{ customer.type }}</div>
+            <div class="card panel">
+              <div class="panel-title">Preferred Shipping Address</div>
+
+              @for (line of shippingAddressLines(); track $index) {
+                <div class="address-line">{{ line }}</div>
+              }
+
+              <div class="kv compact">
+                <div class="k">Address ID</div>
+                <div class="v">{{ customer.preferredShipToAddress.id }}</div>
+              </div>
+
+              <div class="kv compact">
+                <div class="k">Address Name</div>
+                <div class="v">{{ customer.preferredShipToAddress.addressName }}</div>
+              </div>
+
+              <div class="kv compact">
+                <div class="k">Invoice Address</div>
+                <div class="v">{{ customer.preferredShipToAddress.invoiceToAddress ? 'Yes' : 'No' }}</div>
+              </div>
+
+              <div class="kv compact">
+                <div class="k">Ship To Address</div>
+                <div class="v">{{ customer.preferredShipToAddress.shipToAddress ? 'Yes' : 'No' }}</div>
+              </div>
             </div>
-
-            <div class="kv">
-              <div class="k">Budget Price Type</div>
-              <div class="v">{{ customer.budgetPriceType }}</div>
-            </div>
-
-            <div class="kv">
-              <div class="k">Status</div>
-              <div class="v"><span class="badge active">{{ statusLabel() }}</span></div>
-            </div>
-          </div>
-
-          <div class="card panel">
-            <div class="panel-title">Company</div>
-
-            <div class="kv">
-              <div class="k">Company Name</div>
-              <div class="v">{{ customer.companyName }}</div>
-            </div>
-
-            <div class="kv">
-              <div class="k">Customer No</div>
-              <div class="v">{{ customer.customerNo }}</div>
-            </div>
-          </div>
-        </section>
-
-        <section class="grid2">
-          <div class="card panel">
-            <div class="panel-title">Preferred Invoice Address</div>
-
-            @for (line of invoiceAddressLines(); track $index) {
-              <div class="address-line">{{ line }}</div>
-            }
-
-            <div class="kv compact">
-              <div class="k">Address ID</div>
-              <div class="v">{{ customer.preferredInvoiceToAddress.id }}</div>
-            </div>
-
-            <div class="kv compact">
-              <div class="k">Address Name</div>
-              <div class="v">{{ customer.preferredInvoiceToAddress.addressName }}</div>
-            </div>
-
-            <div class="kv compact">
-              <div class="k">Invoice Address</div>
-              <div class="v">{{ customer.preferredInvoiceToAddress.invoiceToAddress ? 'Yes' : 'No' }}</div>
-            </div>
-
-            <div class="kv compact">
-              <div class="k">Ship To Address</div>
-              <div class="v">{{ customer.preferredInvoiceToAddress.shipToAddress ? 'Yes' : 'No' }}</div>
-            </div>
-          </div>
-
-          <div class="card panel">
-            <div class="panel-title">Preferred Shipping Address</div>
-
-            @for (line of shippingAddressLines(); track $index) {
-              <div class="address-line">{{ line }}</div>
-            }
-
-            <div class="kv compact">
-              <div class="k">Address ID</div>
-              <div class="v">{{ customer.preferredShipToAddress.id }}</div>
-            </div>
-
-            <div class="kv compact">
-              <div class="k">Address Name</div>
-              <div class="v">{{ customer.preferredShipToAddress.addressName }}</div>
-            </div>
-
-            <div class="kv compact">
-              <div class="k">Invoice Address</div>
-              <div class="v">{{ customer.preferredShipToAddress.invoiceToAddress ? 'Yes' : 'No' }}</div>
-            </div>
-
-            <div class="kv compact">
-              <div class="k">Ship To Address</div>
-              <div class="v">{{ customer.preferredShipToAddress.shipToAddress ? 'Yes' : 'No' }}</div>
-            </div>
-          </div>
-        </section>
+          </section>
+        }
       }
 
       @if (activeTab === 'attributes') {
         <section class="card panel wide">
           <div class="panel-title">Attributes</div>
-          <div class="panel-sub">Based on current mock customer detail response</div>
 
-          <div class="attr-grid">
-            <div class="attr">
-              <div class="k">Budget Price Type</div>
-              <div class="v">{{ customer.budgetPriceType }}</div>
-            </div>
+          @if (customer) {
+            <div class="attr-grid">
+              <div class="attr">
+                <div class="k">Budget Price Type</div>
+                <div class="v">{{ customer.budgetPriceType }}</div>
+              </div>
 
-            <div class="attr">
-              <div class="k">Customer Type</div>
-              <div class="v">{{ customer.customerType }}</div>
-            </div>
+              <div class="attr">
+                <div class="k">Customer Type</div>
+                <div class="v">{{ customer.customerType }}</div>
+              </div>
 
-            <div class="attr">
-              <div class="k">Object Type</div>
-              <div class="v">{{ customer.type }}</div>
-            </div>
+              <div class="attr">
+                <div class="k">Object Type</div>
+                <div class="v">{{ customer.type }}</div>
+              </div>
 
-            <div class="attr">
-              <div class="k">Company Name</div>
-              <div class="v">{{ customer.companyName }}</div>
+              <div class="attr">
+                <div class="k">Company Name</div>
+                <div class="v">{{ customer.companyName }}</div>
+              </div>
             </div>
-          </div>
+          } @else {
+            <div class="empty-state">Customer attributes are not available yet.</div>
+          }
         </section>
       }
 
@@ -230,13 +235,16 @@
       @if (activeTab === 'segments') {
         <section class="card panel wide">
           <div class="panel-title">Segments</div>
-          <div class="panel-sub">Mock placeholder tab</div>
 
-          <div class="chips">
-            <span class="chip">{{ customer.customerType }}</span>
-            <span class="chip">{{ customer.budgetPriceType }}</span>
-            <span class="chip">{{ customer.type }}</span>
-          </div>
+          @if (customer) {
+            <div class="chips">
+              <span class="chip">{{ customer.customerType }}</span>
+              <span class="chip">{{ customer.budgetPriceType }}</span>
+              <span class="chip">{{ customer.type }}</span>
+            </div>
+          } @else {
+            <div class="empty-state">Segments are not available yet.</div>
+          }
         </section>
       }
     }

@@ -12,7 +12,6 @@ type CustomerRow = {
   id: string;
   name: string;
   customerNo: string;
-  email: string;
   type: string;
   segment: string;
   status: Status;
@@ -32,10 +31,11 @@ export class CustomeroverviewComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
 
+private domainName = 'DailyFreshFood-B1-Anonymous';
+
   query = '';
   customerNoFilter = '';
   typeFilter = '';
-  segmentFilter = '';
   statusFilter = '';
 
   bulkOpen = false;
@@ -63,12 +63,13 @@ export class CustomeroverviewComponent {
 
     this.customerApi.getCustomers(
       authenticationToken,
+      this.domainName,
       0,
       100,
       this.customerNoFilter
     ).subscribe({
       next: (response) => {
-        this.rows = response.data.map(customer => this.mapCustomerToRow(customer));
+        this.rows = (response.data ?? []).map(customer => this.mapCustomerToRow(customer));
         this.loading = false;
       },
       error: (err) => {
@@ -92,9 +93,8 @@ export class CustomeroverviewComponent {
       id: customer.id,
       name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
       customerNo: customer.customerNo ?? '',
-      email: customer.email ?? '',
       type: this.mapCustomerType(customer.customerType),
-      segment: customer.segment ?? 'Standard',
+      segment: customer.segment ?? '-',
       status: customer.active ? 'Active' : 'Inactive',
       locations: 1,
       level: 0
@@ -131,13 +131,10 @@ export class CustomeroverviewComponent {
       const matchesType =
         !this.typeFilter || row.type === this.typeFilter;
 
-      const matchesSegment =
-        !this.segmentFilter || row.segment === this.segmentFilter;
-
       const matchesStatus =
         !this.statusFilter || row.status === this.statusFilter;
 
-      return matchesQuery && matchesType && matchesSegment && matchesStatus;
+      return matchesQuery && matchesType && matchesStatus;
     });
   }
 
@@ -150,7 +147,6 @@ export class CustomeroverviewComponent {
     this.query = '';
     this.customerNoFilter = '';
     this.typeFilter = '';
-    this.segmentFilter = '';
     this.statusFilter = '';
     this.loadCustomers();
     this.clearSelection();

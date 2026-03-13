@@ -24,23 +24,25 @@ public class CustomerController
 
     @GetMapping
     public CustomerListResponse getCustomers(
-            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestHeader(value = "authentication-token", required = false) String authenticationToken,
+            @RequestParam String domain,
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(defaultValue = "50") int limit,
-            @RequestParam(required = false) String customerNo,
-            @RequestParam(required = false) String email
+            @RequestParam(required = false) String customerNo
     )
     {
-        return customerService.getCustomers(authenticationToken, offset, limit, customerNo, email);
+        return customerService.getCustomers(domain, offset, limit, customerNo, null);
     }
+
     @GetMapping("/{customerId}")
-public CustomerDetailResponse getCustomerById(@PathVariable String customerId)
-{
-    return customerService.getCustomerById(customerId);
-}
-@GetMapping("/{customerId}/users")
-public CustomerUserListResponse getCustomerUsers(@PathVariable String customerId)
-{
-    return customerService.getCustomerUsers(customerId);
-}
+    public CustomerDetailResponse getCustomerById(@PathVariable String customerId)
+    {
+        return customerService.getCustomerById(customerId);
+    }
+
+    @GetMapping("/{customerId}/users")
+    public CustomerUserListResponse getCustomerUsers(@PathVariable String customerId)
+    {
+        return customerService.getCustomerUsers(customerId);
+    }
 }
