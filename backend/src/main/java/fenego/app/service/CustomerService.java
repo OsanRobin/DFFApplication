@@ -1,22 +1,23 @@
 package fenego.app.service;
 
+import fenego.app.dto.CustomerAttributeListResponse;
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerListResponse;
-import fenego.app.dto.CustomerUserDTO;
 import fenego.app.dto.CustomerUserListResponse;
+import fenego.app.intershop.IntershopClient;
 import fenego.app.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class CustomerService
 {
     private final CustomerRepository customerRepository;
+    private final IntershopClient intershopClient;
 
-    public CustomerService(CustomerRepository customerRepository)
+    public CustomerService(CustomerRepository customerRepository, IntershopClient intershopClient)
     {
         this.customerRepository = customerRepository;
+        this.intershopClient = intershopClient;
     }
 
     public CustomerListResponse getCustomers(String domainName, int offset, int limit, String customerNo)
@@ -29,30 +30,18 @@ public class CustomerService
         return response;
     }
 
-  public CustomerDetailResponse getCustomerById(String customerId)
-{
-    CustomerDetailResponse detail = customerRepository.findCustomerDetailByCustomerNo(customerId);
-
-    if (detail == null)
+    public CustomerDetailResponse getCustomerById(String authenticationToken, String organization, String customerId)
     {
-        throw new RuntimeException("Customer not found: " + customerId);
+        return intershopClient.getCustomerById(authenticationToken, organization, customerId);
     }
 
-    return detail;
-}
-
-    public CustomerUserListResponse getCustomerUsers(String customerId)
+    public CustomerUserListResponse getCustomerUsers(String authenticationToken, String organization, String customerId)
     {
-        List<CustomerUserDTO> users = customerRepository.findUsersByCustomerId(customerId);
+        return intershopClient.getCustomerUsers(authenticationToken, organization, customerId);
+    }
 
-        CustomerUserListResponse response = new CustomerUserListResponse();
-        response.setType("UserLinkCollection");
-        response.setName("users");
-        response.setAmount(users.size());
-        response.setOffset(0);
-        response.setLimit(50);
-        response.setSortKeys(List.of("name"));
-        response.setElements(users);
-        return response;
+    public CustomerAttributeListResponse getCustomerAttributes(String authenticationToken, String organization, String customerId)
+    {
+        return intershopClient.getCustomerAttributes(authenticationToken, organization, customerId);
     }
 }

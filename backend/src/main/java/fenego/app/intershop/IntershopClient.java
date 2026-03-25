@@ -1,18 +1,24 @@
 package fenego.app.intershop;
 
+import fenego.app.dto.CustomerAttributeListResponse;
+import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerListResponse;
+import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.dto.IntershopLoginResult;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -26,6 +32,9 @@ public class IntershopClient
     @Value("${intershop.accept-header}")
     private String acceptHeader;
 
+    @Value("${intershop.customer-accept-header}")
+    private String customerAcceptHeader;
+
     @Value("${intershop.customers-url}")
     private String customersUrl;
 
@@ -38,11 +47,6 @@ public class IntershopClient
     {
         try
         {
-            System.out.println("validationUrl = " + validationUrl);
-            System.out.println("acceptHeader = " + acceptHeader);
-            System.out.println("username = " + username);
-            System.out.println("organization = " + organization);
-
             String basicAuth = Base64.getEncoder()
                     .encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
 
@@ -60,12 +64,9 @@ public class IntershopClient
                     String.class
             );
 
-            System.out.println("Intershop status = " + response.getStatusCode().value());
-            System.out.println("Intershop auth token header = " + response.getHeaders().getFirst("authentication-token"));
-
             String authenticationToken = response.getHeaders().getFirst("authentication-token");
 
-            if (authenticationToken == null || authenticationToken.isBlank())
+            if (!StringUtils.hasText(authenticationToken))
             {
                 throw new RuntimeException("Intershop validation succeeded but no authentication-token was returned");
             }
@@ -74,19 +75,18 @@ public class IntershopClient
         }
         catch (HttpStatusCodeException ex)
         {
-            int status = ex.getStatusCode().value();
-
-            if (status == 401 || status == 403)
-            {
-                throw new RuntimeException("Invalid username, password or organization");
-            }
-
-            throw new RuntimeException("Intershop validation failed: " + status + " - " + ex.getResponseBodyAsString(), ex);
+            throw new ResponseStatusException(
+                    ex.getStatusCode(),
+                    "Intershop validation failed: " + ex.getResponseBodyAsString(),
+                    ex
+            );
         }
         catch (Exception ex)
         {
-            ex.printStackTrace();
-            throw new RuntimeException("Intershop validation failed: " + ex.getClass().getName() + " - " + ex.getMessage(), ex);
+            throw new RuntimeException(
+                    "Intershop validation failed: " + ex.getClass().getName() + " - " + ex.getMessage(),
+                    ex
+            );
         }
     }
 
@@ -104,11 +104,7 @@ public class IntershopClient
                             StringUtils.hasText(email) ? Optional.of(email) : Optional.empty())
                     .toUriString();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-            headers.set("authentication-token", authenticationToken);
-
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            HttpEntity<Void> entity = new HttpEntity<>(new HttpHeaders());
 
             ResponseEntity<CustomerListResponse> response = restTemplate.exchange(
                     url,
@@ -126,12 +122,143 @@ public class IntershopClient
         }
         catch (HttpStatusCodeException ex)
         {
-            int status = ex.getStatusCode().value();
-            throw new RuntimeException("Fetching customers failed: " + status + " - " + ex.getResponseBodyAsString(), ex);
+            System.out.println("CUSTOMERS STATUS = " + ex.getStatusCode().value());
+            System.out.println("CUSTOMERS BODY = " + ex.getResponseBodyAsString());
+
+            throw new ResponseStatusException(
+                    ex.getStatusCode(),
+                    "Fetching customers failed: " + ex.getResponseBodyAsString(),
+                    ex
+            );
         }
-        catch (Exception ex)
+    }
+
+    public CustomerDetailResponse getCustomerById(String authenticationToken, String organization, String customerId)
+    {
+        try
         {
-            throw new RuntimeException("Fetching customers failed: " + ex.getMessage(), ex);
+            String url = UriComponentsBuilder
+                    .fromUriString(customersUrl + "/{customerId}")
+                    .buildAndExpand(customerId)
+                    .toUriString();
+
+            HttpEntity<Void> entity = new HttpEntity<>(createCustomerHeaders(authenticationToken, organization));
+
+            ResponseEntity<CustomerDetailResponse> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    CustomerDetailResponse.class
+            );
+
+            if (response.getBody() == null)
+            {
+                throw new RuntimeException("Intershop returned an empty customer detail response");
+            }
+
+            return response.getBody();
         }
+        catch (HttpStatusCodeException ex)
+        {
+            System.out.println("DETAIL URL = " + customersUrl + "/" + customerId);
+            System.out.println("DETAIL CUSTOMER ID = " + customerId);
+            System.out.println("DETAIL STATUS = " + ex.getStatusCode().value());
+            System.out.println("DETAIL BODY = " + ex.getResponseBodyAsString());
+
+            throw new ResponseStatusException(
+                    ex.getStatusCode(),
+                    "Fetching customer detail failed: " + ex.getResponseBodyAsString(),
+                    ex
+            );
+        }
+    }
+
+    public CustomerUserListResponse getCustomerUsers(String authenticationToken, String organization, String customerId)
+    {
+        try
+        {
+            String url = UriComponentsBuilder
+                    .fromUriString(customersUrl + "/{customerId}/users")
+                    .buildAndExpand(customerId)
+                    .toUriString();
+
+            HttpEntity<Void> entity = new HttpEntity<>(createCustomerHeaders(authenticationToken, organization));
+
+            ResponseEntity<CustomerUserListResponse> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    CustomerUserListResponse.class
+            );
+
+            if (response.getBody() == null)
+            {
+                throw new RuntimeException("Intershop returned an empty customer users response");
+            }
+
+            return response.getBody();
+        }
+        catch (HttpStatusCodeException ex)
+        {
+            System.out.println("USERS URL = " + customersUrl + "/" + customerId + "/users");
+            System.out.println("USERS CUSTOMER ID = " + customerId);
+            System.out.println("USERS STATUS = " + ex.getStatusCode().value());
+            System.out.println("USERS BODY = " + ex.getResponseBodyAsString());
+
+            throw new ResponseStatusException(
+                    ex.getStatusCode(),
+                    "Fetching customer users failed: " + ex.getResponseBodyAsString(),
+                    ex
+            );
+        }
+    }
+
+    public CustomerAttributeListResponse getCustomerAttributes(String authenticationToken, String organization, String customerId)
+    {
+        try
+        {
+            String url = UriComponentsBuilder
+                    .fromUriString(customersUrl + "/{customerId}/attributes")
+                    .buildAndExpand(customerId)
+                    .toUriString();
+
+            HttpEntity<Void> entity = new HttpEntity<>(createCustomerHeaders(authenticationToken, organization));
+
+            ResponseEntity<CustomerAttributeListResponse> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    CustomerAttributeListResponse.class
+            );
+
+            if (response.getBody() == null)
+            {
+                throw new RuntimeException("Intershop returned an empty customer attributes response");
+            }
+
+            return response.getBody();
+        }
+        catch (HttpStatusCodeException ex)
+        {
+            System.out.println("ATTRIBUTES URL = " + customersUrl + "/" + customerId + "/attributes");
+            System.out.println("ATTRIBUTES CUSTOMER ID = " + customerId);
+            System.out.println("ATTRIBUTES STATUS = " + ex.getStatusCode().value());
+            System.out.println("ATTRIBUTES BODY = " + ex.getResponseBodyAsString());
+
+            throw new ResponseStatusException(
+                    ex.getStatusCode(),
+                    "Fetching customer attributes failed: " + ex.getResponseBodyAsString(),
+                    ex
+            );
+        }
+    }
+
+    private HttpHeaders createCustomerHeaders(String authenticationToken, String organization)
+    {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("authentication-token", authenticationToken);
+        headers.set("UserOrganization", organization);
+        headers.set("Accept", customerAcceptHeader);
+        return headers;
     }
 }

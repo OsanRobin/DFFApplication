@@ -10,6 +10,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
 @Configuration
@@ -40,7 +41,7 @@ public class RestTemplateConfig
         };
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+        sslContext.init(null, trustAllCerts, new SecureRandom());
 
         HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
 
@@ -48,6 +49,8 @@ public class RestTemplateConfig
         HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
 
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(10000);
+        requestFactory.setReadTimeout(10000);
 
         return new RestTemplate(requestFactory);
     }
