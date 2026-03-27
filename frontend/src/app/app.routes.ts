@@ -4,7 +4,6 @@ import { LoginComponent } from './pages/login.component/login.component';
 import { DashboardComponent } from './pages/dashboard.component/dashboard.component';
 import { CustomeroverviewComponent } from './pages/customeroverview.component/customeroverview.component';
 import { CustomerdetailComponent } from './pages/customerdetail.component/customerdetail.component';
-import { AttributeoverviewComponent } from './pages/attributeoverview.component/attributeoverview.component';
 import { SegmentsComponent } from './pages/segments.component/segments.component';
 import { JobsComponent } from './pages/jobs.component/jobs.component';
 
@@ -16,7 +15,6 @@ export const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'customers', component: CustomeroverviewComponent, canActivate: [authGuard] },
   { path: 'customers/:id', component: CustomerdetailComponent, canActivate: [authGuard] },
-  { path: 'attributes', component: AttributeoverviewComponent, canActivate: [authGuard] },
   { path: 'segments', component: SegmentsComponent, canActivate: [authGuard] },
   { path: 'jobs', component: JobsComponent, canActivate: [authGuard] },
 
