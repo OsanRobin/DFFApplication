@@ -20,57 +20,53 @@ public class CustomerRepository
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<CustomerDTO> findCustomersByDomain(String domainName, int offset, int limit, String customerNo)
-    {
-        String sql = """
-            select
-                c.CUSTOMERNO as id,
-                c.CUSTOMERNO as customerNo,
-                'SMB' as customerType,
-                coalesce(addr.COMPANYNAME1, addr.ADDRESSNAME, c.CUSTOMERNO) as displayName,
-                coalesce(addr.COMPANYNAME1, addr.ADDRESSNAME, c.CUSTOMERNO) as companyName,
-                addr.EMAIL as email,
-                cast(1 as bit) as active
-            from DOMAININFORMATION di
-            join CUSTOMER c on di.DOMAINID = c.DOMAINID
-            outer apply (
-                select top 1
-                    ca.COMPANYNAME1,
-                    ca.ADDRESSNAME,
-                    ca.EMAIL
-                from CUSTOMERADDRESS ca
-                where ca.CUSTOMERID = c.UUID
-                order by ca.UUID
-            ) addr
-            where di.DOMAINNAME = :domainName
-              and (:customerNo is null or c.CUSTOMERNO like '%' + :customerNo + '%')
-            order by c.CUSTOMERNO
-            offset :offset rows fetch next :limit rows only
-            """;
+   public List<CustomerDTO> findCustomersByDomain(String domainName, int offset, int limit, String customerNo)
+{
+    String sql = """
+        select
+            c.CUSTOMERNO as id,
+            c.CUSTOMERNO as customerNo,
+            'SMB' as customerType,
+            coalesce(ca.COMPANYNAME1, ca.ADDRESSNAME, c.CUSTOMERNO) as displayName,
+            coalesce(ca.COMPANYNAME1, ca.ADDRESSNAME, c.CUSTOMERNO) as companyName,
+            ca.EMAIL as email,
+            cast(1 as bit) as active
+        from DOMAININFORMATION di
+        join CUSTOMER c on di.DOMAINID = c.DOMAINID
+        outer apply (
+            select top 1 *
+            from CUSTOMERADDRESS ca
+            where ca.CUSTOMERID = c.UUID
+        ) ca
+        where di.DOMAINNAME = :domainName
+          and (:customerNo is null or c.CUSTOMERNO like '%' + :customerNo + '%')
+        order by c.CUSTOMERNO
+        offset :offset rows fetch next :limit rows only
+        """;
 
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("domainName", domainName)
-                .addValue("customerNo", customerNo == null || customerNo.isBlank() ? null : customerNo)
-                .addValue("offset", offset)
-                .addValue("limit", limit);
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("domainName", domainName)
+            .addValue("customerNo", customerNo == null || customerNo.isBlank() ? null : customerNo)
+            .addValue("offset", offset)
+            .addValue("limit", limit);
 
-        return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
-            CustomerDTO dto = new CustomerDTO();
-            dto.setId(rs.getString("id"));
-            dto.setCustomerNo(rs.getString("customerNo"));
-            dto.setCustomerType(rs.getString("customerType"));
-            dto.setDisplayName(rs.getString("displayName"));
-            dto.setCompanyName(rs.getString("companyName"));
-            dto.setEmail(rs.getString("email"));
-            dto.setActive(rs.getBoolean("active"));
-            return dto;
-        });
-    }
+    return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        CustomerDTO dto = new CustomerDTO();
+        dto.setId(rs.getString("id"));
+        dto.setCustomerNo(rs.getString("customerNo"));
+        dto.setCustomerType(rs.getString("customerType"));
+        dto.setDisplayName(rs.getString("displayName"));
+        dto.setCompanyName(rs.getString("companyName"));
+        dto.setEmail(rs.getString("email"));
+        dto.setActive(rs.getBoolean("active"));
+        return dto;
+    });
+}
 
     public int countCustomersByDomain(String domainName, String customerNo)
     {
         String sql = """
-            select count(*)
+            select count(distinct c.UUID)
             from DOMAININFORMATION di
             join CUSTOMER c on di.DOMAINID = c.DOMAINID
             where di.DOMAINNAME = :domainName
@@ -85,80 +81,134 @@ public class CustomerRepository
         return result == null ? 0 : result;
     }
 
-   public CustomerDetailResponse findCustomerDetailByCustomerNo(String customerId)
+   public CustomerDetailResponse findCustomerDetailById(String customerId)
 {
     String sql = """
         select top 1
             c.CUSTOMERNO as customerNo,
-            coalesce(addr.COMPANYNAME1, addr.ADDRESSNAME, c.CUSTOMERNO) as companyName
+            coalesce(mainAddr.COMPANYNAME1, mainAddr.ADDRESSNAME, c.CUSTOMERNO) as companyName,
+            c.CUSTOMERTYPEID as customerType,
+            'STANDARD' as budgetPriceType,
+            'Customer' as type,
+
+            coalesce(invoiceAddr.ADDRESSID, fallbackAddr.ADDRESSID) as invoice_id,
+            coalesce(invoiceAddr.ADDRESSNAME, fallbackAddr.ADDRESSNAME) as invoice_addressName,
+            coalesce(invoiceAddr.FIRSTNAME, fallbackAddr.FIRSTNAME) as invoice_firstName,
+            coalesce(invoiceAddr.LASTNAME, fallbackAddr.LASTNAME) as invoice_lastName,
+            coalesce(invoiceAddr.COMPANYNAME1, fallbackAddr.COMPANYNAME1) as invoice_companyName1,
+            coalesce(invoiceAddr.ADDRESSLINE1, fallbackAddr.ADDRESSLINE1) as invoice_addressLine1,
+            coalesce(invoiceAddr.POSTALCODE, fallbackAddr.POSTALCODE) as invoice_postalCode,
+            coalesce(invoiceAddr.COUNTRYCODE, fallbackAddr.COUNTRYCODE) as invoice_country,
+            coalesce(invoiceAddr.COUNTRYCODE, fallbackAddr.COUNTRYCODE) as invoice_countryCode,
+            coalesce(invoiceAddr.CITY, fallbackAddr.CITY) as invoice_city,
+            coalesce(invoiceAddr.ADDRESSLINE1, fallbackAddr.ADDRESSLINE1) as invoice_street,
+            cast(0 as bit) as invoice_shipFromAddress,
+            cast(0 as bit) as invoice_serviceToAddress,
+            cast(0 as bit) as invoice_installToAddress,
+            cast(1 as bit) as invoice_invoiceToAddress,
+            cast(0 as bit) as invoice_shipToAddress,
+            coalesce(invoiceAddr.COMPANYNAME1, fallbackAddr.COMPANYNAME1, invoiceAddr.ADDRESSNAME, fallbackAddr.ADDRESSNAME, '') as invoice_company,
+
+            coalesce(shipAddr.ADDRESSID, fallbackAddr.ADDRESSID) as ship_id,
+            coalesce(shipAddr.ADDRESSNAME, fallbackAddr.ADDRESSNAME) as ship_addressName,
+            coalesce(shipAddr.FIRSTNAME, fallbackAddr.FIRSTNAME) as ship_firstName,
+            coalesce(shipAddr.LASTNAME, fallbackAddr.LASTNAME) as ship_lastName,
+            coalesce(shipAddr.COMPANYNAME1, fallbackAddr.COMPANYNAME1) as ship_companyName1,
+            coalesce(shipAddr.ADDRESSLINE1, fallbackAddr.ADDRESSLINE1) as ship_addressLine1,
+            coalesce(shipAddr.POSTALCODE, fallbackAddr.POSTALCODE) as ship_postalCode,
+            coalesce(shipAddr.COUNTRYCODE, fallbackAddr.COUNTRYCODE) as ship_country,
+            coalesce(shipAddr.COUNTRYCODE, fallbackAddr.COUNTRYCODE) as ship_countryCode,
+            coalesce(shipAddr.CITY, fallbackAddr.CITY) as ship_city,
+            coalesce(shipAddr.ADDRESSLINE1, fallbackAddr.ADDRESSLINE1) as ship_street,
+            cast(0 as bit) as ship_shipFromAddress,
+            cast(0 as bit) as ship_serviceToAddress,
+            cast(0 as bit) as ship_installToAddress,
+            cast(0 as bit) as ship_invoiceToAddress,
+            cast(1 as bit) as ship_shipToAddress,
+            coalesce(shipAddr.COMPANYNAME1, fallbackAddr.COMPANYNAME1, shipAddr.ADDRESSNAME, fallbackAddr.ADDRESSNAME, '') as ship_company
         from CUSTOMER c
         outer apply (
-            select top 1
-                ca.COMPANYNAME1,
-                ca.ADDRESSNAME
-            from CUSTOMERADDRESS ca
-            where ca.CUSTOMERID = c.UUID
-        ) addr
+            select top 1 *
+            from CUSTOMERADDRESS a
+            where a.CUSTOMERID = c.UUID
+        ) mainAddr
+        outer apply (
+            select top 1 *
+            from CUSTOMERADDRESS a
+            where a.CUSTOMERID = c.UUID
+        ) fallbackAddr
+        outer apply (
+            select top 1 *
+            from CUSTOMERADDRESS a
+            where a.CUSTOMERID = c.UUID
+              and a.USAGE = 2
+        ) invoiceAddr
+        outer apply (
+            select top 1 *
+            from CUSTOMERADDRESS a
+            where a.CUSTOMERID = c.UUID
+              and a.USAGE = 3
+        ) shipAddr
         where c.CUSTOMERNO = :customerId
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
             .addValue("customerId", customerId);
 
-    List<CustomerDetailResponse> result = jdbcTemplate.query(sql, params, (rs, rowNum) -> {
+    List<CustomerDetailResponse> results = jdbcTemplate.query(sql, params, (rs, rowNum) -> {
         CustomerDetailResponse dto = new CustomerDetailResponse();
         dto.setCustomerNo(rs.getString("customerNo"));
         dto.setCompanyName(rs.getString("companyName"));
-        dto.setCustomerType("SMB");
-        dto.setBudgetPriceType("gross");
-        dto.setType("SMBCustomer");
+        dto.setCustomerType(rs.getString("customerType"));
+        dto.setBudgetPriceType(rs.getString("budgetPriceType"));
+        dto.setType(rs.getString("type"));
 
-        CustomerAddressDTO emptyInvoice = new CustomerAddressDTO();
-        emptyInvoice.setId("");
-        emptyInvoice.setAddressName("");
-        emptyInvoice.setFirstName("");
-        emptyInvoice.setLastName("");
-        emptyInvoice.setCompanyName1(rs.getString("companyName"));
-        emptyInvoice.setAddressLine1("");
-        emptyInvoice.setPostalCode("");
-        emptyInvoice.setCountry("");
-        emptyInvoice.setCountryCode("");
-        emptyInvoice.setCity("");
-        emptyInvoice.setStreet("");
-        emptyInvoice.setShipFromAddress(false);
-        emptyInvoice.setServiceToAddress(false);
-        emptyInvoice.setInstallToAddress(false);
-        emptyInvoice.setInvoiceToAddress(false);
-        emptyInvoice.setShipToAddress(false);
-        emptyInvoice.setCompany(rs.getString("companyName"));
+        CustomerAddressDTO invoice = new CustomerAddressDTO();
+        invoice.setId(rs.getString("invoice_id"));
+        invoice.setAddressName(rs.getString("invoice_addressName"));
+        invoice.setFirstName(rs.getString("invoice_firstName"));
+        invoice.setLastName(rs.getString("invoice_lastName"));
+        invoice.setCompanyName1(rs.getString("invoice_companyName1"));
+        invoice.setAddressLine1(rs.getString("invoice_addressLine1"));
+        invoice.setPostalCode(rs.getString("invoice_postalCode"));
+        invoice.setCountry(rs.getString("invoice_country"));
+        invoice.setCountryCode(rs.getString("invoice_countryCode"));
+        invoice.setCity(rs.getString("invoice_city"));
+        invoice.setStreet(rs.getString("invoice_street"));
+        invoice.setShipFromAddress(rs.getBoolean("invoice_shipFromAddress"));
+        invoice.setServiceToAddress(rs.getBoolean("invoice_serviceToAddress"));
+        invoice.setInstallToAddress(rs.getBoolean("invoice_installToAddress"));
+        invoice.setInvoiceToAddress(rs.getBoolean("invoice_invoiceToAddress"));
+        invoice.setShipToAddress(rs.getBoolean("invoice_shipToAddress"));
+        invoice.setCompany(rs.getString("invoice_company"));
+        dto.setPreferredInvoiceToAddress(invoice);
 
-        CustomerAddressDTO emptyShip = new CustomerAddressDTO();
-        emptyShip.setId("");
-        emptyShip.setAddressName("");
-        emptyShip.setFirstName("");
-        emptyShip.setLastName("");
-        emptyShip.setCompanyName1(rs.getString("companyName"));
-        emptyShip.setAddressLine1("");
-        emptyShip.setPostalCode("");
-        emptyShip.setCountry("");
-        emptyShip.setCountryCode("");
-        emptyShip.setCity("");
-        emptyShip.setStreet("");
-        emptyShip.setShipFromAddress(false);
-        emptyShip.setServiceToAddress(false);
-        emptyShip.setInstallToAddress(false);
-        emptyShip.setInvoiceToAddress(false);
-        emptyShip.setShipToAddress(false);
-        emptyShip.setCompany(rs.getString("companyName"));
-
-        dto.setPreferredInvoiceToAddress(emptyInvoice);
-        dto.setPreferredShipToAddress(emptyShip);
+        CustomerAddressDTO ship = new CustomerAddressDTO();
+        ship.setId(rs.getString("ship_id"));
+        ship.setAddressName(rs.getString("ship_addressName"));
+        ship.setFirstName(rs.getString("ship_firstName"));
+        ship.setLastName(rs.getString("ship_lastName"));
+        ship.setCompanyName1(rs.getString("ship_companyName1"));
+        ship.setAddressLine1(rs.getString("ship_addressLine1"));
+        ship.setPostalCode(rs.getString("ship_postalCode"));
+        ship.setCountry(rs.getString("ship_country"));
+        ship.setCountryCode(rs.getString("ship_countryCode"));
+        ship.setCity(rs.getString("ship_city"));
+        ship.setStreet(rs.getString("ship_street"));
+        ship.setShipFromAddress(rs.getBoolean("ship_shipFromAddress"));
+        ship.setServiceToAddress(rs.getBoolean("ship_serviceToAddress"));
+        ship.setInstallToAddress(rs.getBoolean("ship_installToAddress"));
+        ship.setInvoiceToAddress(rs.getBoolean("ship_invoiceToAddress"));
+        ship.setShipToAddress(rs.getBoolean("ship_shipToAddress"));
+        ship.setCompany(rs.getString("ship_company"));
+        dto.setPreferredShipToAddress(ship);
 
         return dto;
     });
 
-    return result.isEmpty() ? null : result.get(0);
+    return results.isEmpty() ? null : results.get(0);
 }
+
 
     public List<CustomerUserDTO> findUsersByCustomerId(String customerId)
     {
@@ -189,58 +239,5 @@ public class CustomerRepository
             dto.setPendingRecurringRequisitionsCount(0);
             return dto;
         });
-    }
-
-    private CustomerAddressDTO mapAddress(
-            String id,
-            String addressName,
-            String firstName,
-            String lastName,
-            String companyName1,
-            String addressLine1,
-            String postalCode,
-            String countryCode,
-            String city,
-            String street,
-            boolean invoiceToAddress,
-            boolean shipToAddress
-    )
-    {
-        if (id == null || id.isBlank())
-        {
-            return null;
-        }
-
-        CustomerAddressDTO address = new CustomerAddressDTO();
-        address.setId(id);
-        address.setAddressName(addressName);
-        address.setFirstName(firstName);
-        address.setLastName(lastName);
-        address.setCompanyName1(companyName1);
-        address.setAddressLine1(addressLine1);
-        address.setPostalCode(postalCode);
-        address.setCountry(countryCode);
-        address.setCountryCode(countryCode);
-        address.setCity(city);
-        address.setStreet(street);
-        address.setShipFromAddress(false);
-        address.setServiceToAddress(false);
-        address.setInstallToAddress(false);
-        address.setInvoiceToAddress(invoiceToAddress);
-        address.setShipToAddress(shipToAddress);
-        address.setCompany(companyName1);
-        return address;
-    }
-
-    private String firstNonBlank(String... values)
-    {
-        for (String value : values)
-        {
-            if (value != null && !value.isBlank())
-            {
-                return value;
-            }
-        }
-        return null;
     }
 }

@@ -1,18 +1,18 @@
 package fenego.app.controller;
 
-import fenego.app.dto.CustomerAttributeListResponse;
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerListResponse;
 import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.service.CustomerService;
-import jakarta.servlet.http.HttpSession;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/customers")
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 public class CustomerController
 {
     private final CustomerService customerService;
@@ -24,60 +24,25 @@ public class CustomerController
 
     @GetMapping
     public CustomerListResponse getCustomers(
+            @RequestHeader(value = "authentication-token", required = false) String authenticationToken,
             @RequestParam String domain,
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(defaultValue = "50") int limit,
             @RequestParam(required = false) String customerNo
     )
     {
-        return customerService.getCustomers(domain, offset, limit, customerNo);
+        return customerService.getCustomers(domain, offset, limit, customerNo, null);
     }
 
     @GetMapping("/{customerId}")
-    public CustomerDetailResponse getCustomerById(
-            @PathVariable String customerId,
-            HttpSession session
-    )
+    public CustomerDetailResponse getCustomerById(@PathVariable String customerId)
     {
-        String authenticationToken = getRequiredSessionValue(session, "intershopToken");
-        String organization = getRequiredSessionValue(session, "organization");
-
-        return customerService.getCustomerById(authenticationToken, organization, customerId);
+        return customerService.getCustomerById(customerId);
     }
 
     @GetMapping("/{customerId}/users")
-    public CustomerUserListResponse getCustomerUsers(
-            @PathVariable String customerId,
-            HttpSession session
-    )
+    public CustomerUserListResponse getCustomerUsers(@PathVariable String customerId)
     {
-        String authenticationToken = getRequiredSessionValue(session, "intershopToken");
-        String organization = getRequiredSessionValue(session, "organization");
-
-        return customerService.getCustomerUsers(authenticationToken, organization, customerId);
-    }
-
-    @GetMapping("/{customerId}/attributes")
-    public CustomerAttributeListResponse getCustomerAttributes(
-            @PathVariable String customerId,
-            HttpSession session
-    )
-    {
-        String authenticationToken = getRequiredSessionValue(session, "intershopToken");
-        String organization = getRequiredSessionValue(session, "organization");
-
-        return customerService.getCustomerAttributes(authenticationToken, organization, customerId);
-    }
-
-    private String getRequiredSessionValue(HttpSession session, String key)
-    {
-        Object value = session.getAttribute(key);
-
-        if (value == null || String.valueOf(value).isBlank())
-        {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
-        }
-
-        return String.valueOf(value);
+        return customerService.getCustomerUsers(customerId);
     }
 }
