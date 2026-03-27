@@ -202,20 +202,9 @@
           <div class="bulk-count">{{ selectedIds.size }} customers selected</div>
 
           <div class="bulk-actions">
-            <div class="dropdown">
-              <button class="dropdown-btn" type="button" (click)="bulkOpen = !bulkOpen">
-                Choose bulk action…
-                <span class="down" aria-hidden="true">▾</span>
-              </button>
-
-              @if (bulkOpen) {
-                <div class="menu" (mouseleave)="bulkOpen = false">
-                  <button type="button" class="menu-item">Add Attribute</button>
-                  <button type="button" class="menu-item">Update Attribute</button>
-                  <button type="button" class="menu-item">Assign to Segment</button>
-                </div>
-              }
-            </div>
+            <button class="btn-white" type="button" (click)="goToBulkActions()">
+              Go to Bulk Actions
+            </button>
           </div>
         </div>
 

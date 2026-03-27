@@ -10,6 +10,8 @@ import {
   SaveCustomerSearchRequest
 } from '../../core/api/customer-api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { BulkSelectionService, SelectedCustomerRow } from '../../core/api/bulk-selection.service';
+
 
 type Status = 'Active' | 'Inactive';
 
@@ -35,6 +37,7 @@ export class CustomeroverviewComponent {
   private customerApi = inject(CustomerApiService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private bulkSelectionService = inject(BulkSelectionService);
 
   private domainName = 'DailyFreshFood-B1-Anonymous';
 
@@ -43,7 +46,6 @@ export class CustomeroverviewComponent {
   typeFilter = '';
   statusFilter = '';
 
-  bulkOpen = false;
   selectedIds = new Set<string>();
 
   loading = false;
@@ -286,26 +288,75 @@ export class CustomeroverviewComponent {
     }
   }
 
+  goToBulkActions(): void {
+    const selectedCustomers: SelectedCustomerRow[] = this.visibleRows()
+      .filter(row => this.selectedIds.has(row.id))
+      .map(row => ({
+        id: row.id,
+        name: row.name,
+        customerNo: row.customerNo,
+        type: row.type,
+        segment: row.segment,
+        status: row.status,
+        locations: row.locations,
+        level: row.level,
+        parentId: row.parentId
+      }));
+
+    if (selectedCustomers.length === 0) {
+      return;
+    }
+
+    this.bulkSelectionService.setSelectedCustomers(selectedCustomers);
+    this.router.navigate(['/customers/bulk-actions']);
+  }
+
   clearSelection(): void {
     this.selectedIds.clear();
-    this.bulkOpen = false;
-  }
-  deleteSavedSearch(searchId: number) {
-
-  const authenticationToken = this.authService.getAuthenticationToken();
-
-  if (!authenticationToken) {
-    return;
   }
 
-  const confirmDelete = window.confirm("Delete this saved search?");
+  deleteSavedSearch(searchId: number): void {
+    const authenticationToken = this.authService.getAuthenticationToken();
 
-  if (!confirmDelete) {
-    return;
+    if (!authenticationToken) {
+      return;
+    }
+
+    const confirmDelete = window.confirm('Delete this saved search?');
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    this.customerApi.deleteSavedSearch(authenticationToken, searchId)
+      .subscribe({
+        next: () => {
+          this.loadSavedSearches();
+        },
+        error: err => {
+          console.error(err);
+        }
+      });
   }
 
-  this.customerApi.deleteSavedSearch(authenticationToken, searchId)
-    .subscribe({
+  editSavedSearchName(search: SavedCustomerSearchDto): void {
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken) {
+      return;
+    }
+
+    const newName = window.prompt('Edit search name', search.name);
+
+    if (!newName || !newName.trim()) {
+      return;
+    }
+
+    this.customerApi.updateSavedSearchName(
+      authenticationToken,
+      search.id,
+      newName.trim()
+    ).subscribe({
       next: () => {
         this.loadSavedSearches();
       },
@@ -313,32 +364,5 @@ export class CustomeroverviewComponent {
         console.error(err);
       }
     });
-}
-editSavedSearchName(search: SavedCustomerSearchDto) {
-
-  const authenticationToken = this.authService.getAuthenticationToken();
-
-  if (!authenticationToken) {
-    return;
   }
-
-  const newName = window.prompt("Edit search name", search.name);
-
-  if (!newName || !newName.trim()) {
-    return;
-  }
-
-  this.customerApi.updateSavedSearchName(
-    authenticationToken,
-    search.id,
-    newName.trim()
-  ).subscribe({
-    next: () => {
-      this.loadSavedSearches();
-    },
-    error: err => {
-      console.error(err);
-    }
-  });
-}
 }

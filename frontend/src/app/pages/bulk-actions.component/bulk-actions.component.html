@@ -1,0 +1,99 @@
+<div class="page">
+  <app-header class="component"></app-header>
+
+  <main class="content">
+    <div class="crumb">
+      Home <span class="sep">›</span>
+      <a routerLink="/customers" class="crumb-link">Customers</a>
+      <span class="sep">›</span>
+      <span class="current">Bulk Actions</span>
+    </div>
+
+    <h1 class="title">Customer Bulk Actions</h1>
+
+    <div class="layout">
+      <aside class="side card">
+        <div class="side-title">Selected Customers</div>
+        <div class="side-count">{{ customers.length }} selected</div>
+
+        @for (customer of customers; track customer.id) {
+          <div class="selected-item">
+            <div class="selected-name">{{ customer.name }}</div>
+            <div class="selected-meta">
+              {{ customer.customerNo }} • {{ customer.type }}
+            </div>
+          </div>
+        }
+
+        <div class="side-actions">
+          <button class="btn-outline" type="button" (click)="goBack()">Back to Overview</button>
+          <button class="btn-outline danger" type="button" (click)="clearSelection()">
+            Clear Selection
+          </button>
+        </div>
+      </aside>
+
+      <section class="main card">
+        <div class="filters-head">
+          <div>
+            <div class="filters-title">Bulk action setup</div>
+            <div class="filters-meta">Choose what you want to do for the selected customers</div>
+          </div>
+        </div>
+
+        <div class="toolbar one-col">
+          <div class="field">
+            <label class="field-label">Bulk Action</label>
+            <select class="select" [(ngModel)]="selectedAction">
+              <option value="">Choose an action</option>
+              <option value="add-attribute">Add Attribute</option>
+              <option value="update-attribute">Update Attribute</option>
+              <option value="assign-segment">Assign to Segment</option>
+            </select>
+          </div>
+
+          <div class="toolbar-actions left">
+            <button class="btn-primary" type="button" (click)="applyBulkAction()">
+              Continue
+            </button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Customer Name</th>
+                <th>Customer No</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Locations</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (customer of customers; track customer.id) {
+                <tr>
+                  <td>{{ customer.name }}</td>
+                  <td>{{ customer.customerNo }}</td>
+                  <td>{{ customer.type }}</td>
+                  <td>
+                    <span
+                      class="badge"
+                      [class.active]="customer.status === 'Active'"
+                      [class.inactive]="customer.status === 'Inactive'"
+                    >
+                      {{ customer.status }}
+                    </span>
+                  </td>
+                  <td>{{ customer.locations }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
