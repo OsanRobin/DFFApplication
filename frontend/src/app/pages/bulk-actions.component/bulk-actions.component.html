@@ -16,6 +16,12 @@
         <div class="side-title">Selected Customers</div>
         <div class="side-count">{{ customers.length }} selected</div>
 
+        @if (customers.length === 0) {
+          <div class="empty-state">
+            No customers selected.
+          </div>
+        }
+
         @for (customer of customers; track customer.id) {
           <div class="selected-item">
             <div class="selected-name">{{ customer.name }}</div>
@@ -26,7 +32,10 @@
         }
 
         <div class="side-actions">
-          <button class="btn-outline" type="button" (click)="goBack()">Back to Overview</button>
+          <button class="btn-outline" type="button" (click)="goBack()">
+            Back to Overview
+          </button>
+
           <button class="btn-outline danger" type="button" (click)="clearSelection()">
             Clear Selection
           </button>
@@ -37,14 +46,20 @@
         <div class="filters-head">
           <div>
             <div class="filters-title">Bulk action setup</div>
-            <div class="filters-meta">Choose what you want to do for the selected customers</div>
+            <div class="filters-meta">
+              Choose what you want to do for the selected customers
+            </div>
           </div>
         </div>
+
+        @if (loadingOptions) {
+          <div class="message">Loading available attributes and segments...</div>
+        }
 
         <div class="toolbar one-col">
           <div class="field">
             <label class="field-label">Bulk Action</label>
-            <select class="select" [(ngModel)]="selectedAction">
+            <select class="select" [(ngModel)]="selectedAction" (ngModelChange)="onActionChange()">
               <option value="">Choose an action</option>
               <option value="add-attribute">Add Attribute</option>
               <option value="update-attribute">Update Attribute</option>
@@ -52,9 +67,64 @@
             </select>
           </div>
 
+          @if (selectedAction === 'add-attribute' || selectedAction === 'update-attribute') {
+            <div class="field">
+              <label class="field-label">Attribute</label>
+              <select class="select" [(ngModel)]="attributeName">
+                <option value="">Choose an attribute</option>
+                @for (attribute of availableAttributes; track attribute.name) {
+                  <option [value]="attribute.name">
+                    {{ attribute.displayName }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Attribute Value</label>
+              <input
+                class="input"
+                type="text"
+                [(ngModel)]="attributeValue"
+                placeholder="Enter attribute value"
+              />
+            </div>
+          }
+
+          @if (selectedAction === 'assign-segment') {
+            <div class="field">
+              <label class="field-label">Segment</label>
+              <select class="select" [(ngModel)]="segmentId">
+                <option value="">Choose a segment</option>
+                @for (segment of availableSegments; track segment.id) {
+                  <option [value]="segment.id">
+                    {{ segment.name }}
+                  </option>
+                }
+              </select>
+            </div>
+          }
+
+          @if (errorMessage) {
+            <div class="message error-message">
+              {{ errorMessage }}
+            </div>
+          }
+
+          @if (successMessage) {
+            <div class="message success-message">
+              {{ successMessage }}
+            </div>
+          }
+
           <div class="toolbar-actions left">
-            <button class="btn-primary" type="button" (click)="applyBulkAction()">
-              Continue
+            <button
+              class="btn-primary"
+              type="button"
+              (click)="applyBulkAction()"
+              [disabled]="loading || loadingOptions"
+            >
+              {{ loading ? 'Processing...' : 'Continue' }}
             </button>
           </div>
         </div>
