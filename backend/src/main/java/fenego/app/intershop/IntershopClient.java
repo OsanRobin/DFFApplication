@@ -1,6 +1,7 @@
 package fenego.app.intershop;
 
 import fenego.app.dto.CustomerDetailResponse;
+import fenego.app.dto.CustomerSegmentListResponse;
 import fenego.app.dto.CustomerAddressDTO;
 import fenego.app.dto.IntershopLoginResult;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +30,11 @@ public class IntershopClient
 
     @Value("${intershop.customer-accept-header}")
     private String customerAcceptHeader;
+    @Value("${intershop.customer-segments-url}")
+private String customerSegmentsUrl;
+
+@Value("${intershop.customer-segments-accept}")
+private String customerSegmentsAccept;
 
     public IntershopClient(RestTemplate restTemplate)
     {
@@ -237,6 +243,45 @@ public void assignCustomerToSegment(String authenticationToken, String customerI
     catch (HttpStatusCodeException ex)
     {
         throw new RuntimeException("Assign segment failed: " + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString(), ex);
+    }
+}
+public CustomerSegmentListResponse getCustomerSegments(String username, String password)
+{
+    try
+    {
+        String basicAuth = Base64.getEncoder()
+                .encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Basic " + basicAuth);
+        headers.set("Accept", customerSegmentsAccept);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<CustomerSegmentListResponse> response = restTemplate.exchange(
+                customerSegmentsUrl,
+                HttpMethod.GET,
+                entity,
+                CustomerSegmentListResponse.class
+        );
+
+        if (response.getBody() == null)
+        {
+            throw new RuntimeException("Empty response from Intershop customer segments endpoint");
+        }
+
+        return response.getBody();
+    }
+    catch (HttpStatusCodeException ex)
+    {
+        throw new RuntimeException(
+                "Get customer segments failed: " + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString(),
+                ex
+        );
+    }
+    catch (Exception ex)
+    {
+        throw new RuntimeException("Get customer segments failed: " + ex.getMessage(), ex);
     }
 }
 }
