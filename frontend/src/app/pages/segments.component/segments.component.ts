@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../shell/header.component/header.component';
 import { SegmentsApiService, SegmentCard, LogItem } from '../../core/api/segments-api.service';
 
 @Component({
   selector: 'app-segments.component',
   standalone: true,
-  imports: [CommonModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent],
   templateUrl: './segments.component.html',
   styleUrl: './segments.component.css',
 })
@@ -20,6 +21,10 @@ export class SegmentsComponent implements OnInit {
   loadingLogs = false;
   syncing = false;
   errorMessage = '';
+
+  editingSegmentId: string | null = null;
+  editedRule = '';
+  savingRule = false;
 
   ngOnInit(): void {
     this.loadSegments();
@@ -80,9 +85,43 @@ export class SegmentsComponent implements OnInit {
     });
   }
 
+  startEditRules(segment: SegmentCard): void {
+    this.editingSegmentId = segment.id;
+    this.editedRule = segment.rule || '';
+  }
+
+  cancelEditRules(): void {
+    this.editingSegmentId = null;
+    this.editedRule = '';
+  }
+
+  saveRules(segment: SegmentCard): void {
+    this.savingRule = true;
+    this.errorMessage = '';
+
+    this.segmentsApi.updateSegmentRule(segment.id, this.editedRule).subscribe({
+      next: () => {
+        segment.rule = this.editedRule;
+        segment.autoUpdated = false;
+        this.savingRule = false;
+        this.editingSegmentId = null;
+        this.editedRule = '';
+        this.loadSegments();
+        this.loadLogs();
+      },
+      error: (error) => {
+        console.error(error);
+        this.errorMessage = 'Failed to update segment rule.';
+        this.savingRule = false;
+      }
+    });
+  }
+
   onCreateSegment(): void {}
 
   onViewCustomers(_segment: SegmentCard): void {}
 
-  onEditRules(_segment: SegmentCard): void {}
+  onEditRules(segment: SegmentCard): void {
+    this.startEditRules(segment);
+  }
 }

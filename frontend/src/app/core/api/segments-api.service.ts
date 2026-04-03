@@ -37,4 +37,11 @@ export class SegmentsApiService {
   syncSegments(): Observable<{ success: boolean; importedCount: number }> {
     return this.http.post<{ success: boolean; importedCount: number }>(`${this.baseUrl}/sync`, {});
   }
+
+  updateSegmentRule(segmentId: string, rule: string): Observable<{ success: boolean; message: string }> {
+    return this.http.put<{ success: boolean; message: string }>(
+      `${this.baseUrl}/${segmentId}/rule`,
+      { rule }
+    );
+  }
 }

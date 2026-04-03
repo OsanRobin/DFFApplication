@@ -26,4 +26,10 @@ public class SegmentService
     {
         return segmentRepository.findAllLogs();
     }
+
+    public void updateSegmentRule(String segmentId, String rule)
+    {
+        segmentRepository.updateRuleExpression(segmentId, rule);
+        segmentRepository.insertSegmentLog(segmentId, "down", "Rule updated for segment " + segmentId);
+    }
 }

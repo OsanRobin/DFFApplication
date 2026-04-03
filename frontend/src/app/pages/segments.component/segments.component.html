@@ -37,8 +37,26 @@
                 </span>
               </div>
 
-              <div class="rule">
-  {{ segment.rule || segment.description || 'No rule or description available.' }}
+             <div class="rule">
+  @if (editingSegmentId === segment.id) {
+    <textarea
+      [(ngModel)]="editedRule"
+      rows="4"
+      class="rule-editor"
+      placeholder="Enter segment rule..."
+    ></textarea>
+
+    <div class="edit-actions">
+      <button class="primary" type="button" (click)="saveRules(segment)" [disabled]="savingRule">
+        {{ savingRule ? 'Saving...' : 'Save Rule' }}
+      </button>
+      <button class="secondary" type="button" (click)="cancelEditRules()" [disabled]="savingRule">
+        Cancel
+      </button>
+    </div>
+  } @else {
+    {{ segment.rule || segment.description || 'No rule or description available.' }}
+  }
 </div>
 
               <div class="segment-bottom">

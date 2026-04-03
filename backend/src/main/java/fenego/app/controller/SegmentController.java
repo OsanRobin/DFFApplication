@@ -2,6 +2,7 @@ package fenego.app.controller;
 
 import fenego.app.dto.SegmentDTO;
 import fenego.app.dto.SegmentLogItemDTO;
+import fenego.app.dto.UpdateSegmentRuleRequest;
 import fenego.app.service.SegmentService;
 import fenego.app.service.SegmentSyncService;
 import org.springframework.web.bind.annotation.*;
@@ -43,6 +44,17 @@ public class SegmentController
         return Map.of(
                 "success", true,
                 "importedCount", importedCount
+        );
+    }
+
+    @PutMapping("/{id}/rule")
+    public Map<String, Object> updateSegmentRule(@PathVariable String id, @RequestBody UpdateSegmentRuleRequest request)
+    {
+        segmentService.updateSegmentRule(id, request.getRule());
+
+        return Map.of(
+                "success", true,
+                "message", "Segment rule updated successfully"
         );
     }
 }

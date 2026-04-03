@@ -107,4 +107,27 @@ public class SegmentRepository
 
         jdbcTemplate.update(sql, UUID.randomUUID().toString(), direction, message);
     }
+    public void updateRuleExpression(String segmentId, String ruleExpression)
+{
+    String sql = """
+        UPDATE app_segments
+        SET
+            rule_expression = ?,
+            last_updated = GETDATE(),
+            auto_updated = 0
+        WHERE id = ?
+        """;
+
+    jdbcTemplate.update(sql, ruleExpression, segmentId);
+}
+
+public void insertSegmentLog(String segmentId, String direction, String message)
+{
+    String sql = """
+        INSERT INTO app_segment_log (id, segment_id, direction, message, created_at)
+        VALUES (?, ?, ?, ?, GETDATE())
+        """;
+
+    jdbcTemplate.update(sql, UUID.randomUUID().toString(), segmentId, direction, message);
+}
 }
