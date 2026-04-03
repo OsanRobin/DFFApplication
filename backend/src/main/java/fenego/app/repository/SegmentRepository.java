@@ -130,4 +130,14 @@ public void insertSegmentLog(String segmentId, String direction, String message)
 
     jdbcTemplate.update(sql, UUID.randomUUID().toString(), segmentId, direction, message);
 }
+public void insertSegment(String id, String name, String description, String rule)
+{
+    String sql = """
+        INSERT INTO app_segments
+        (id, name, description, rule_expression, matched_customers, last_updated, auto_updated, source)
+        VALUES (?, ?, ?, ?, 0, GETDATE(), 0, 'MANUAL')
+        """;
+
+    jdbcTemplate.update(sql, id, name, description, rule);
+}
 }

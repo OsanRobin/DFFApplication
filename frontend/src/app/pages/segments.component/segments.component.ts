@@ -25,7 +25,14 @@ export class SegmentsComponent implements OnInit {
   editingSegmentId: string | null = null;
   editedRule = '';
   savingRule = false;
+creating= false;
+newSegment = {
+  name: '',
+  description: '',
+  rule: ''
+};
 
+savingNewSegment = false;
   ngOnInit(): void {
     this.loadSegments();
     this.loadLogs();
@@ -117,7 +124,37 @@ export class SegmentsComponent implements OnInit {
     });
   }
 
-  onCreateSegment(): void {}
+  onCreateSegment(): void {
+  this.creating = true;
+}
+cancelCreate(): void {
+  this.creating = false;
+  this.newSegment = { name: '', description: '', rule: '' };
+}
+saveNewSegment(): void {
+  if (!this.newSegment.name) {
+    this.errorMessage = 'Name is required.';
+    return;
+  }
+
+  this.savingNewSegment = true;
+
+  this.segmentsApi.createSegment(this.newSegment).subscribe({
+    next: () => {
+      this.creating = false;
+      this.savingNewSegment = false;
+      this.newSegment = { name: '', description: '', rule: '' };
+
+      this.loadSegments();
+      this.loadLogs();
+    },
+    error: (err) => {
+      console.error(err);
+      this.errorMessage = 'Failed to create segment.';
+      this.savingNewSegment = false;
+    }
+  });
+}
 
   onViewCustomers(_segment: SegmentCard): void {}
 

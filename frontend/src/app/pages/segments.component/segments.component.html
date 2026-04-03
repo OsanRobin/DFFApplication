@@ -12,7 +12,9 @@
         <p class="subtitle">View and manage customer segments and rules</p>
       </div>
 
-      <button class="primary" type="button" (click)="onCreateSegment()">Create Segment</button>
+      <button class="primary" type="button" (click)="onCreateSegment()" [disabled]="creating">
+        Create Segment
+      </button>
     </div>
 
     @if (errorMessage) {
@@ -23,6 +25,55 @@
 
     <div class="grid">
       <section class="left">
+
+        @if (creating) {
+          <div class="card panel create-form">
+            <div class="panel-title">Create New Segment</div>
+            <div class="panel-sub">Add a new manual segment with rule and description</div>
+
+            <input
+              type="text"
+              [(ngModel)]="newSegment.name"
+              placeholder="Segment name"
+              class="input"
+            />
+
+            <textarea
+              [(ngModel)]="newSegment.description"
+              placeholder="Description"
+              rows="3"
+              class="input"
+            ></textarea>
+
+            <textarea
+              [(ngModel)]="newSegment.rule"
+              placeholder="Rule expression"
+              rows="5"
+              class="input"
+            ></textarea>
+
+            <div class="edit-actions">
+              <button
+                class="primary"
+                type="button"
+                (click)="saveNewSegment()"
+                [disabled]="savingNewSegment"
+              >
+                {{ savingNewSegment ? 'Saving...' : 'Create' }}
+              </button>
+
+              <button
+                class="secondary"
+                type="button"
+                (click)="cancelCreate()"
+                [disabled]="savingNewSegment"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        }
+
         @if (loadingSegments) {
           <div class="card panel">Loading segments...</div>
         } @else if (segments.length === 0) {
@@ -37,27 +88,38 @@
                 </span>
               </div>
 
-             <div class="rule">
-  @if (editingSegmentId === segment.id) {
-    <textarea
-      [(ngModel)]="editedRule"
-      rows="4"
-      class="rule-editor"
-      placeholder="Enter segment rule..."
-    ></textarea>
+              <div class="rule">
+                @if (editingSegmentId === segment.id) {
+                  <textarea
+                    [(ngModel)]="editedRule"
+                    rows="4"
+                    class="rule-editor"
+                    placeholder="Enter segment rule..."
+                  ></textarea>
 
-    <div class="edit-actions">
-      <button class="primary" type="button" (click)="saveRules(segment)" [disabled]="savingRule">
-        {{ savingRule ? 'Saving...' : 'Save Rule' }}
-      </button>
-      <button class="secondary" type="button" (click)="cancelEditRules()" [disabled]="savingRule">
-        Cancel
-      </button>
-    </div>
-  } @else {
-    {{ segment.rule || segment.description || 'No rule or description available.' }}
-  }
-</div>
+                  <div class="edit-actions">
+                    <button
+                      class="primary"
+                      type="button"
+                      (click)="saveRules(segment)"
+                      [disabled]="savingRule"
+                    >
+                      {{ savingRule ? 'Saving...' : 'Save Rule' }}
+                    </button>
+
+                    <button
+                      class="secondary"
+                      type="button"
+                      (click)="cancelEditRules()"
+                      [disabled]="savingRule"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                } @else {
+                  {{ segment.rule || segment.description || 'No rule or description available.' }}
+                }
+              </div>
 
               <div class="segment-bottom">
                 <div class="meta">
@@ -73,8 +135,12 @@
                 </div>
 
                 <div class="actions">
-                  <button class="secondary" type="button" (click)="onViewCustomers(segment)">View Customers</button>
-                  <button class="secondary" type="button" (click)="onEditRules(segment)">Edit Rules</button>
+                  <button class="secondary" type="button" (click)="onViewCustomers(segment)">
+                    View Customers
+                  </button>
+                  <button class="secondary" type="button" (click)="onEditRules(segment)">
+                    Edit Rules
+                  </button>
                 </div>
               </div>
             </div>
@@ -103,7 +169,11 @@
             } @else {
               @for (item of logItems; track item.id) {
                 <div class="log-item">
-                  <div class="log-icon" [class.up]="item.direction === 'up'" [class.down]="item.direction === 'down'">
+                  <div
+                    class="log-icon"
+                    [class.up]="item.direction === 'up'"
+                    [class.down]="item.direction === 'down'"
+                  >
                     @if (item.direction === 'up') { ↑ } @else { ↓ }
                   </div>
 

@@ -1,5 +1,6 @@
 package fenego.app.controller;
 
+import fenego.app.dto.CreateSegmentRequest;
 import fenego.app.dto.SegmentDTO;
 import fenego.app.dto.SegmentLogItemDTO;
 import fenego.app.dto.UpdateSegmentRuleRequest;
@@ -57,4 +58,18 @@ public class SegmentController
                 "message", "Segment rule updated successfully"
         );
     }
+    @PostMapping
+public Map<String, Object> createSegment(@RequestBody CreateSegmentRequest request)
+{
+    String id = segmentService.createSegment(
+            request.getName(),
+            request.getDescription(),
+            request.getRule()
+    );
+
+    return Map.of(
+            "success", true,
+            "id", id
+    );
+}
 }

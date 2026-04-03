@@ -44,4 +44,14 @@ export class SegmentsApiService {
       { rule }
     );
   }
+  createSegment(data: {
+  name: string;
+  description: string;
+  rule: string;
+}): Observable<{ success: boolean; id: string }> {
+  return this.http.post<{ success: boolean; id: string }>(
+    this.baseUrl,
+    data
+  );
+}
 }
