@@ -1,9 +1,9 @@
 package fenego.app.controller;
 
 import fenego.app.dto.CreateSegmentRequest;
-import fenego.app.dto.SegmentDTO;
 import fenego.app.dto.SegmentLogItemDTO;
 import fenego.app.dto.UpdateSegmentRuleRequest;
+import fenego.app.jpa.Segment;
 import fenego.app.service.SegmentService;
 import fenego.app.service.SegmentSyncService;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +26,7 @@ public class SegmentController
     }
 
     @GetMapping
-    public List<SegmentDTO> getSegments()
+    public List<Segment> getSegments()
     {
         return segmentService.getSegments();
     }
@@ -58,18 +58,19 @@ public class SegmentController
                 "message", "Segment rule updated successfully"
         );
     }
-    @PostMapping
-public Map<String, Object> createSegment(@RequestBody CreateSegmentRequest request)
-{
-    String id = segmentService.createSegment(
-            request.getName(),
-            request.getDescription(),
-            request.getRule()
-    );
 
-    return Map.of(
-            "success", true,
-            "id", id
-    );
-}
+    @PostMapping
+    public Map<String, Object> createSegment(@RequestBody CreateSegmentRequest request)
+    {
+        String id = segmentService.createSegment(
+                request.getName(),
+                request.getDescription(),
+                request.getRule()
+        );
+
+        return Map.of(
+                "success", true,
+                "id", id
+        );
+    }
 }

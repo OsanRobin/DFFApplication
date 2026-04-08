@@ -1,14 +1,18 @@
 package fenego.app.dto;
 
+
+
 import java.util.ArrayList;
 import java.util.List;
+
+import fenego.app.jpa.Customer;
 
 public class CustomerListResponse
 {
     private int offset;
     private int limit;
     private int count;
-    private List<CustomerDTO> data = new ArrayList<>();
+    private List<Customer> data = new ArrayList<>();
 
     public int getOffset()
     {
@@ -40,12 +44,12 @@ public class CustomerListResponse
         this.count = count;
     }
 
-    public List<CustomerDTO> getData()
+    public List<Customer> getData()
     {
         return data;
     }
 
-    public void setData(List<CustomerDTO> data)
+    public void setData(List<Customer> data)
     {
         this.data = data;
     }

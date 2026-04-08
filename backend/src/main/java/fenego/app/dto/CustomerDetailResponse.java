@@ -1,5 +1,7 @@
 package fenego.app.dto;
 
+import fenego.app.jpa.CustomerAddress;
+
 public class CustomerDetailResponse
 {
     private String customerNo;
@@ -7,8 +9,8 @@ public class CustomerDetailResponse
     private String customerType;
     private String budgetPriceType;
     private String type;
-    private CustomerAddressDTO preferredInvoiceToAddress;
-    private CustomerAddressDTO preferredShipToAddress;
+    private CustomerAddress preferredInvoiceToAddress;
+    private CustomerAddress preferredShipToAddress;
 
     public String getCustomerNo()
     {
@@ -60,22 +62,22 @@ public class CustomerDetailResponse
         this.type = type;
     }
 
-    public CustomerAddressDTO getPreferredInvoiceToAddress()
+    public CustomerAddress getPreferredInvoiceToAddress()
     {
         return preferredInvoiceToAddress;
     }
 
-    public void setPreferredInvoiceToAddress(CustomerAddressDTO preferredInvoiceToAddress)
+    public void setPreferredInvoiceToAddress(CustomerAddress preferredInvoiceToAddress)
     {
         this.preferredInvoiceToAddress = preferredInvoiceToAddress;
     }
 
-    public CustomerAddressDTO getPreferredShipToAddress()
+    public CustomerAddress getPreferredShipToAddress()
     {
         return preferredShipToAddress;
     }
 
-    public void setPreferredShipToAddress(CustomerAddressDTO preferredShipToAddress)
+    public void setPreferredShipToAddress(CustomerAddress preferredShipToAddress)
     {
         this.preferredShipToAddress = preferredShipToAddress;
     }

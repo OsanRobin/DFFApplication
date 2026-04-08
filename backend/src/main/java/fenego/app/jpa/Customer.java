@@ -1,6 +1,6 @@
-package fenego.app.dto;
+package fenego.app.jpa;
 
-public class CustomerDTO
+public class Customer
 {
     private String id;
     private String customerNo;

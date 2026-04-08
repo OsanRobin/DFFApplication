@@ -1,13 +1,15 @@
-package fenego.app.dto;
+package fenego.app.jpa;
 
-public class AttributeOptionDTO
+
+
+public class AttributeOption
 {
     private String name;
     private String displayName;
 
-    public AttributeOptionDTO() {}
+    public AttributeOption() {}
 
-    public AttributeOptionDTO(String name, String displayName)
+    public AttributeOption(String name, String displayName)
     {
         this.name = name;
         this.displayName = displayName;

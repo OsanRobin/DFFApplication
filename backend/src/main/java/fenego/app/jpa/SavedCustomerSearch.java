@@ -1,6 +1,6 @@
-package fenego.app.dto;
+package fenego.app.jpa;
 
-public class SavedCustomerSearchDTO
+public class SavedCustomerSearch
 {
     private Long id;
     private String domainName;

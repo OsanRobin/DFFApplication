@@ -1,11 +1,26 @@
 package fenego.app.dto;
 
+
+
+import java.util.ArrayList;
 import java.util.List;
+
+import fenego.app.jpa.SavedCustomerSearch;
 
 public class SavedCustomerSearchListResponse
 {
+    private List<SavedCustomerSearch> data = new ArrayList<>();
     private int count;
-    private List<SavedCustomerSearchDTO> data;
+
+    public List<SavedCustomerSearch> getData()
+    {
+        return data;
+    }
+
+    public void setData(List<SavedCustomerSearch> data)
+    {
+        this.data = data;
+    }
 
     public int getCount()
     {
@@ -15,15 +30,5 @@ public class SavedCustomerSearchListResponse
     public void setCount(int count)
     {
         this.count = count;
-    }
-
-    public List<SavedCustomerSearchDTO> getData()
-    {
-        return data;
-    }
-
-    public void setData(List<SavedCustomerSearchDTO> data)
-    {
-        this.data = data;
     }
 }

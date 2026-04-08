@@ -2,8 +2,9 @@ package fenego.app.intershop;
 
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerSegmentListResponse;
-import fenego.app.dto.CustomerAddressDTO;
 import fenego.app.dto.IntershopLoginResult;
+import fenego.app.jpa.CustomerAddress;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -30,11 +31,12 @@ public class IntershopClient
 
     @Value("${intershop.customer-accept-header}")
     private String customerAcceptHeader;
-    @Value("${intershop.customer-segments-url}")
-private String customerSegmentsUrl;
 
-@Value("${intershop.customer-segments-accept}")
-private String customerSegmentsAccept;
+    @Value("${intershop.customer-segments-url}")
+    private String customerSegmentsUrl;
+
+    @Value("${intershop.customer-segments-accept}")
+    private String customerSegmentsAccept;
 
     public IntershopClient(RestTemplate restTemplate)
     {
@@ -150,9 +152,9 @@ private String customerSegmentsAccept;
         }
     }
 
-    private CustomerAddressDTO mapAddress(Map address)
+    private CustomerAddress mapAddress(Map address)
     {
-        CustomerAddressDTO dto = new CustomerAddressDTO();
+        CustomerAddress dto = new CustomerAddress();
         dto.setId((String) address.get("id"));
         dto.setAddressName((String) address.get("addressName"));
         dto.setFirstName((String) address.get("firstName"));
@@ -174,114 +176,116 @@ private String customerSegmentsAccept;
 
         return dto;
     }
+
     public void addCustomerAttribute(String authenticationToken, String customerId, String attributeName, String attributeValue)
-{
-    try
     {
-        String url = customersUrl + "/" + customerId + "/attributes";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("authentication-token", authenticationToken);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Accept", customerAcceptHeader);
-
-        Map<String, Object> body = Map.of(
-                "name", attributeName,
-                "value", attributeValue
-        );
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-
-        restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
-    }
-    catch (HttpStatusCodeException ex)
-    {
-        throw new RuntimeException("Add attribute failed: " + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString(), ex);
-    }
-}
-
-public void updateCustomerAttribute(String authenticationToken, String customerId, String attributeName, String attributeValue)
-{
-    try
-    {
-        String url = customersUrl + "/" + customerId + "/attributes/" + attributeName;
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("authentication-token", authenticationToken);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Accept", customerAcceptHeader);
-
-        Map<String, Object> body = Map.of("value", attributeValue);
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-
-        restTemplate.exchange(url, HttpMethod.PUT, entity, Void.class);
-    }
-    catch (HttpStatusCodeException ex)
-    {
-        throw new RuntimeException("Update attribute failed: " + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString(), ex);
-    }
-}
-
-public void assignCustomerToSegment(String authenticationToken, String customerId, String segmentId)
-{
-    try
-    {
-        String url = customersUrl + "/" + customerId + "/customersegments";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("authentication-token", authenticationToken);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Accept", customerAcceptHeader);
-
-        Map<String, Object> body = Map.of("id", segmentId);
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-
-        restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
-    }
-    catch (HttpStatusCodeException ex)
-    {
-        throw new RuntimeException("Assign segment failed: " + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString(), ex);
-    }
-}
-public CustomerSegmentListResponse getCustomerSegments(String username, String password)
-{
-    try
-    {
-        String basicAuth = Base64.getEncoder()
-                .encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Basic " + basicAuth);
-        headers.set("Accept", customerSegmentsAccept);
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-        ResponseEntity<CustomerSegmentListResponse> response = restTemplate.exchange(
-                customerSegmentsUrl,
-                HttpMethod.GET,
-                entity,
-                CustomerSegmentListResponse.class
-        );
-
-        if (response.getBody() == null)
+        try
         {
-            throw new RuntimeException("Empty response from Intershop customer segments endpoint");
-        }
+            String url = customersUrl + "/" + customerId + "/attributes";
 
-        return response.getBody();
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("authentication-token", authenticationToken);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Accept", customerAcceptHeader);
+
+            Map<String, Object> body = Map.of(
+                    "name", attributeName,
+                    "value", attributeValue
+            );
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+            restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
+        }
+        catch (HttpStatusCodeException ex)
+        {
+            throw new RuntimeException("Add attribute failed: " + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString(), ex);
+        }
     }
-    catch (HttpStatusCodeException ex)
+
+    public void updateCustomerAttribute(String authenticationToken, String customerId, String attributeName, String attributeValue)
     {
-        throw new RuntimeException(
-                "Get customer segments failed: " + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString(),
-                ex
-        );
+        try
+        {
+            String url = customersUrl + "/" + customerId + "/attributes/" + attributeName;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("authentication-token", authenticationToken);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Accept", customerAcceptHeader);
+
+            Map<String, Object> body = Map.of("value", attributeValue);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+            restTemplate.exchange(url, HttpMethod.PUT, entity, Void.class);
+        }
+        catch (HttpStatusCodeException ex)
+        {
+            throw new RuntimeException("Update attribute failed: " + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString(), ex);
+        }
     }
-    catch (Exception ex)
+
+    public void assignCustomerToSegment(String authenticationToken, String customerId, String segmentId)
     {
-        throw new RuntimeException("Get customer segments failed: " + ex.getMessage(), ex);
+        try
+        {
+            String url = customersUrl + "/" + customerId + "/customersegments";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("authentication-token", authenticationToken);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Accept", customerAcceptHeader);
+
+            Map<String, Object> body = Map.of("id", segmentId);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+            restTemplate.exchange(url, HttpMethod.POST, entity, Void.class);
+        }
+        catch (HttpStatusCodeException ex)
+        {
+            throw new RuntimeException("Assign segment failed: " + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString(), ex);
+        }
     }
-}
+
+    public CustomerSegmentListResponse getCustomerSegments(String username, String password)
+    {
+        try
+        {
+            String basicAuth = Base64.getEncoder()
+                    .encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Basic " + basicAuth);
+            headers.set("Accept", customerSegmentsAccept);
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<CustomerSegmentListResponse> response = restTemplate.exchange(
+                    customerSegmentsUrl,
+                    HttpMethod.GET,
+                    entity,
+                    CustomerSegmentListResponse.class
+            );
+
+            if (response.getBody() == null)
+            {
+                throw new RuntimeException("Empty response from Intershop customer segments endpoint");
+            }
+
+            return response.getBody();
+        }
+        catch (HttpStatusCodeException ex)
+        {
+            throw new RuntimeException(
+                    "Get customer segments failed: " + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString(),
+                    ex
+            );
+        }
+        catch (Exception ex)
+        {
+            throw new RuntimeException("Get customer segments failed: " + ex.getMessage(), ex);
+        }
+    }
 }

@@ -6,12 +6,8 @@ public class BulkActionRequest
 {
     private List<String> customerIds;
     private String action;
-
-    // voor add/update attribute
     private String attributeName;
     private String attributeValue;
-
-    // voor segment
     private String segmentId;
 
     public List<String> getCustomerIds()

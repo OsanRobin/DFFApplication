@@ -1,9 +1,10 @@
 package fenego.app.service;
 
-import fenego.app.dto.AttributeOptionDTO;
 import fenego.app.dto.BulkActionRequest;
 import fenego.app.dto.BulkActionResponse;
-import fenego.app.dto.SegmentOptionDTO;
+import fenego.app.jpa.AttributeOption;
+import fenego.app.jpa.SegmentOption;
+
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -12,22 +13,22 @@ import java.util.List;
 @Service
 public class BulkActionService
 {
-    public List<AttributeOptionDTO> getAvailableAttributes()
+    public List<AttributeOption> getAvailableAttributes()
     {
         return List.of(
-                new AttributeOptionDTO("budgetPriceType", "Budget Price Type"),
-                new AttributeOptionDTO("companyName", "Company Name"),
-                new AttributeOptionDTO("customerType", "Customer Type"),
-                new AttributeOptionDTO("type", "Type")
+                new AttributeOption("budgetPriceType", "Budget Price Type"),
+                new AttributeOption("companyName", "Company Name"),
+                new AttributeOption("customerType", "Customer Type"),
+                new AttributeOption("type", "Type")
         );
     }
 
-    public List<SegmentOptionDTO> getAvailableSegments()
+    public List<SegmentOption> getAvailableSegments()
     {
         return List.of(
-                new SegmentOptionDTO("B2B", "B2B"),
-                new SegmentOptionDTO("VIP", "VIP"),
-                new SegmentOptionDTO("WHOLESALE", "Wholesale")
+                new SegmentOption("B2B", "B2B"),
+                new SegmentOption("VIP", "VIP"),
+                new SegmentOption("WHOLESALE", "Wholesale")
         );
     }
 
@@ -54,27 +55,12 @@ public class BulkActionService
                 switch (request.getAction()) {
                     case "add-attribute":
                     case "update-attribute":
-                        if (request.getAttributeName() == null || request.getAttributeName().isBlank()) {
-                            throw new RuntimeException("Attribute name is missing");
-                        }
-                        if (request.getAttributeValue() == null || request.getAttributeValue().isBlank()) {
-                            throw new RuntimeException("Attribute value is missing");
-                        }
-
-                        // TODO: hier je echte update logica
-                        // bv. attribute toevoegen/updaten voor customerId
-
+                        validateAttributeAction(request);
                         response.getProcessedCustomerIds().add(customerId);
                         break;
 
                     case "assign-segment":
-                        if (request.getSegmentId() == null || request.getSegmentId().isBlank()) {
-                            throw new RuntimeException("Segment ID is missing");
-                        }
-
-                        // TODO: hier je echte segment assign logica
-                        // bv. segment koppelen aan customerId
-
+                        validateSegmentAction(request);
                         response.getProcessedCustomerIds().add(customerId);
                         break;
 
@@ -99,5 +85,23 @@ public class BulkActionService
         }
 
         return response;
+    }
+
+    private void validateAttributeAction(BulkActionRequest request)
+    {
+        if (request.getAttributeName() == null || request.getAttributeName().isBlank()) {
+            throw new RuntimeException("Attribute name is missing");
+        }
+
+        if (request.getAttributeValue() == null || request.getAttributeValue().isBlank()) {
+            throw new RuntimeException("Attribute value is missing");
+        }
+    }
+
+    private void validateSegmentAction(BulkActionRequest request)
+    {
+        if (request.getSegmentId() == null || request.getSegmentId().isBlank()) {
+            throw new RuntimeException("Segment ID is missing");
+        }
     }
 }

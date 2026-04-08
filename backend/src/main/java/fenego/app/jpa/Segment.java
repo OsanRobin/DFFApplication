@@ -1,6 +1,6 @@
-package fenego.app.dto;
+package fenego.app.jpa;
 
-public class SegmentDTO
+public class Segment
 {
     private String id;
     private String name;
@@ -10,9 +10,10 @@ public class SegmentDTO
     private String lastUpdated;
     private boolean autoUpdated;
 
-    public SegmentDTO() {}
+    public Segment() {}
 
-    public SegmentDTO(String id, String name, String description, String rule, int matchedCustomers, String lastUpdated, boolean autoUpdated)
+    public Segment(String id, String name, String description, String rule,
+                   int matchedCustomers, String lastUpdated, boolean autoUpdated)
     {
         this.id = id;
         this.name = name;

@@ -1,7 +1,8 @@
 package fenego.app.repository;
 
-import fenego.app.dto.SegmentDTO;
 import fenego.app.dto.SegmentLogItemDTO;
+import fenego.app.jpa.Segment;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -18,7 +19,7 @@ public class SegmentRepository
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<SegmentDTO> findAll()
+    public List<Segment> findAll()
     {
         String sql = """
             SELECT
@@ -33,7 +34,7 @@ public class SegmentRepository
             ORDER BY name
             """;
 
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new SegmentDTO(
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new Segment(
                 rs.getString("id"),
                 rs.getString("name"),
                 rs.getString("description"),
@@ -107,37 +108,39 @@ public class SegmentRepository
 
         jdbcTemplate.update(sql, UUID.randomUUID().toString(), direction, message);
     }
+
     public void updateRuleExpression(String segmentId, String ruleExpression)
-{
-    String sql = """
-        UPDATE app_segments
-        SET
-            rule_expression = ?,
-            last_updated = GETDATE(),
-            auto_updated = 0
-        WHERE id = ?
-        """;
+    {
+        String sql = """
+            UPDATE app_segments
+            SET
+                rule_expression = ?,
+                last_updated = GETDATE(),
+                auto_updated = 0
+            WHERE id = ?
+            """;
 
-    jdbcTemplate.update(sql, ruleExpression, segmentId);
-}
+        jdbcTemplate.update(sql, ruleExpression, segmentId);
+    }
 
-public void insertSegmentLog(String segmentId, String direction, String message)
-{
-    String sql = """
-        INSERT INTO app_segment_log (id, segment_id, direction, message, created_at)
-        VALUES (?, ?, ?, ?, GETDATE())
-        """;
+    public void insertSegmentLog(String segmentId, String direction, String message)
+    {
+        String sql = """
+            INSERT INTO app_segment_log (id, segment_id, direction, message, created_at)
+            VALUES (?, ?, ?, ?, GETDATE())
+            """;
 
-    jdbcTemplate.update(sql, UUID.randomUUID().toString(), segmentId, direction, message);
-}
-public void insertSegment(String id, String name, String description, String rule)
-{
-    String sql = """
-        INSERT INTO app_segments
-        (id, name, description, rule_expression, matched_customers, last_updated, auto_updated, source)
-        VALUES (?, ?, ?, ?, 0, GETDATE(), 0, 'MANUAL')
-        """;
+        jdbcTemplate.update(sql, UUID.randomUUID().toString(), segmentId, direction, message);
+    }
 
-    jdbcTemplate.update(sql, id, name, description, rule);
-}
+    public void insertSegment(String id, String name, String description, String rule)
+    {
+        String sql = """
+            INSERT INTO app_segments
+            (id, name, description, rule_expression, matched_customers, last_updated, auto_updated, source)
+            VALUES (?, ?, ?, ?, 0, GETDATE(), 0, 'MANUAL')
+            """;
+
+        jdbcTemplate.update(sql, id, name, description, rule);
+    }
 }

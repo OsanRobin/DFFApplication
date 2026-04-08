@@ -1,7 +1,8 @@
 package fenego.app.repository;
 
-import fenego.app.dto.SavedCustomerSearchDTO;
 import fenego.app.dto.SaveCustomerSearchRequest;
+import fenego.app.jpa.SavedCustomerSearch;
+
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -18,7 +19,7 @@ public class SavedCustomerSearchRepository
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<SavedCustomerSearchDTO> findByDomain(String domainName)
+    public List<SavedCustomerSearch> findByDomain(String domainName)
     {
         String sql = """
             select
@@ -35,19 +36,19 @@ public class SavedCustomerSearchRepository
             """;
 
         return jdbcTemplate.query(
-            sql,
-            new MapSqlParameterSource("domainName", domainName),
-            (rs, rowNum) -> {
-                SavedCustomerSearchDTO dto = new SavedCustomerSearchDTO();
-                dto.setId(rs.getLong("id"));
-                dto.setDomainName(rs.getString("domainName"));
-                dto.setName(rs.getString("name"));
-                dto.setQuery(rs.getString("query"));
-                dto.setCustomerNo(rs.getString("customerNo"));
-                dto.setTypeFilter(rs.getString("typeFilter"));
-                dto.setStatusFilter(rs.getString("statusFilter"));
-                return dto;
-            }
+                sql,
+                new MapSqlParameterSource("domainName", domainName),
+                (rs, rowNum) -> {
+                    SavedCustomerSearch search = new SavedCustomerSearch();
+                    search.setId(rs.getLong("id"));
+                    search.setDomainName(rs.getString("domainName"));
+                    search.setName(rs.getString("name"));
+                    search.setQuery(rs.getString("query"));
+                    search.setCustomerNo(rs.getString("customerNo"));
+                    search.setTypeFilter(rs.getString("typeFilter"));
+                    search.setStatusFilter(rs.getString("statusFilter"));
+                    return search;
+                }
         );
     }
 
@@ -61,11 +62,11 @@ public class SavedCustomerSearchRepository
             """;
 
         Integer count = jdbcTemplate.queryForObject(
-            sql,
-            new MapSqlParameterSource()
-                .addValue("domainName", domainName)
-                .addValue("name", name),
-            Integer.class
+                sql,
+                new MapSqlParameterSource()
+                        .addValue("domainName", domainName)
+                        .addValue("name", name),
+                Integer.class
         );
 
         return count != null && count > 0;
@@ -109,40 +110,41 @@ public class SavedCustomerSearchRepository
 
         jdbcTemplate.update(sql, toParams(request));
     }
+
     public void deleteById(Long id)
-{
-    String sql = """
-        delete from saved_customer_search
-        where id = :id
-        """;
+    {
+        String sql = """
+            delete from saved_customer_search
+            where id = :id
+            """;
 
-    jdbcTemplate.update(sql, new MapSqlParameterSource("id", id));
-}
+        jdbcTemplate.update(sql, new MapSqlParameterSource("id", id));
+    }
 
-public void updateName(Long id, String newName)
-{
-    String sql = """
-        update saved_customer_search
-        set name = :name
-        where id = :id
-        """;
+    public void updateName(Long id, String newName)
+    {
+        String sql = """
+            update saved_customer_search
+            set name = :name
+            where id = :id
+            """;
 
-    jdbcTemplate.update(
-        sql,
-        new MapSqlParameterSource()
-            .addValue("id", id)
-            .addValue("name", newName)
-    );
-}
+        jdbcTemplate.update(
+                sql,
+                new MapSqlParameterSource()
+                        .addValue("id", id)
+                        .addValue("name", newName)
+        );
+    }
 
     private MapSqlParameterSource toParams(SaveCustomerSearchRequest request)
     {
         return new MapSqlParameterSource()
-            .addValue("domainName", request.getDomainName())
-            .addValue("name", request.getName())
-            .addValue("query", request.getQuery())
-            .addValue("customerNo", request.getCustomerNo())
-            .addValue("typeFilter", request.getTypeFilter())
-            .addValue("statusFilter", request.getStatusFilter());
+                .addValue("domainName", request.getDomainName())
+                .addValue("name", request.getName())
+                .addValue("query", request.getQuery())
+                .addValue("customerNo", request.getCustomerNo())
+                .addValue("typeFilter", request.getTypeFilter())
+                .addValue("statusFilter", request.getStatusFilter());
     }
 }

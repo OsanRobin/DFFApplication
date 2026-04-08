@@ -1,6 +1,6 @@
-package fenego.app.dto;
+package fenego.app.jpa;
 
-public class CustomerAddressDTO
+public class CustomerAddress
 {
     private String id;
     private String addressName;
