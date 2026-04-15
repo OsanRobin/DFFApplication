@@ -2,7 +2,6 @@ package fenego.app.repository;
 
 import fenego.app.dto.SegmentLogItemDTO;
 import fenego.app.jpa.Segment;
-
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 

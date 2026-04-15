@@ -19,6 +19,12 @@ export interface LogItem {
   timestamp: string;
 }
 
+export interface CreateSegmentRequest {
+  name: string;
+  description: string;
+  rule: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -44,14 +50,8 @@ export class SegmentsApiService {
       { rule }
     );
   }
-  createSegment(data: {
-  name: string;
-  description: string;
-  rule: string;
-}): Observable<{ success: boolean; id: string }> {
-  return this.http.post<{ success: boolean; id: string }>(
-    this.baseUrl,
-    data
-  );
-}
+
+  createSegment(data: CreateSegmentRequest): Observable<{ success: boolean; id: string }> {
+    return this.http.post<{ success: boolean; id: string }>(this.baseUrl, data);
+  }
 }

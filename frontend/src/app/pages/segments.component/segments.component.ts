@@ -25,14 +25,16 @@ export class SegmentsComponent implements OnInit {
   editingSegmentId: string | null = null;
   editedRule = '';
   savingRule = false;
-creating= false;
-newSegment = {
-  name: '',
-  description: '',
-  rule: ''
-};
 
-savingNewSegment = false;
+  creating = false;
+  newSegment = {
+    name: '',
+    description: '',
+    rule: ''
+  };
+
+  savingNewSegment = false;
+
   ngOnInit(): void {
     this.loadSegments();
     this.loadLogs();
@@ -125,38 +127,50 @@ savingNewSegment = false;
   }
 
   onCreateSegment(): void {
-  this.creating = true;
-}
-cancelCreate(): void {
-  this.creating = false;
-  this.newSegment = { name: '', description: '', rule: '' };
-}
-saveNewSegment(): void {
-  if (!this.newSegment.name) {
-    this.errorMessage = 'Name is required.';
-    return;
+    this.errorMessage = '';
+    this.creating = true;
   }
 
-  this.savingNewSegment = true;
+  cancelCreate(): void {
+    this.creating = false;
+    this.savingNewSegment = false;
+    this.newSegment = { name: '', description: '', rule: '' };
+    this.errorMessage = '';
+  }
 
-  this.segmentsApi.createSegment(this.newSegment).subscribe({
-    next: () => {
-      this.creating = false;
-      this.savingNewSegment = false;
-      this.newSegment = { name: '', description: '', rule: '' };
+  saveNewSegment(): void {
+    this.errorMessage = '';
 
-      this.loadSegments();
-      this.loadLogs();
-    },
-    error: (err) => {
-      console.error(err);
-      this.errorMessage = 'Failed to create segment.';
-      this.savingNewSegment = false;
+    if (!this.newSegment.name.trim()) {
+      this.errorMessage = 'Name is required.';
+      return;
     }
-  });
-}
 
-  onViewCustomers(_segment: SegmentCard): void {}
+    this.savingNewSegment = true;
+
+    this.segmentsApi.createSegment({
+      name: this.newSegment.name.trim(),
+      description: this.newSegment.description.trim(),
+      rule: this.newSegment.rule.trim()
+    }).subscribe({
+      next: () => {
+        this.creating = false;
+        this.savingNewSegment = false;
+        this.newSegment = { name: '', description: '', rule: '' };
+        this.loadSegments();
+        this.loadLogs();
+      },
+      error: (err) => {
+        console.error(err);
+        this.errorMessage = 'Failed to create segment.';
+        this.savingNewSegment = false;
+      }
+    });
+  }
+
+  onViewCustomers(_segment: SegmentCard): void {
+    // later invullen
+  }
 
   onEditRules(segment: SegmentCard): void {
     this.startEditRules(segment);
