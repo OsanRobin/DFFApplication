@@ -3,7 +3,7 @@ package fenego.app.service;
 import fenego.app.dto.BulkActionRequest;
 import fenego.app.dto.BulkActionResponse;
 import fenego.app.jpa.AttributeOption;
-import fenego.app.jpa.SegmentOption;
+
 
 import org.springframework.stereotype.Service;
 
@@ -23,14 +23,7 @@ public class BulkActionService
         );
     }
 
-    public List<SegmentOption> getAvailableSegments()
-    {
-        return List.of(
-                new SegmentOption("B2B", "B2B"),
-                new SegmentOption("VIP", "VIP"),
-                new SegmentOption("WHOLESALE", "Wholesale")
-        );
-    }
+  
 
     public BulkActionResponse executeBulkAction(BulkActionRequest request)
     {

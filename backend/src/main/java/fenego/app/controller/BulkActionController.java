@@ -1,9 +1,7 @@
 package fenego.app.controller;
-
 import fenego.app.dto.BulkActionRequest;
 import fenego.app.dto.BulkActionResponse;
 import fenego.app.jpa.AttributeOption;
-import fenego.app.jpa.SegmentOption;
 import fenego.app.service.BulkActionService;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,11 +25,7 @@ public class BulkActionController
         return bulkActionService.getAvailableAttributes();
     }
 
-    @GetMapping("/segments")
-    public List<SegmentOption> getAvailableSegments()
-    {
-        return bulkActionService.getAvailableSegments();
-    }
+  
 
     @PostMapping
     public BulkActionResponse executeBulkAction(@RequestBody BulkActionRequest request)
