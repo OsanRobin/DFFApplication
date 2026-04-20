@@ -2,6 +2,9 @@ package fenego.app.dto;
 
 import fenego.app.jpa.CustomerAddress;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CustomerDetailResponse
 {
     private String customerNo;
@@ -11,6 +14,7 @@ public class CustomerDetailResponse
     private String type;
     private CustomerAddress preferredInvoiceToAddress;
     private CustomerAddress preferredShipToAddress;
+    private List<CustomerSegmentDTO> segments = new ArrayList<>();
 
     public String getCustomerNo()
     {
@@ -80,5 +84,15 @@ public class CustomerDetailResponse
     public void setPreferredShipToAddress(CustomerAddress preferredShipToAddress)
     {
         this.preferredShipToAddress = preferredShipToAddress;
+    }
+
+    public List<CustomerSegmentDTO> getSegments()
+    {
+        return segments;
+    }
+
+    public void setSegments(List<CustomerSegmentDTO> segments)
+    {
+        this.segments = segments;
     }
 }

@@ -1,5 +1,6 @@
 package fenego.app.intershop;
 import fenego.app.dto.CustomerDetailResponse;
+import fenego.app.dto.CustomerSegmentDTO;
 import fenego.app.dto.IntershopLoginResult;
 import fenego.app.jpa.CustomerAddress;
 
@@ -10,7 +11,9 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -247,5 +250,92 @@ public class IntershopClient
         }
     }
 
+
+public List<CustomerSegmentDTO> getAllCustomerSegments(String authenticationToken)
+{
+    try
+    {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("authentication-token", authenticationToken);
+        headers.set("Accept", customerSegmentsAccept);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<Map> response = restTemplate.exchange(
+                customerSegmentsUrl,
+                HttpMethod.GET,
+                entity,
+                Map.class
+        );
+
+        Map body = response.getBody();
+        if (body == null)
+        {
+            return List.of();
+        }
+
+        Object dataObject = body.get("data");
+        if (!(dataObject instanceof List<?> dataList))
+        {
+            return List.of();
+        }
+
+        List<CustomerSegmentDTO> result = new ArrayList<>();
+
+        for (Object item : dataList)
+        {
+            if (!(item instanceof Map<?, ?> entry))
+            {
+                continue;
+            }
+
+            CustomerSegmentDTO dto = new CustomerSegmentDTO();
+            dto.setId(stringValue(entry.get("id")));
+
+            Object data = entry.get("data");
+            if (data instanceof Map<?, ?> dataMap)
+            {
+                dto.setName(stringValue(dataMap.get("name")));
+                dto.setDescription(stringValue(dataMap.get("description")));
+            }
+
+            if (dto.getName() == null || dto.getName().isBlank())
+            {
+                dto.setName(dto.getId());
+            }
+
+            result.add(dto);
+        }
+
+        return result;
+    }
+    catch (HttpStatusCodeException ex)
+    {
+        System.err.println("Intershop getAllCustomerSegments failed: "
+                + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString());
+
+        if (ex.getStatusCode().value() == 403)
+        {
+            return List.of();
+        }
+
+        throw new RuntimeException(
+                "Fetch all customer segments failed: "
+                        + ex.getStatusCode().value() + " - "
+                        + ex.getResponseBodyAsString(),
+                ex
+        );
+    }
+    catch (Exception ex)
+    {
+        System.err.println("Intershop getAllCustomerSegments unexpected error: " + ex.getMessage());
+        return List.of();
+    }
+}
+
+private String stringValue(Object value)
+{
+    return value == null ? null : String.valueOf(value);
+}
     
 }

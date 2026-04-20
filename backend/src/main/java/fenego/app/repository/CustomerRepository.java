@@ -4,6 +4,7 @@ import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerUserDTO;
 import fenego.app.jpa.Customer;
 import fenego.app.jpa.CustomerAddress;
+import fenego.app.jpa.CustomerSegmentAssignment;
 
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -240,4 +241,51 @@ public class CustomerRepository
             return dto;
         });
     }
+    public List<String> findSegmentIdsByCustomerNo(String customerNo)
+{
+    String sql = """
+        select distinct
+            ugua.USERGROUPID as segmentId
+        from CUSTOMER c
+        join CUSTOMERPROFILEASSIGNMENT cpa
+            on c.UUID = cpa.CUSTOMERID
+        join USERGROUPUSERASSIGNMENT ugua
+            on ugua.USERID = cpa.PROFILEID
+        where c.CUSTOMERNO = :customerNo
+        order by ugua.USERGROUPID
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("customerNo", customerNo);
+
+    return jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("segmentId"));
+}
+
+public List<CustomerSegmentAssignment> findCustomerSegmentAssignmentsByDomain(String domainName)
+{
+    String sql = """
+        select distinct
+            c.CUSTOMERNO as customerNo,
+            ugua.USERGROUPID as segmentId
+        from DOMAININFORMATION di
+        join CUSTOMER c
+            on di.DOMAINID = c.DOMAINID
+        join CUSTOMERPROFILEASSIGNMENT cpa
+            on c.UUID = cpa.CUSTOMERID
+        join USERGROUPUSERASSIGNMENT ugua
+            on ugua.USERID = cpa.PROFILEID
+        where di.DOMAINNAME = :domainName
+        order by c.CUSTOMERNO, ugua.USERGROUPID
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("domainName", domainName);
+
+    return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        CustomerSegmentAssignment assignment = new CustomerSegmentAssignment();
+        assignment.setCustomerNo(rs.getString("customerNo"));
+        assignment.setSegmentId(rs.getString("segmentId"));
+        return assignment;
+    });
+}
 }

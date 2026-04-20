@@ -138,7 +138,9 @@
                   <th>Type</th>
                   <th>Status</th>
                   <th>Locations</th>
+                  <th>Segments</th>
                   <th class="col-actions"></th>
+                  
                 </tr>
               </thead>
 
@@ -179,6 +181,7 @@
                     </td>
 
                     <td>{{ row.locations }}</td>
+                    <td>{{ row.segment }}</td>
 
                     <td class="col-actions">
                       <a class="link" [routerLink]="['/customers', row.id]">

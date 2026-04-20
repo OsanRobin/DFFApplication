@@ -48,6 +48,7 @@ export interface CustomerDetailResponse {
   type: string;
   preferredInvoiceToAddress: CustomerAddressDto;
   preferredShipToAddress: CustomerAddressDto;
+  segments: CustomerSegmentDto[];
 }
 
 export interface CustomerUserDto {
@@ -97,6 +98,11 @@ export interface SaveCustomerSearchRequest {
   typeFilter: string;
   statusFilter: string;
   overwrite: boolean;
+}
+export interface CustomerSegmentDto {
+  id: string;
+  name: string | null;
+  description: string | null;
 }
 
 @Injectable({

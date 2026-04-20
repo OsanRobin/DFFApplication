@@ -232,21 +232,45 @@
         </section>
       }
 
-      @if (activeTab === 'segments') {
+           @if (activeTab === 'segments') {
         <section class="card panel wide">
           <div class="panel-title">Segments</div>
 
-          @if (customer) {
+          @if (customer?.segments?.length) {
             <div class="chips">
-              <span class="chip">{{ customer.customerType }}</span>
-              <span class="chip">{{ customer.budgetPriceType }}</span>
-              <span class="chip">{{ customer.type }}</span>
+              @for (segment of customer!.segments; track segment.id) {
+                <span class="chip" [title]="segment.description || segment.id">
+                  {{ segment.name || segment.id }}
+                </span>
+              }
+            </div>
+
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (segment of customer!.segments; track segment.id) {
+                    <tr>
+                      <td>{{ segment.id }}</td>
+                      <td>{{ segment.name || '-' }}</td>
+                      <td>{{ segment.description || '-' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
           } @else {
-            <div class="empty-state">Segments are not available yet.</div>
+            <div class="empty-state">No segments found for this customer.</div>
           }
         </section>
       }
+
     }
   </main>
 </div>
