@@ -5,6 +5,7 @@ public class Customer
     private String id;
     private String customerNo;
     private String customerType;
+    private String type;
     private String displayName;
     private String companyName;
     private String email;
@@ -39,6 +40,16 @@ public class Customer
     public void setCustomerType(String customerType)
     {
         this.customerType = customerType;
+    }
+
+    public String getType()
+    {
+        return type;
+    }
+
+    public void setType(String type)
+    {
+        this.type = type;
     }
 
     public String getDisplayName()

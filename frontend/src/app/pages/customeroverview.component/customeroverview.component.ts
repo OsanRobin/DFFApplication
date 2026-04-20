@@ -191,36 +191,20 @@ export class CustomeroverviewComponent {
     this.onApplyFilters();
   }
 
-  mapCustomerToRow(customer: CustomerDto): CustomerRow {
-    return {
-      id: customer.id,
-      name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
-      customerNo: customer.customerNo ?? '',
-      type: this.mapCustomerType(customer.customerType),
-      segment: customer.segment ?? '-',
-      status: customer.active ? 'Active' : 'Inactive',
-      locations: 1,
-      level: 0
-    };
-  }
+ mapCustomerToRow(customer: CustomerDto): CustomerRow {
+  return {
+    id: customer.id,
+    name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
+    customerNo: customer.customerNo ?? '',
+    type: customer.type ?? 'Customer',
+    segment: customer.segment ?? '-',
+    status: customer.active ? 'Active' : 'Inactive',
+    locations: 1,
+    level: 0
+  };
+}
 
-  mapCustomerType(customerType: string): string {
-    if (!customerType) {
-      return 'Customer';
-    }
-
-    const normalized = customerType.toLowerCase();
-
-    if (normalized.includes('smb') || normalized.includes('business')) {
-      return 'Cluster';
-    }
-
-    if (normalized.includes('private')) {
-      return 'Subcustomer';
-    }
-
-    return 'Customer';
-  }
+ 
 
   visibleRows(): CustomerRow[] {
     const q = this.query.trim().toLowerCase();

@@ -18,7 +18,11 @@
 
         @for (savedSearch of savedSearches; track savedSearch.id) {
           <div class="saved-row">
-            <button class="saved" type="button" (click)="applySavedSearch(savedSearch)">
+            <button
+              class="saved"
+              type="button"
+              (click)="applySavedSearch(savedSearch)"
+            >
               <span class="caret">›</span>
               <span class="saved-name">{{ savedSearch.name }}</span>
             </button>
@@ -48,20 +52,30 @@
         <div class="filters-head">
           <div>
             <div class="filters-title">Filter customers</div>
-            <div class="filters-meta">Search and refine your customer list</div>
+            <div class="filters-meta">
+              Search and refine your customer list
+            </div>
           </div>
 
-          <button class="btn-outline" type="button" (click)="saveCurrentSearch()">
+          <button
+            class="btn-outline"
+            type="button"
+            (click)="saveCurrentSearch()"
+          >
             Save Search
           </button>
         </div>
 
         @if (saveSearchSuccess) {
-          <div class="state success">{{ saveSearchSuccess }}</div>
+          <div class="state success">
+            {{ saveSearchSuccess }}
+          </div>
         }
 
         @if (saveSearchError) {
-          <div class="state error">{{ saveSearchError }}</div>
+          <div class="state error">
+            {{ saveSearchError }}
+          </div>
         }
 
         <div class="toolbar">
@@ -87,17 +101,23 @@
 
           <div class="field">
             <label class="field-label">Type</label>
-            <select class="select" [(ngModel)]="typeFilter">
+            <select
+              class="select"
+              [(ngModel)]="typeFilter"
+            >
               <option value="">All types</option>
-              <option value="Cluster">Cluster</option>
-              <option value="Subcustomer">Subcustomer</option>
               <option value="Customer">Customer</option>
+              <option value="ClusterCustomer">ClusterCustomer</option>
+              <option value="KSWCustomer">KSWCustomer</option>
             </select>
           </div>
 
           <div class="field">
             <label class="field-label">Status</label>
-            <select class="select" [(ngModel)]="statusFilter">
+            <select
+              class="select"
+              [(ngModel)]="statusFilter"
+            >
               <option value="">All statuses</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
@@ -105,11 +125,19 @@
           </div>
 
           <div class="toolbar-actions">
-            <button class="btn-primary" type="button" (click)="onApplyFilters()">
+            <button
+              class="btn-primary"
+              type="button"
+              (click)="onApplyFilters()"
+            >
               Apply
             </button>
 
-            <button class="btn-outline" type="button" (click)="onClearFilters()">
+            <button
+              class="btn-outline"
+              type="button"
+              (click)="onClearFilters()"
+            >
               Clear
             </button>
           </div>
@@ -118,11 +146,15 @@
         <div class="divider"></div>
 
         @if (loading) {
-          <div class="state">Loading customers...</div>
+          <div class="state">
+            Loading customers...
+          </div>
         }
 
         @if (error) {
-          <div class="state error">{{ error }}</div>
+          <div class="state error">
+            {{ error }}
+          </div>
         }
 
         @if (!loading && !error) {
@@ -131,8 +163,13 @@
               <thead>
                 <tr>
                   <th class="col-check">
-                    <input type="checkbox" [checked]="allSelected" (change)="toggleAll()" />
+                    <input
+                      type="checkbox"
+                      [checked]="allSelected"
+                      (change)="toggleAll()"
+                    />
                   </th>
+
                   <th>Customer Name</th>
                   <th>Customer No</th>
                   <th>Type</th>
@@ -140,7 +177,6 @@
                   <th>Locations</th>
                   <th>Segments</th>
                   <th class="col-actions"></th>
-                  
                 </tr>
               </thead>
 
@@ -156,19 +192,31 @@
                     </td>
 
                     <td>
-                      <div class="name-cell" [class.sub]="row.level === 1">
+                      <div
+                        class="name-cell"
+                        [class.sub]="row.level === 1"
+                      >
                         @if (row.level === 1) {
-                          <span class="tree" aria-hidden="true">
+                          <span
+                            class="tree"
+                            aria-hidden="true"
+                          >
                             <span class="tree-v"></span>
                             <span class="tree-h"></span>
                           </span>
                         }
-                        <span class="name">{{ row.name }}</span>
+
+                        <span class="name">
+                          {{ row.name }}
+                        </span>
                       </div>
                     </td>
 
                     <td>{{ row.customerNo }}</td>
-                    <td>{{ row.type }}</td>
+
+                    <td>
+                      {{ row.type }}
+                    </td>
 
                     <td>
                       <span
@@ -181,11 +229,23 @@
                     </td>
 
                     <td>{{ row.locations }}</td>
-                    <td>{{ row.segment }}</td>
+
+                    <td>
+                      {{ row.segment }}
+                    </td>
 
                     <td class="col-actions">
-                      <a class="link" [routerLink]="['/customers', row.id]">
-                        View Details <span class="chev-r" aria-hidden="true">›</span>
+                      <a
+                        class="link"
+                        [routerLink]="['/customers', row.id]"
+                      >
+                        View Details
+                        <span
+                          class="chev-r"
+                          aria-hidden="true"
+                        >
+                          ›
+                        </span>
                       </a>
                     </td>
                   </tr>
@@ -199,19 +259,34 @@
       </section>
     </div>
 
-    <div class="bulk" [class.show]="selectedIds.size > 0">
+    <div
+      class="bulk"
+      [class.show]="selectedIds.size > 0"
+    >
       <div class="bulk-inner">
         <div class="bulk-left">
-          <div class="bulk-count">{{ selectedIds.size }} customers selected</div>
+          <div class="bulk-count">
+            {{ selectedIds.size }} customers selected
+          </div>
 
           <div class="bulk-actions">
-            <button class="btn-white" type="button" (click)="goToBulkActions()">
+            <button
+              class="btn-white"
+              type="button"
+              (click)="goToBulkActions()"
+            >
               Go to Bulk Actions
             </button>
           </div>
         </div>
 
-        <button class="bulk-clear" type="button" (click)="clearSelection()">Clear Selection</button>
+        <button
+          class="bulk-clear"
+          type="button"
+          (click)="clearSelection()"
+        >
+          Clear Selection
+        </button>
       </div>
     </div>
   </main>

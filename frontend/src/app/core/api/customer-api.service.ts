@@ -6,6 +6,7 @@ export interface CustomerDto {
   id: string;
   customerNo: string;
   customerType: string;
+  type: string;
   displayName: string;
   companyName: string | null;
   email: string | null;
