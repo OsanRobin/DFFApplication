@@ -11,6 +11,7 @@ public class Customer
     private String email;
     private String segment;
     private boolean active;
+    private int locations;
 
     public String getId()
     {
@@ -100,5 +101,15 @@ public class Customer
     public void setActive(boolean active)
     {
         this.active = active;
+    }
+
+    public int getLocations()
+    {
+        return locations;
+    }
+
+    public void setLocations(int locations)
+    {
+        this.locations = locations;
     }
 }

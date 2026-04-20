@@ -203,18 +203,18 @@ export class CustomeroverviewComponent {
     this.onApplyFilters();
   }
 
-  mapCustomerToRow(customer: CustomerDto): CustomerRow {
-    return {
-      id: customer.id,
-      name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
-      customerNo: customer.customerNo ?? '',
-      type: customer.type ?? 'Customer',
-      segment: customer.segment ?? '-',
-      status: customer.active ? 'Active' : 'Inactive',
-      locations: 1,
-      level: 0
-    };
-  }
+ mapCustomerToRow(customer: CustomerDto): CustomerRow {
+  return {
+    id: customer.id,
+    name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
+    customerNo: customer.customerNo ?? '',
+    type: customer.type ?? 'Customer',
+    segment: customer.segment ?? '-',
+    status: customer.active ? 'Active' : 'Inactive',
+    locations: customer.locations ?? 0,
+    level: 0
+  };
+}
 
   visibleRows(): CustomerRow[] {
     return this.rows;

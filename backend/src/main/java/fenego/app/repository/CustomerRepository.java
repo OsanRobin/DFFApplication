@@ -33,52 +33,88 @@ public class CustomerRepository
             String segment)
     {
         String sql = """
-            select distinct
-                c.CUSTOMERNO as id,
-                c.CUSTOMERNO as customerNo,
-                c.CUSTOMERTYPEID as customerType,
-                coalesce(typeAv.STRINGVALUE, 'Customer') as type,
-                coalesce(ca.COMPANYNAME1, ca.ADDRESSNAME, c.CUSTOMERNO) as displayName,
-                coalesce(ca.COMPANYNAME1, ca.ADDRESSNAME, c.CUSTOMERNO) as companyName,
-                ca.EMAIL as email,
-                cast(1 as bit) as active
-            from DOMAININFORMATION di
-            join CUSTOMER c
-                on di.DOMAINID = c.DOMAINID
-            outer apply (
-                select top 1 *
-                from CUSTOMERADDRESS ca
-                where ca.CUSTOMERID = c.UUID
-            ) ca
-            outer apply (
-                select top 1 av.STRINGVALUE
-                from CUSTOMER_AV av
-                where av.OWNERID = c.UUID
-                  and av.NAME = 'CustomerType'
-                order by av.LOCALIZEDFLAG asc, av.LOCALEID asc
-            ) typeAv
-            left join CUSTOMERPROFILEASSIGNMENT cpa
-                on c.UUID = cpa.CUSTOMERID
-            left join USERGROUPUSERASSIGNMENT ugua
-                on ugua.USERID = cpa.PROFILEID
-            where di.DOMAINNAME = :domainName
-              and (:customerNo is null or c.CUSTOMERNO like '%' + :customerNo + '%')
-              and (
-                    :query is null
-                    or c.CUSTOMERNO like '%' + :query + '%'
-                    or coalesce(ca.COMPANYNAME1, ca.ADDRESSNAME, c.CUSTOMERNO) like '%' + :query + '%'
-                  )
-              and (:type is null or coalesce(typeAv.STRINGVALUE, 'Customer') = :type)
-              and (
-                    :status is null
-                    or (:status = 'Active' and 1 = 1)
-                    or (:status = 'Inactive' and 1 = 0)
-                  )
-              and (
-                    :segment is null
-                    or lower(ugua.USERGROUPID) like '%' + lower(:segment) + '%'
-                  )
-            order by c.CUSTOMERNO
+            select
+                x.id,
+                x.customerNo,
+                x.customerType,
+                x.type,
+                x.displayName,
+                x.companyName,
+                x.email,
+                x.active,
+                x.locations
+            from (
+                select
+                    c.CUSTOMERNO as id,
+                    c.CUSTOMERNO as customerNo,
+                    c.CUSTOMERTYPEID as customerType,
+                    coalesce(typeAv.STRINGVALUE, 'Customer') as type,
+                    coalesce(mainAddr.COMPANYNAME1, mainAddr.ADDRESSNAME, c.CUSTOMERNO) as displayName,
+                    coalesce(mainAddr.COMPANYNAME1, mainAddr.ADDRESSNAME, c.CUSTOMERNO) as companyName,
+                    mainAddr.EMAIL as email,
+                    case
+                        when c.APPROVALSTATUS = 1 then cast(1 as bit)
+                        else cast(0 as bit)
+                    end as active,
+                    count(distinct addrCount.ADDRESSID) as locations,
+                    row_number() over (
+                        partition by c.UUID
+                        order by c.CUSTOMERNO
+                    ) as rn
+                from DOMAININFORMATION di
+                join CUSTOMER c
+                    on di.DOMAINID = c.DOMAINID
+                outer apply (
+                    select top 1 *
+                    from CUSTOMERADDRESS ca
+                    where ca.CUSTOMERID = c.UUID
+                    order by ca.ADDRESSID
+                ) mainAddr
+                outer apply (
+                    select top 1 av.STRINGVALUE
+                    from CUSTOMER_AV av
+                    where av.OWNERID = c.UUID
+                      and av.NAME = 'CustomerType'
+                    order by av.LOCALIZEDFLAG asc, av.LOCALEID asc
+                ) typeAv
+                left join CUSTOMERADDRESS addrCount
+                    on addrCount.CUSTOMERID = c.UUID
+                where di.DOMAINNAME = :domainName
+                  and (:customerNo is null or c.CUSTOMERNO like '%' + :customerNo + '%')
+                  and (
+                        :query is null
+                        or c.CUSTOMERNO like '%' + :query + '%'
+                        or coalesce(mainAddr.COMPANYNAME1, mainAddr.ADDRESSNAME, c.CUSTOMERNO) like '%' + :query + '%'
+                      )
+                  and (:type is null or coalesce(typeAv.STRINGVALUE, 'Customer') = :type)
+                  and (
+                        :status is null
+                        or (:status = 'Active' and c.APPROVALSTATUS = 1)
+                        or (:status = 'Inactive' and c.APPROVALSTATUS <> 1)
+                      )
+                  and (
+                        :segment is null
+                        or exists (
+                            select 1
+                            from CUSTOMERPROFILEASSIGNMENT cpa2
+                            join USERGROUPUSERASSIGNMENT ugua2
+                                on ugua2.USERID = cpa2.PROFILEID
+                            where cpa2.CUSTOMERID = c.UUID
+                              and lower(ugua2.USERGROUPID) like '%' + lower(:segment) + '%'
+                        )
+                      )
+                group by
+                    c.UUID,
+                    c.CUSTOMERNO,
+                    c.CUSTOMERTYPEID,
+                    c.APPROVALSTATUS,
+                    typeAv.STRINGVALUE,
+                    mainAddr.COMPANYNAME1,
+                    mainAddr.ADDRESSNAME,
+                    mainAddr.EMAIL
+            ) x
+            where x.rn = 1
+            order by x.customerNo
             offset :offset rows fetch next :limit rows only
             """;
 
@@ -102,6 +138,7 @@ public class CustomerRepository
             customer.setCompanyName(rs.getString("companyName"));
             customer.setEmail(rs.getString("email"));
             customer.setActive(rs.getBoolean("active"));
+            customer.setLocations(rs.getInt("locations"));
             return customer;
         });
     }
@@ -115,42 +152,50 @@ public class CustomerRepository
             String segment)
     {
         String sql = """
-            select count(distinct c.UUID)
-            from DOMAININFORMATION di
-            join CUSTOMER c
-                on di.DOMAINID = c.DOMAINID
-            outer apply (
-                select top 1 *
-                from CUSTOMERADDRESS ca
-                where ca.CUSTOMERID = c.UUID
-            ) ca
-            outer apply (
-                select top 1 av.STRINGVALUE
-                from CUSTOMER_AV av
-                where av.OWNERID = c.UUID
-                  and av.NAME = 'CustomerType'
-                order by av.LOCALIZEDFLAG asc, av.LOCALEID asc
-            ) typeAv
-            left join CUSTOMERPROFILEASSIGNMENT cpa
-                on c.UUID = cpa.CUSTOMERID
-            left join USERGROUPUSERASSIGNMENT ugua
-                on ugua.USERID = cpa.PROFILEID
-            where di.DOMAINNAME = :domainName
+            select count(*)
+            from CUSTOMER c
+            where exists (
+                select 1
+                from DOMAININFORMATION di
+                where di.DOMAINID = c.DOMAINID
+                  and di.DOMAINNAME = :domainName
+            )
               and (:customerNo is null or c.CUSTOMERNO like '%' + :customerNo + '%')
               and (
                     :query is null
                     or c.CUSTOMERNO like '%' + :query + '%'
-                    or coalesce(ca.COMPANYNAME1, ca.ADDRESSNAME, c.CUSTOMERNO) like '%' + :query + '%'
+                    or exists (
+                        select 1
+                        from CUSTOMERADDRESS ca
+                        where ca.CUSTOMERID = c.UUID
+                          and coalesce(ca.COMPANYNAME1, ca.ADDRESSNAME, c.CUSTOMERNO) like '%' + :query + '%'
+                    )
                   )
-              and (:type is null or coalesce(typeAv.STRINGVALUE, 'Customer') = :type)
+              and (
+                    :type is null
+                    or coalesce((
+                        select top 1 av.STRINGVALUE
+                        from CUSTOMER_AV av
+                        where av.OWNERID = c.UUID
+                          and av.NAME = 'CustomerType'
+                        order by av.LOCALIZEDFLAG asc, av.LOCALEID asc
+                    ), 'Customer') = :type
+                  )
               and (
                     :status is null
-                    or (:status = 'Active' and 1 = 1)
-                    or (:status = 'Inactive' and 1 = 0)
+                    or (:status = 'Active' and c.APPROVALSTATUS = 1)
+                    or (:status = 'Inactive' and c.APPROVALSTATUS <> 1)
                   )
               and (
                     :segment is null
-                    or lower(ugua.USERGROUPID) like '%' + lower(:segment) + '%'
+                    or exists (
+                        select 1
+                        from CUSTOMERPROFILEASSIGNMENT cpa
+                        join USERGROUPUSERASSIGNMENT ugua
+                            on ugua.USERID = cpa.PROFILEID
+                        where cpa.CUSTOMERID = c.UUID
+                          and lower(ugua.USERGROUPID) like '%' + lower(:segment) + '%'
+                    )
                   )
             """;
 

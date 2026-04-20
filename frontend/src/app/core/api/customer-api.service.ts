@@ -12,6 +12,7 @@ export interface CustomerDto {
   email: string | null;
   segment: string | null;
   active: boolean;
+  locations: number;
 }
 
 export interface CustomerListResponse {
@@ -102,7 +103,6 @@ export interface SaveCustomerSearchRequest {
   segmentFilter: string;
   overwrite: boolean;
 }
-
 export interface CustomerSegmentDto {
   id: string;
   name: string | null;
