@@ -12,7 +12,6 @@ import {
 import { AuthService } from '../../core/auth/auth.service';
 import { BulkSelectionService, SelectedCustomerRow } from '../../core/api/bulk-selection.service';
 
-
 type Status = 'Active' | 'Inactive';
 
 type CustomerRow = {
@@ -56,6 +55,10 @@ export class CustomeroverviewComponent {
   rows: CustomerRow[] = [];
   savedSearches: SavedCustomerSearchDto[] = [];
 
+  offset = 0;
+  limit = 50;
+  totalCount = 0;
+
   constructor() {
     this.loadCustomers();
     this.loadSavedSearches();
@@ -73,30 +76,34 @@ export class CustomeroverviewComponent {
     this.error = '';
 
     this.customerApi.getCustomers(
-      authenticationToken,
-      this.domainName,
-      0,
-      100,
-      this.customerNoFilter
-    ).subscribe({
-      next: (response) => {
-        this.rows = (response.data ?? []).map(customer => this.mapCustomerToRow(customer));
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error(err);
+  authenticationToken,
+  this.domainName,
+  this.offset,
+  this.limit,
+  this.customerNoFilter,
+  this.query,
+  this.typeFilter,
+  this.statusFilter
+).subscribe({
+  next: (response) => {
+    this.rows = (response.data ?? []).map(customer => this.mapCustomerToRow(customer));
+    this.totalCount = response.count ?? 0;
+    this.loading = false;
+  },
+  error: (err) => {
+    console.error(err);
 
-        if (err.status === 401 || err.status === 403) {
-          this.error = 'Your session expired. Please log in again.';
-          this.loading = false;
-          this.router.navigate(['/login']);
-          return;
-        }
+    if (err.status === 401 || err.status === 403) {
+      this.error = 'Your session expired. Please log in again.';
+      this.loading = false;
+      this.router.navigate(['/login']);
+      return;
+    }
 
-        this.error = 'Failed to load customers.';
-        this.loading = false;
-      }
-    });
+    this.error = 'Failed to load customers.';
+    this.loading = false;
+  }
+});
   }
 
   loadSavedSearches(): void {
@@ -187,45 +194,30 @@ export class CustomeroverviewComponent {
     this.customerNoFilter = savedSearch.customerNo ?? '';
     this.typeFilter = savedSearch.typeFilter ?? '';
     this.statusFilter = savedSearch.statusFilter ?? '';
+    this.offset = 0;
 
     this.onApplyFilters();
   }
 
- mapCustomerToRow(customer: CustomerDto): CustomerRow {
-  return {
-    id: customer.id,
-    name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
-    customerNo: customer.customerNo ?? '',
-    type: customer.type ?? 'Customer',
-    segment: customer.segment ?? '-',
-    status: customer.active ? 'Active' : 'Inactive',
-    locations: 1,
-    level: 0
-  };
-}
-
- 
-
-  visibleRows(): CustomerRow[] {
-    const q = this.query.trim().toLowerCase();
-
-    return this.rows.filter((row) => {
-      const matchesQuery =
-        !q ||
-        row.name.toLowerCase().includes(q) ||
-        row.customerNo.toLowerCase().includes(q);
-
-      const matchesType =
-        !this.typeFilter || row.type === this.typeFilter;
-
-      const matchesStatus =
-        !this.statusFilter || row.status === this.statusFilter;
-
-      return matchesQuery && matchesType && matchesStatus;
-    });
+  mapCustomerToRow(customer: CustomerDto): CustomerRow {
+    return {
+      id: customer.id,
+      name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
+      customerNo: customer.customerNo ?? '',
+      type: customer.type ?? 'Customer',
+      segment: customer.segment ?? '-',
+      status: customer.active ? 'Active' : 'Inactive',
+      locations: 1,
+      level: 0
+    };
   }
 
+ visibleRows(): CustomerRow[] {
+  return this.rows;
+}
+
   onApplyFilters(): void {
+    this.offset = 0;
     this.loadCustomers();
     this.clearSelection();
   }
@@ -237,6 +229,7 @@ export class CustomeroverviewComponent {
     this.statusFilter = '';
     this.saveSearchError = '';
     this.saveSearchSuccess = '';
+    this.offset = 0;
     this.loadCustomers();
     this.clearSelection();
   }
@@ -348,5 +341,43 @@ export class CustomeroverviewComponent {
         console.error(err);
       }
     });
+  }
+
+  previousPage(): void {
+    if (this.offset >= this.limit) {
+      this.offset -= this.limit;
+      this.loadCustomers();
+      this.clearSelection();
+    }
+  }
+
+  nextPage(): void {
+    if (this.offset + this.limit < this.totalCount) {
+      this.offset += this.limit;
+      this.loadCustomers();
+      this.clearSelection();
+    }
+  }
+
+  currentPage(): number {
+    return Math.floor(this.offset / this.limit) + 1;
+  }
+
+  totalPages(): number {
+    if (this.totalCount === 0) {
+      return 1;
+    }
+    return Math.ceil(this.totalCount / this.limit);
+  }
+
+  pageStart(): number {
+    if (this.totalCount === 0) {
+      return 0;
+    }
+    return this.offset + 1;
+  }
+
+  pageEnd(): number {
+    return Math.min(this.offset + this.limit, this.totalCount);
   }
 }

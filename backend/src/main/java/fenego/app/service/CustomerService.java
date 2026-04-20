@@ -30,65 +30,82 @@ public class CustomerService
         this.intershopClient = intershopClient;
     }
 
-    public CustomerListResponse getCustomers(String authenticationToken, String domainName, int offset, int limit, String customerNo, String email)
+    public CustomerListResponse getCustomers(
+        String authenticationToken,
+        String domainName,
+        int offset,
+        int limit,
+        String customerNo,
+        String query,
+        String type,
+        String status,
+        String email)
+{
+    List<Customer> customers = customerRepository.findCustomersByDomain(
+            domainName,
+            offset,
+            limit,
+            customerNo,
+            query,
+            type,
+            status
+    );
+
+    Map<String, CustomerSegmentDTO> tempSegmentById = new LinkedHashMap<>();
+
+    try
     {
-        List<Customer> customers = customerRepository.findCustomersByDomain(domainName, offset, limit, customerNo);
+        List<CustomerSegmentDTO> allSegments = intershopClient.getAllCustomerSegments(authenticationToken);
 
-        Map<String, CustomerSegmentDTO> tempSegmentById = new LinkedHashMap<>();
-
-        try
-        {
-            List<CustomerSegmentDTO> allSegments = intershopClient.getAllCustomerSegments(authenticationToken);
-
-            tempSegmentById = allSegments.stream()
-                    .collect(Collectors.toMap(
-                            CustomerSegmentDTO::getId,
-                            s -> s,
-                            (a, b) -> a,
-                            LinkedHashMap::new
-                    ));
-        }
-        catch (Exception ex)
-        {
-            System.err.println("Could not load customer segments in getCustomers: " + ex.getMessage());
-        }
-
-        final Map<String, CustomerSegmentDTO> segmentById = tempSegmentById;
-
-        List<CustomerSegmentAssignment> assignments = customerRepository.findCustomerSegmentAssignmentsByDomain(domainName);
-
-        Map<String, List<String>> segmentIdsByCustomerNo = assignments.stream()
-                .collect(Collectors.groupingBy(
-                        CustomerSegmentAssignment::getCustomerNo,
-                        Collectors.mapping(CustomerSegmentAssignment::getSegmentId, Collectors.toList())
+        tempSegmentById = allSegments.stream()
+                .collect(Collectors.toMap(
+                        CustomerSegmentDTO::getId,
+                        s -> s,
+                        (a, b) -> a,
+                        LinkedHashMap::new
                 ));
-
-        for (Customer customer : customers)
-        {
-            List<String> segmentIds = segmentIdsByCustomerNo.getOrDefault(customer.getCustomerNo(), List.of());
-
-            String segmentNames = segmentIds.stream()
-                    .map(segmentId -> {
-                        CustomerSegmentDTO dto = segmentById.get(segmentId);
-                        if (dto != null && dto.getName() != null && !dto.getName().isBlank())
-                        {
-                            return dto.getName();
-                        }
-                        return segmentId;
-                    })
-                    .distinct()
-                    .collect(Collectors.joining(", "));
-
-            customer.setSegment(segmentNames.isBlank() ? "-" : segmentNames);
-        }
-
-        CustomerListResponse response = new CustomerListResponse();
-        response.setOffset(offset);
-        response.setLimit(limit);
-        response.setCount(customerRepository.countCustomersByDomain(domainName, customerNo));
-        response.setData(customers);
-        return response;
     }
+    catch (Exception ex)
+    {
+        System.err.println("Could not load customer segments in getCustomers: " + ex.getMessage());
+    }
+
+    final Map<String, CustomerSegmentDTO> segmentById = tempSegmentById;
+
+    List<CustomerSegmentAssignment> assignments = customerRepository.findCustomerSegmentAssignmentsByDomain(domainName);
+
+    Map<String, List<String>> segmentIdsByCustomerNo = assignments.stream()
+            .collect(Collectors.groupingBy(
+                    CustomerSegmentAssignment::getCustomerNo,
+                    Collectors.mapping(CustomerSegmentAssignment::getSegmentId, Collectors.toList())
+            ));
+
+    for (Customer customer : customers)
+    {
+        List<String> segmentIds = segmentIdsByCustomerNo.getOrDefault(customer.getCustomerNo(), List.of());
+
+        String segmentNames = segmentIds.stream()
+                .map(segmentId -> {
+                    CustomerSegmentDTO dto = segmentById.get(segmentId);
+                    if (dto != null && dto.getName() != null && !dto.getName().isBlank())
+                    {
+                        return dto.getName();
+                    }
+                    return segmentId;
+                })
+                .distinct()
+                .collect(Collectors.joining(", "));
+
+        customer.setSegment(segmentNames.isBlank() ? "-" : segmentNames);
+    }
+
+    CustomerListResponse response = new CustomerListResponse();
+    response.setOffset(offset);
+    response.setLimit(limit);
+    response.setCount(customerRepository.countCustomersByDomain(domainName, customerNo, query, type, status));
+    response.setData(customers);
+    return response;
+}
 
     public CustomerDetailResponse getCustomerById(String authenticationToken, String customerId)
     {

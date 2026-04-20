@@ -22,31 +22,32 @@ public class CustomerController
         this.customerService = customerService;
     }
 
-  
-   
-
     @GetMapping("/{customerId}/users")
     public CustomerUserListResponse getCustomerUsers(@PathVariable String customerId)
     {
         return customerService.getCustomerUsers(customerId);
     }
-    @GetMapping
-public CustomerListResponse getCustomers(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @RequestParam("domain") String domain,
-        @RequestParam(defaultValue = "0") int offset,
-        @RequestParam(defaultValue = "50") int limit,
-        @RequestParam(required = false) String customerNo,
-        @RequestParam(required = false) String email)
-{
-    return customerService.getCustomers(authenticationToken, domain, offset, limit, customerNo, email);
-}
 
-@GetMapping("/{customerId}")
-public CustomerDetailResponse getCustomerById(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @PathVariable String customerId)
-{
-    return customerService.getCustomerById(authenticationToken, customerId);
-}
+    @GetMapping
+    public CustomerListResponse getCustomers(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(required = false) String customerNo,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String email)
+    {
+        return customerService.getCustomers(authenticationToken, domain, offset, limit, customerNo, query, type, status, email);
+    }
+
+    @GetMapping("/{customerId}")
+    public CustomerDetailResponse getCustomerById(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @PathVariable String customerId)
+    {
+        return customerService.getCustomerById(authenticationToken, customerId);
+    }
 }

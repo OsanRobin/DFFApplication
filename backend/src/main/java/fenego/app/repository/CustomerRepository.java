@@ -22,7 +22,14 @@ public class CustomerRepository
         this.jdbcTemplate = jdbcTemplate;
     }
 
-   public List<Customer> findCustomersByDomain(String domainName, int offset, int limit, String customerNo)
+  public List<Customer> findCustomersByDomain(
+        String domainName,
+        int offset,
+        int limit,
+        String customerNo,
+        String query,
+        String type,
+        String status)
 {
     String sql = """
         select
@@ -35,7 +42,8 @@ public class CustomerRepository
             ca.EMAIL as email,
             cast(1 as bit) as active
         from DOMAININFORMATION di
-        join CUSTOMER c on di.DOMAINID = c.DOMAINID
+        join CUSTOMER c
+            on di.DOMAINID = c.DOMAINID
         outer apply (
             select top 1 *
             from CUSTOMERADDRESS ca
@@ -50,13 +58,27 @@ public class CustomerRepository
         ) typeAv
         where di.DOMAINNAME = :domainName
           and (:customerNo is null or c.CUSTOMERNO like '%' + :customerNo + '%')
+          and (
+                :query is null
+                or c.CUSTOMERNO like '%' + :query + '%'
+                or coalesce(ca.COMPANYNAME1, ca.ADDRESSNAME, c.CUSTOMERNO) like '%' + :query + '%'
+              )
+          and (:type is null or coalesce(typeAv.STRINGVALUE, 'Customer') = :type)
+          and (
+                :status is null
+                or (:status = 'Active' and 1 = 1)
+                or (:status = 'Inactive' and 1 = 0)
+              )
         order by c.CUSTOMERNO
         offset :offset rows fetch next :limit rows only
         """;
 
     MapSqlParameterSource params = new MapSqlParameterSource()
             .addValue("domainName", domainName)
-            .addValue("customerNo", customerNo == null || customerNo.isBlank() ? null : customerNo)
+            .addValue("customerNo", isBlank(customerNo) ? null : customerNo.trim())
+            .addValue("query", isBlank(query) ? null : query.trim())
+            .addValue("type", isBlank(type) ? null : type.trim())
+            .addValue("status", isBlank(status) ? null : status.trim())
             .addValue("offset", offset)
             .addValue("limit", limit);
 
@@ -74,23 +96,50 @@ public class CustomerRepository
     });
 }
 
-    public int countCustomersByDomain(String domainName, String customerNo)
-    {
-        String sql = """
-            select count(distinct c.UUID)
-            from DOMAININFORMATION di
-            join CUSTOMER c on di.DOMAINID = c.DOMAINID
-            where di.DOMAINNAME = :domainName
-              and (:customerNo is null or c.CUSTOMERNO like '%' + :customerNo + '%')
-            """;
+ public int countCustomersByDomain(String domainName, String customerNo, String query, String type, String status)
+{
+    String sql = """
+        select count(distinct c.UUID)
+        from DOMAININFORMATION di
+        join CUSTOMER c
+            on di.DOMAINID = c.DOMAINID
+        outer apply (
+            select top 1 *
+            from CUSTOMERADDRESS ca
+            where ca.CUSTOMERID = c.UUID
+        ) ca
+        outer apply (
+            select top 1 av.STRINGVALUE
+            from CUSTOMER_AV av
+            where av.OWNERID = c.UUID
+              and av.NAME = 'CustomerType'
+            order by av.LOCALIZEDFLAG asc, av.LOCALEID asc
+        ) typeAv
+        where di.DOMAINNAME = :domainName
+          and (:customerNo is null or c.CUSTOMERNO like '%' + :customerNo + '%')
+          and (
+                :query is null
+                or c.CUSTOMERNO like '%' + :query + '%'
+                or coalesce(ca.COMPANYNAME1, ca.ADDRESSNAME, c.CUSTOMERNO) like '%' + :query + '%'
+              )
+          and (:type is null or coalesce(typeAv.STRINGVALUE, 'Customer') = :type)
+          and (
+                :status is null
+                or (:status = 'Active' and 1 = 1)
+                or (:status = 'Inactive' and 1 = 0)
+              )
+        """;
 
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("domainName", domainName)
-                .addValue("customerNo", customerNo == null || customerNo.isBlank() ? null : customerNo);
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("domainName", domainName)
+            .addValue("customerNo", isBlank(customerNo) ? null : customerNo.trim())
+            .addValue("query", isBlank(query) ? null : query.trim())
+            .addValue("type", isBlank(type) ? null : type.trim())
+            .addValue("status", isBlank(status) ? null : status.trim());
 
-        Integer result = jdbcTemplate.queryForObject(sql, params, Integer.class);
-        return result == null ? 0 : result;
-    }
+    Integer result = jdbcTemplate.queryForObject(sql, params, Integer.class);
+    return result == null ? 0 : result;
+}
 
     public CustomerDetailResponse findCustomerDetailById(String customerId)
 {
@@ -303,5 +352,9 @@ public List<CustomerSegmentAssignment> findCustomerSegmentAssignmentsByDomain(St
         assignment.setSegmentId(rs.getString("segmentId"));
         return assignment;
     });
+}
+private boolean isBlank(String value)
+{
+    return value == null || value.trim().isEmpty();
 }
 }
