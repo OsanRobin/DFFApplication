@@ -72,6 +72,7 @@ export class CustomerdetailComponent {
     this.customerApi.getCustomerById(authenticationToken, this.customerId).subscribe({
       next: (response) => {
         this.customer = response;
+        console.log('Customer detail response:', response);
         this.loading = false;
       },
       error: (err) => {
@@ -150,17 +151,15 @@ export class CustomerdetailComponent {
       return '-';
     }
 
-    const normalized = this.customer.customerType.toLowerCase();
-
-    if (normalized.includes('smb') || normalized.includes('business')) {
-      return 'Cluster';
-    }
-
-    if (normalized.includes('private')) {
-      return 'Subcustomer';
-    }
-
     return this.customer.customerType;
+  }
+
+  objectTypeLabel(): string {
+    if (!this.customer?.type || !this.customer.type.trim()) {
+      return '-';
+    }
+
+    return this.customer.type;
   }
 
   statusLabel(): string {
@@ -176,9 +175,9 @@ export class CustomerdetailComponent {
     return [
       address.company || address.companyName1,
       address.addressLine1 || address.street,
-      `${address.postalCode} ${address.city}`.trim(),
+      `${address.postalCode ?? ''} ${address.city ?? ''}`.trim(),
       address.country
-    ].filter(Boolean) as string[];
+    ].filter((line): line is string => !!line && line.trim().length > 0);
   }
 
   shippingAddressLines(): string[] {
@@ -190,9 +189,9 @@ export class CustomerdetailComponent {
     return [
       address.company || address.companyName1,
       address.addressLine1 || address.street,
-      `${address.postalCode} ${address.city}`.trim(),
+      `${address.postalCode ?? ''} ${address.city ?? ''}`.trim(),
       address.country
-    ].filter(Boolean) as string[];
+    ].filter((line): line is string => !!line && line.trim().length > 0);
   }
 
   displayRoles(user: CustomerUserDto): string {

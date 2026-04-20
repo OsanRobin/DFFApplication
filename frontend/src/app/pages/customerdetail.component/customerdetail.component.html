@@ -29,10 +29,10 @@
       </div>
 
       <div class="tabs">
-        <button class="tab" [class.on]="activeTab==='overview'" (click)="setTab('overview')">Overview</button>
-        <button class="tab" [class.on]="activeTab==='attributes'" (click)="setTab('attributes')">Attributes</button>
-        <button class="tab" [class.on]="activeTab==='users'" (click)="setTab('users')">Users</button>
-        <button class="tab" [class.on]="activeTab==='segments'" (click)="setTab('segments')">Segments</button>
+        <button class="tab" [class.on]="activeTab === 'overview'" (click)="setTab('overview')">Overview</button>
+        <button class="tab" [class.on]="activeTab === 'attributes'" (click)="setTab('attributes')">Attributes</button>
+        <button class="tab" [class.on]="activeTab === 'users'" (click)="setTab('users')">Users</button>
+        <button class="tab" [class.on]="activeTab === 'segments'" (click)="setTab('segments')">Segments</button>
       </div>
 
       @if (activeTab === 'overview') {
@@ -48,23 +48,18 @@
               <div class="panel-title">Basic Information</div>
 
               <div class="kv">
-                <div class="k">Customer Type</div>
+                <div class="k">Customer Type ID</div>
                 <div class="v">{{ customerTypeLabel() }}</div>
               </div>
 
               <div class="kv">
-                <div class="k">Customer Type Code</div>
-                <div class="v">{{ customer.customerType }}</div>
-              </div>
-
-              <div class="kv">
-                <div class="k">Object Type</div>
-                <div class="v">{{ customer.type }}</div>
+                <div class="k">Customer Type</div>
+                <div class="v">{{ objectTypeLabel() }}</div>
               </div>
 
               <div class="kv">
                 <div class="k">Budget Price Type</div>
-                <div class="v">{{ customer.budgetPriceType }}</div>
+                <div class="v">{{ customer.budgetPriceType || '-' }}</div>
               </div>
 
               <div class="kv">
@@ -78,12 +73,12 @@
 
               <div class="kv">
                 <div class="k">Company Name</div>
-                <div class="v">{{ customer.companyName }}</div>
+                <div class="v">{{ customer.companyName || '-' }}</div>
               </div>
 
               <div class="kv">
                 <div class="k">Customer No</div>
-                <div class="v">{{ customer.customerNo }}</div>
+                <div class="v">{{ customer.customerNo || '-' }}</div>
               </div>
             </div>
           </section>
@@ -96,24 +91,21 @@
                 <div class="address-line">{{ line }}</div>
               }
 
-              <div class="kv compact">
-                <div class="k">Address ID</div>
-                <div class="v">{{ customer.preferredInvoiceToAddress.id }}</div>
-              </div>
+              
 
               <div class="kv compact">
                 <div class="k">Address Name</div>
-                <div class="v">{{ customer.preferredInvoiceToAddress.addressName }}</div>
+                <div class="v">{{ customer.preferredInvoiceToAddress?.addressName || '-' }}</div>
               </div>
 
               <div class="kv compact">
                 <div class="k">Invoice Address</div>
-                <div class="v">{{ customer.preferredInvoiceToAddress.invoiceToAddress ? 'Yes' : 'No' }}</div>
+                <div class="v">{{ customer.preferredInvoiceToAddress?.invoiceToAddress ? 'Yes' : 'No' }}</div>
               </div>
 
               <div class="kv compact">
                 <div class="k">Ship To Address</div>
-                <div class="v">{{ customer.preferredInvoiceToAddress.shipToAddress ? 'Yes' : 'No' }}</div>
+                <div class="v">{{ customer.preferredInvoiceToAddress?.shipToAddress ? 'Yes' : 'No' }}</div>
               </div>
             </div>
 
@@ -124,24 +116,21 @@
                 <div class="address-line">{{ line }}</div>
               }
 
-              <div class="kv compact">
-                <div class="k">Address ID</div>
-                <div class="v">{{ customer.preferredShipToAddress.id }}</div>
-              </div>
+              
 
               <div class="kv compact">
                 <div class="k">Address Name</div>
-                <div class="v">{{ customer.preferredShipToAddress.addressName }}</div>
+                <div class="v">{{ customer.preferredShipToAddress?.addressName || '-' }}</div>
               </div>
 
               <div class="kv compact">
                 <div class="k">Invoice Address</div>
-                <div class="v">{{ customer.preferredShipToAddress.invoiceToAddress ? 'Yes' : 'No' }}</div>
+                <div class="v">{{ customer.preferredShipToAddress?.invoiceToAddress ? 'Yes' : 'No' }}</div>
               </div>
 
               <div class="kv compact">
                 <div class="k">Ship To Address</div>
-                <div class="v">{{ customer.preferredShipToAddress.shipToAddress ? 'Yes' : 'No' }}</div>
+                <div class="v">{{ customer.preferredShipToAddress?.shipToAddress ? 'Yes' : 'No' }}</div>
               </div>
             </div>
           </section>
@@ -156,22 +145,22 @@
             <div class="attr-grid">
               <div class="attr">
                 <div class="k">Budget Price Type</div>
-                <div class="v">{{ customer.budgetPriceType }}</div>
+                <div class="v">{{ customer.budgetPriceType || '-' }}</div>
+              </div>
+
+              <div class="attr">
+                <div class="k">Customer Type ID</div>
+                <div class="v">{{ customer.customerType || '-' }}</div>
               </div>
 
               <div class="attr">
                 <div class="k">Customer Type</div>
-                <div class="v">{{ customer.customerType }}</div>
-              </div>
-
-              <div class="attr">
-                <div class="k">Object Type</div>
-                <div class="v">{{ customer.type }}</div>
+                <div class="v">{{ objectTypeLabel() }}</div>
               </div>
 
               <div class="attr">
                 <div class="k">Company Name</div>
-                <div class="v">{{ customer.companyName }}</div>
+                <div class="v">{{ customer.companyName || '-' }}</div>
               </div>
             </div>
           } @else {
@@ -232,7 +221,7 @@
         </section>
       }
 
-           @if (activeTab === 'segments') {
+      @if (activeTab === 'segments') {
         <section class="card panel wide">
           <div class="panel-title">Segments</div>
 
@@ -260,7 +249,6 @@
           }
         </section>
       }
-
     }
   </main>
 </div>
