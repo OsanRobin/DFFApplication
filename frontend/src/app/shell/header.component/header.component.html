@@ -10,7 +10,12 @@
     </a>
 
     <nav class="nav">
-      <a class="nav-item" routerLink="/customers" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      <a
+        class="nav-item"
+        routerLink="/customers"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
         Customers
       </a>
 
@@ -19,28 +24,77 @@
       </a>
     </nav>
 
-    <div class="user" (click)="toggleMenu()">
-      <div class="avatar" aria-hidden="true">
+    <div class="user-wrapper">
+      <div class="user" (click)="toggleMenu($event)">
+        <div class="avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"
+            />
+          </svg>
+        </div>
+
+        <div class="user-meta">
+          <div class="user-name">{{ userName }}</div>
+          <div class="user-role">Admin</div>
+        </div>
+
+        <div class="chev" aria-hidden="true">▾</div>
+      </div>
+
+      @if (dropdownOpen) {
+        <div class="user-dropdown" (click)="$event.stopPropagation()">
+          <button
+            type="button"
+            class="logout-btn"
+            (click)="openLogoutConfirm($event)"
+          >
+            <span class="logout-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M10 17l1.41-1.41L8.83 13H20v-2H8.83l2.58-2.59L10 7l-5 5 5 5zm10-14H4a2 2 0 0 0-2 2v4h2V5h16v14H4v-4H2v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"
+                />
+              </svg>
+            </span>
+            <span>Logout</span>
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</header>
+
+@if (showLogoutConfirm) {
+  <div class="modal-backdrop" (click)="closeLogoutConfirm()">
+    <div class="confirm-modal" (click)="$event.stopPropagation()">
+      <div class="confirm-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24">
           <path
-            d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"
+            d="M10 17l1.41-1.41L8.83 13H20v-2H8.83l2.58-2.59L10 7l-5 5 5 5zm10-14H4a2 2 0 0 0-2 2v4h2V5h16v14H4v-4H2v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"
           />
         </svg>
       </div>
 
-      <div class="user-meta">
-        <div class="user-name">{{ userName }}</div>
-        <div class="user-role">Admin</div>
+      <h3>Log out?</h3>
+      <p>Are you sure you want to log out?</p>
+
+      <div class="confirm-actions">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeLogoutConfirm()"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          class="btn-danger"
+          (click)="confirmLogout()"
+        >
+          Yes, log out
+        </button>
       </div>
-
-      <div class="chev" aria-hidden="true">▾</div>
-
-      @if (dropdownOpen) {
-        <div class="user-dropdown">
-          <button (click)="logout()">Logout</button>
-        </div>
-      }
     </div>
-
   </div>
-</header>
+}
