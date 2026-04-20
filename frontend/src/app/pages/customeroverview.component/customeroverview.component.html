@@ -138,7 +138,8 @@
         @if (!loading && !error) {
           <div>
             <div class="pagination-info">
-              Showing {{ pageStart() }} - {{ pageEnd() }} of {{ totalCount }} customers
+              <span class="pagination-info-dot"></span>
+              <span>Showing {{ pageStart() }} - {{ pageEnd() }} of {{ totalCount }} customers</span>
             </div>
 
             <div class="table-wrap">
@@ -210,25 +211,29 @@
 
             <div class="pagination">
               <button
-                class="btn-outline"
+                class="btn-outline pagination-btn"
                 type="button"
                 (click)="previousPage()"
                 [disabled]="offset === 0"
               >
-                Previous
+                <span aria-hidden="true">‹</span>
+                <span>Previous</span>
               </button>
 
-              <span class="pagination-text">
-                Page {{ currentPage() }} of {{ totalPages() }}
-              </span>
+              <div class="pagination-center">
+                <span class="pagination-text">
+                  Page {{ currentPage() }} of {{ totalPages() }}
+                </span>
+              </div>
 
               <button
-                class="btn-outline"
+                class="btn-outline pagination-btn"
                 type="button"
                 (click)="nextPage()"
                 [disabled]="offset + limit >= totalCount"
               >
-                Next
+                <span>Next</span>
+                <span aria-hidden="true">›</span>
               </button>
             </div>
           </div>

@@ -323,9 +323,35 @@
   margin: 16px 0 14px;
 }
 
+.pagination-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border: 1px solid #e6ebf2;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: #475467;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+}
+
+.pagination-info-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #1e63ff;
+  box-shadow: 0 0 0 4px rgba(30, 99, 255, 0.12);
+  flex-shrink: 0;
+}
+
 .table-wrap {
   overflow: auto;
   border-radius: 12px;
+  border: 1px solid #eef0f6;
+  background: #fff;
 }
 
 .table {
@@ -455,6 +481,77 @@ input[type='checkbox'] {
   font-size: 18px;
 }
 
+.pagination {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid #e8eaf1;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 10px 24px rgba(18, 24, 40, 0.05);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+}
+
+.pagination-center {
+  display: flex;
+  justify-content: center;
+}
+
+.pagination-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 150px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #1e40af;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  border: 1px solid #dbe7ff;
+}
+
+.pagination-btn {
+  min-width: 130px;
+  height: 42px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pagination-btn:first-child {
+  justify-self: start;
+}
+
+.pagination-btn:last-child {
+  justify-self: end;
+}
+
+.pagination .btn-outline:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background: #f8fafc;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  transform: none;
+  box-shadow: none;
+}
+
+.pagination .btn-outline:not(:disabled):hover {
+  background: #f8fbff;
+  border-color: #bfd3ff;
+  color: #1e40af;
+}
+
+.pagination .btn-outline:not(:disabled):active {
+  transform: translateY(0);
+}
+
 .bottom-pad {
   height: 8px;
 }
@@ -582,6 +679,25 @@ input[type='checkbox'] {
   .btn-outline,
   .btn-white {
     width: 100%;
+  }
+
+  .pagination {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination-center {
+    order: -1;
+  }
+
+  .pagination-btn,
+  .pagination-text {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pagination-btn:first-child,
+  .pagination-btn:last-child {
+    justify-self: stretch;
   }
 
   .bulk-inner,
