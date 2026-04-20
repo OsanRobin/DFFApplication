@@ -84,6 +84,7 @@ export interface SavedCustomerSearchDto {
   customerNo: string;
   typeFilter: string;
   statusFilter: string;
+  segmentFilter: string;
 }
 
 export interface SavedCustomerSearchListResponse {
@@ -98,8 +99,10 @@ export interface SaveCustomerSearchRequest {
   customerNo: string;
   typeFilter: string;
   statusFilter: string;
+  segmentFilter: string;
   overwrite: boolean;
 }
+
 export interface CustomerSegmentDto {
   id: string;
   name: string | null;
@@ -114,46 +117,51 @@ export class CustomerApiService {
   private baseUrl = 'http://localhost:8081/api/customers';
   private savedSearchBaseUrl = 'http://localhost:8081/api/customer-searches';
 
- getCustomers(
-  authenticationToken: string,
-  domain: string,
-  offset = 0,
-  limit = 1500,
-  customerNo?: string,
-  query?: string,
-  type?: string,
-  status?: string
-): Observable<CustomerListResponse> {
-  let params = new HttpParams()
-    .set('domain', domain)
-    .set('offset', offset)
-    .set('limit', limit);
+  getCustomers(
+    authenticationToken: string,
+    domain: string,
+    offset = 0,
+    limit = 1500,
+    customerNo?: string,
+    query?: string,
+    type?: string,
+    status?: string,
+    segment?: string
+  ): Observable<CustomerListResponse> {
+    let params = new HttpParams()
+      .set('domain', domain)
+      .set('offset', offset)
+      .set('limit', limit);
 
-  if (customerNo?.trim()) {
-    params = params.set('customerNo', customerNo.trim());
+    if (customerNo?.trim()) {
+      params = params.set('customerNo', customerNo.trim());
+    }
+
+    if (query?.trim()) {
+      params = params.set('query', query.trim());
+    }
+
+    if (type?.trim()) {
+      params = params.set('type', type.trim());
+    }
+
+    if (status?.trim()) {
+      params = params.set('status', status.trim());
+    }
+
+    if (segment?.trim()) {
+      params = params.set('segment', segment.trim());
+    }
+
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    return this.http.get<CustomerListResponse>(this.baseUrl, {
+      headers,
+      params
+    });
   }
-
-  if (query?.trim()) {
-    params = params.set('query', query.trim());
-  }
-
-  if (type?.trim()) {
-    params = params.set('type', type.trim());
-  }
-
-  if (status?.trim()) {
-    params = params.set('status', status.trim());
-  }
-
-  const headers = new HttpHeaders({
-    'authentication-token': authenticationToken
-  });
-
-  return this.http.get<CustomerListResponse>(this.baseUrl, {
-    headers,
-    params
-  });
-}
 
   getCustomerById(authenticationToken: string, customerId: string): Observable<CustomerDetailResponse> {
     const headers = new HttpHeaders({
@@ -195,19 +203,20 @@ export class CustomerApiService {
 
     return this.http.post<void>(this.savedSearchBaseUrl, request, { headers });
   }
+
   deleteSavedSearch(authenticationToken: string, id: number) {
-  const headers = new HttpHeaders({
-    'authentication-token': authenticationToken
-  });
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
 
-  return this.http.delete(`${this.savedSearchBaseUrl}/${id}`, { headers });
-}
+    return this.http.delete(`${this.savedSearchBaseUrl}/${id}`, { headers });
+  }
 
-updateSavedSearchName(authenticationToken: string, id: number, name: string) {
-  const headers = new HttpHeaders({
-    'authentication-token': authenticationToken
-  });
+  updateSavedSearchName(authenticationToken: string, id: number, name: string) {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
 
-  return this.http.put(`${this.savedSearchBaseUrl}/${id}/name`, name, { headers });
-}
+    return this.http.put(`${this.savedSearchBaseUrl}/${id}/name`, name, { headers });
+  }
 }

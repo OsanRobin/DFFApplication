@@ -39,6 +39,7 @@ public class CustomerService
             String query,
             String type,
             String status,
+            String segment,
             String email)
     {
         List<Customer> customers = customerRepository.findCustomersByDomain(
@@ -48,7 +49,8 @@ public class CustomerService
                 customerNo,
                 query,
                 type,
-                status
+                status,
+                segment
         );
 
         Map<String, CustomerSegmentDTO> tempSegmentById = new LinkedHashMap<>();
@@ -58,7 +60,7 @@ public class CustomerService
             List<CustomerSegmentDTO> allSegments = intershopClient.getAllCustomerSegments(authenticationToken);
 
             tempSegmentById = allSegments.stream()
-                    .filter(segment -> hasCgPrefix(segment.getId()))
+                    .filter(segmentDto -> hasCgPrefix(segmentDto.getId()))
                     .collect(Collectors.toMap(
                             CustomerSegmentDTO::getId,
                             s -> s,
@@ -104,7 +106,7 @@ public class CustomerService
         CustomerListResponse response = new CustomerListResponse();
         response.setOffset(offset);
         response.setLimit(limit);
-        response.setCount(customerRepository.countCustomersByDomain(domainName, customerNo, query, type, status));
+        response.setCount(customerRepository.countCustomersByDomain(domainName, customerNo, query, type, status, segment));
         response.setData(customers);
         return response;
     }
@@ -125,7 +127,7 @@ public class CustomerService
             List<CustomerSegmentDTO> allSegments = intershopClient.getAllCustomerSegments(authenticationToken);
 
             tempSegmentById = allSegments.stream()
-                    .filter(segment -> hasCgPrefix(segment.getId()))
+                    .filter(segmentDto -> hasCgPrefix(segmentDto.getId()))
                     .collect(Collectors.toMap(
                             CustomerSegmentDTO::getId,
                             s -> s,

@@ -104,6 +104,16 @@
             </select>
           </div>
 
+          <div class="field">
+            <label class="field-label">Segment</label>
+            <input
+              class="search"
+              type="text"
+              placeholder="Segment..."
+              [(ngModel)]="segmentFilter"
+            />
+          </div>
+
           <div class="toolbar-actions">
             <button class="btn-primary" type="button" (click)="onApplyFilters()">
               Apply

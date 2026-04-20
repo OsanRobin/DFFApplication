@@ -38,9 +38,21 @@ public class CustomerController
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String segment,
             @RequestParam(required = false) String email)
     {
-        return customerService.getCustomers(authenticationToken, domain, offset, limit, customerNo, query, type, status, email);
+        return customerService.getCustomers(
+                authenticationToken,
+                domain,
+                offset,
+                limit,
+                customerNo,
+                query,
+                type,
+                status,
+                segment,
+                email
+        );
     }
 
     @GetMapping("/{customerId}")

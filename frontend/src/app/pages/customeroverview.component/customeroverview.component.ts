@@ -44,6 +44,7 @@ export class CustomeroverviewComponent {
   customerNoFilter = '';
   typeFilter = '';
   statusFilter = '';
+  segmentFilter = '';
 
   selectedIds = new Set<string>();
 
@@ -76,34 +77,35 @@ export class CustomeroverviewComponent {
     this.error = '';
 
     this.customerApi.getCustomers(
-  authenticationToken,
-  this.domainName,
-  this.offset,
-  this.limit,
-  this.customerNoFilter,
-  this.query,
-  this.typeFilter,
-  this.statusFilter
-).subscribe({
-  next: (response) => {
-    this.rows = (response.data ?? []).map(customer => this.mapCustomerToRow(customer));
-    this.totalCount = response.count ?? 0;
-    this.loading = false;
-  },
-  error: (err) => {
-    console.error(err);
+      authenticationToken,
+      this.domainName,
+      this.offset,
+      this.limit,
+      this.customerNoFilter,
+      this.query,
+      this.typeFilter,
+      this.statusFilter,
+      this.segmentFilter
+    ).subscribe({
+      next: (response) => {
+        this.rows = (response.data ?? []).map(customer => this.mapCustomerToRow(customer));
+        this.totalCount = response.count ?? 0;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error(err);
 
-    if (err.status === 401 || err.status === 403) {
-      this.error = 'Your session expired. Please log in again.';
-      this.loading = false;
-      this.router.navigate(['/login']);
-      return;
-    }
+        if (err.status === 401 || err.status === 403) {
+          this.error = 'Your session expired. Please log in again.';
+          this.loading = false;
+          this.router.navigate(['/login']);
+          return;
+        }
 
-    this.error = 'Failed to load customers.';
-    this.loading = false;
-  }
-});
+        this.error = 'Failed to load customers.';
+        this.loading = false;
+      }
+    });
   }
 
   loadSavedSearches(): void {
@@ -147,6 +149,7 @@ export class CustomeroverviewComponent {
       customerNo: this.customerNoFilter.trim(),
       typeFilter: this.typeFilter,
       statusFilter: this.statusFilter,
+      segmentFilter: this.segmentFilter.trim(),
       overwrite: false
     };
 
@@ -194,6 +197,7 @@ export class CustomeroverviewComponent {
     this.customerNoFilter = savedSearch.customerNo ?? '';
     this.typeFilter = savedSearch.typeFilter ?? '';
     this.statusFilter = savedSearch.statusFilter ?? '';
+    this.segmentFilter = savedSearch.segmentFilter ?? '';
     this.offset = 0;
 
     this.onApplyFilters();
@@ -212,9 +216,9 @@ export class CustomeroverviewComponent {
     };
   }
 
- visibleRows(): CustomerRow[] {
-  return this.rows;
-}
+  visibleRows(): CustomerRow[] {
+    return this.rows;
+  }
 
   onApplyFilters(): void {
     this.offset = 0;
@@ -227,6 +231,7 @@ export class CustomeroverviewComponent {
     this.customerNoFilter = '';
     this.typeFilter = '';
     this.statusFilter = '';
+    this.segmentFilter = '';
     this.saveSearchError = '';
     this.saveSearchSuccess = '';
     this.offset = 0;
