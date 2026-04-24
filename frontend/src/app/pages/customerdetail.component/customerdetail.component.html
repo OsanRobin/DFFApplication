@@ -29,11 +29,11 @@
       </div>
 
       <div class="tabs">
-        <button class="tab" [class.on]="activeTab === 'overview'" (click)="setTab('overview')">Overview</button>
-        <button class="tab" [class.on]="activeTab === 'attributes'" (click)="setTab('attributes')">Attributes</button>
-        <button class="tab" [class.on]="activeTab === 'users'" (click)="setTab('users')">Users</button>
-        <button class="tab" [class.on]="activeTab === 'segments'" (click)="setTab('segments')">Segments</button>
-        <button class="tab" [class.on]="activeTab === 'relations'" (click)="setTab('relations')">Relations</button>
+        <button class="tab" [class.on]="activeTab === 'overview'" type="button" (click)="setTab('overview')">Overview</button>
+        <button class="tab" [class.on]="activeTab === 'attributes'" type="button" (click)="setTab('attributes')">Attributes</button>
+        <button class="tab" [class.on]="activeTab === 'users'" type="button" (click)="setTab('users')">Users</button>
+        <button class="tab" [class.on]="activeTab === 'segments'" type="button" (click)="setTab('segments')">Segments</button>
+        <button class="tab" [class.on]="activeTab === 'relations'" type="button" (click)="setTab('relations')">Relations</button>
       </div>
 
       @if (activeTab === 'overview') {
@@ -275,7 +275,8 @@
                       <td>{{ cluster.type || '-' }}</td>
                       <td class="col-actions">
                         <a class="link" [routerLink]="['/customers', cluster.customerNo]">
-                          View Details <span class="chev-r" aria-hidden="true">›</span>
+                          <span>View<br />Details</span>
+                          <span class="chev-r" aria-hidden="true">›</span>
                         </a>
                       </td>
                     </tr>
@@ -307,7 +308,8 @@
                       <td>{{ sub.type || '-' }}</td>
                       <td class="col-actions">
                         <a class="link" [routerLink]="['/customers', sub.customerNo]">
-                          View Details <span class="chev-r" aria-hidden="true">›</span>
+                          <span>View<br />Details</span>
+                          <span class="chev-r" aria-hidden="true">›</span>
                         </a>
                       </td>
                     </tr>

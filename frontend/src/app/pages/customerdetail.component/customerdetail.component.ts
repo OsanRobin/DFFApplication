@@ -40,12 +40,23 @@ export class CustomerdetailComponent {
   users: CustomerUserDto[] = [];
 
   constructor() {
-    this.customerId = this.route.snapshot.paramMap.get('id') ?? '';
-    this.loadCustomer();
+    this.route.paramMap.subscribe(params => {
+      this.customerId = params.get('id') ?? '';
+
+      this.customer = null;
+      this.users = [];
+      this.usersLoaded = false;
+      this.usersLoading = false;
+      this.usersError = '';
+      this.error = '';
+      this.activeTab = 'overview';
+
+      this.loadCustomer();
+    });
   }
 
   goBack(): void {
-    history.back();
+    this.router.navigate(['/customers']);
   }
 
   setTab(tab: TabKey): void {
@@ -74,7 +85,13 @@ export class CustomerdetailComponent {
 
     this.customerApi.getCustomerById(authenticationToken, this.domainName, this.customerId).subscribe({
       next: (response) => {
-        this.customer = response;
+        this.customer = {
+          ...response,
+          segments: response.segments ?? [],
+          subCustomers: response.subCustomers ?? [],
+          parentClusterCustomers: response.parentClusterCustomers ?? []
+        };
+
         this.loading = false;
       },
       error: (err) => {
