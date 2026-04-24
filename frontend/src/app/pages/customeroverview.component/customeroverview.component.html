@@ -161,24 +161,49 @@
 
                 <tbody>
                   @for (row of visibleRows(); track row.id) {
-                    <tr>
+                    <tr
+                      [class.cluster-row]="row.type === 'ClusterCustomer'"
+                      [class.child-row]="row.level === 1"
+                      [class.expanded]="row.type === 'ClusterCustomer' && isClusterExpanded(row)"
+                    >
                       <td class="col-check">
                         <input
                           type="checkbox"
                           [checked]="isSelected(row.id)"
                           (change)="toggleRow(row.id)"
+                          (click)="$event.stopPropagation()"
                         />
                       </td>
 
                       <td>
                         <div class="name-cell" [class.sub]="row.level === 1">
+                          @if (row.type === 'ClusterCustomer') {
+                            <button
+                              class="expand-btn"
+                              type="button"
+                              (click)="toggleCluster(row); $event.stopPropagation()"
+                              [attr.aria-expanded]="isClusterExpanded(row)"
+                            >
+                              <span [class.rotate]="isClusterExpanded(row)">›</span>
+                            </button>
+
+                            
+                          }
+
                           @if (row.level === 1) {
                             <span class="tree" aria-hidden="true">
                               <span class="tree-v"></span>
                               <span class="tree-h"></span>
                             </span>
                           }
-                          <span class="name">{{ row.name }}</span>
+
+                          <div class="name-stack">
+                            <span class="name">{{ row.name }}</span>
+
+                           
+
+                          
+                          </div>
                         </div>
                       </td>
 
@@ -199,7 +224,11 @@
                       <td>{{ row.segment }}</td>
 
                       <td class="col-actions">
-                        <a class="link" [routerLink]="['/customers', row.id]">
+                        <a
+                          class="link"
+                          [routerLink]="['/customers', row.customerNo]"
+                          (click)="$event.stopPropagation()"
+                        >
                           View Details <span class="chev-r" aria-hidden="true">›</span>
                         </a>
                       </td>

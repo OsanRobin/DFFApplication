@@ -12,6 +12,7 @@ public class Customer
     private String segment;
     private boolean active;
     private int locations;
+    private String customerList;
 
     public String getId()
     {
@@ -112,4 +113,25 @@ public class Customer
     {
         this.locations = locations;
     }
+
+    public String getCustomerList()
+    {
+        return customerList;
+    }
+
+    public void setCustomerList(String customerList)
+    {
+        this.customerList = customerList;
+    }
+    private String parentCustomerNo;
+
+public String getParentCustomerNo()
+{
+    return parentCustomerNo;
+}
+
+public void setParentCustomerNo(String parentCustomerNo)
+{
+    this.parentCustomerNo = parentCustomerNo;
+}
 }

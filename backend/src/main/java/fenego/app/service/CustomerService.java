@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,29 +54,10 @@ public class CustomerService
                 segment
         );
 
-        Map<String, CustomerSegmentDTO> tempSegmentById = new LinkedHashMap<>();
+        Map<String, CustomerSegmentDTO> segmentById = loadCgSegments(authenticationToken);
 
-        try
-        {
-            List<CustomerSegmentDTO> allSegments = intershopClient.getAllCustomerSegments(authenticationToken);
-
-            tempSegmentById = allSegments.stream()
-                    .filter(segmentDto -> hasCgPrefix(segmentDto.getId()))
-                    .collect(Collectors.toMap(
-                            CustomerSegmentDTO::getId,
-                            s -> s,
-                            (a, b) -> a,
-                            LinkedHashMap::new
-                    ));
-        }
-        catch (Exception ex)
-        {
-            System.err.println("Could not load customer segments in getCustomers: " + ex.getMessage());
-        }
-
-        final Map<String, CustomerSegmentDTO> segmentById = tempSegmentById;
-
-        List<CustomerSegmentAssignment> assignments = customerRepository.findCustomerSegmentAssignmentsByDomain(domainName);
+        List<CustomerSegmentAssignment> assignments =
+                customerRepository.findCustomerSegmentAssignmentsByDomain(domainName);
 
         Map<String, List<String>> segmentIdsByCustomerNo = assignments.stream()
                 .filter(assignment -> hasCgPrefix(assignment.getSegmentId()))
@@ -84,30 +66,66 @@ public class CustomerService
                         Collectors.mapping(CustomerSegmentAssignment::getSegmentId, Collectors.toList())
                 ));
 
+        applySegments(customers, segmentIdsByCustomerNo, segmentById);
+
+        List<String> linkedCustomerNos = customers.stream()
+                .filter(customer -> "ClusterCustomer".equalsIgnoreCase(customer.getType()))
+                .flatMap(customer -> parseCustomerList(customer.getCustomerList()).stream())
+                .distinct()
+                .toList();
+
+        List<Customer> linkedCustomers =
+                customerRepository.findCustomersByCustomerNos(domainName, linkedCustomerNos);
+
+        applySegments(linkedCustomers, segmentIdsByCustomerNo, segmentById);
+
+        Map<String, Customer> linkedCustomerByNo = linkedCustomers.stream()
+                .collect(Collectors.toMap(
+                        Customer::getCustomerNo,
+                        customer -> customer,
+                        (a, b) -> a
+                ));
+
+        List<Customer> rows = new ArrayList<>();
+
         for (Customer customer : customers)
         {
-            List<String> segmentIds = segmentIdsByCustomerNo.getOrDefault(customer.getCustomerNo(), List.of());
+            rows.add(customer);
 
-            String segmentNames = segmentIds.stream()
-                    .map(segmentId -> {
-                        CustomerSegmentDTO dto = segmentById.get(segmentId);
-                        if (dto != null && dto.getName() != null && !dto.getName().isBlank())
-                        {
-                            return dto.getName();
-                        }
-                        return segmentId;
-                    })
-                    .distinct()
-                    .collect(Collectors.joining(", "));
+            if (!"ClusterCustomer".equalsIgnoreCase(customer.getType()))
+            {
+                continue;
+            }
 
-            customer.setSegment(segmentNames.isBlank() ? "-" : segmentNames);
+            List<String> childNos = parseCustomerList(customer.getCustomerList());
+
+            for (String childNo : childNos)
+            {
+                Customer child = linkedCustomerByNo.get(childNo);
+
+                if (child == null)
+                {
+                    continue;
+                }
+
+                Customer childRow = copyCustomer(child);
+                childRow.setParentCustomerNo(customer.getCustomerNo());
+                rows.add(childRow);
+            }
         }
 
         CustomerListResponse response = new CustomerListResponse();
         response.setOffset(offset);
         response.setLimit(limit);
-        response.setCount(customerRepository.countCustomersByDomain(domainName, customerNo, query, type, status, segment));
-        response.setData(customers);
+        response.setCount(customerRepository.countCustomersByDomain(
+                domainName,
+                customerNo,
+                query,
+                type,
+                status,
+                segment
+        ));
+        response.setData(rows);
         return response;
     }
 
@@ -120,27 +138,7 @@ public class CustomerService
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found");
         }
 
-        Map<String, CustomerSegmentDTO> tempSegmentById = new LinkedHashMap<>();
-
-        try
-        {
-            List<CustomerSegmentDTO> allSegments = intershopClient.getAllCustomerSegments(authenticationToken);
-
-            tempSegmentById = allSegments.stream()
-                    .filter(segmentDto -> hasCgPrefix(segmentDto.getId()))
-                    .collect(Collectors.toMap(
-                            CustomerSegmentDTO::getId,
-                            s -> s,
-                            (a, b) -> a,
-                            LinkedHashMap::new
-                    ));
-        }
-        catch (Exception ex)
-        {
-            System.err.println("Could not load customer segments in getCustomerById: " + ex.getMessage());
-        }
-
-        final Map<String, CustomerSegmentDTO> segmentById = tempSegmentById;
+        Map<String, CustomerSegmentDTO> segmentById = loadCgSegments(authenticationToken);
 
         List<String> segmentIds = customerRepository.findSegmentIdsByCustomerNo(customerId).stream()
                 .filter(this::hasCgPrefix)
@@ -149,6 +147,7 @@ public class CustomerService
         List<CustomerSegmentDTO> segments = segmentIds.stream()
                 .map(segmentId -> {
                     CustomerSegmentDTO dto = segmentById.get(segmentId);
+
                     if (dto != null)
                     {
                         return dto;
@@ -163,7 +162,6 @@ public class CustomerService
                 .toList();
 
         response.setSegments(segments);
-
         return response;
     }
 
@@ -180,6 +178,89 @@ public class CustomerService
         response.setSortKeys(List.of("name"));
         response.setElements(users);
         return response;
+    }
+
+    private Map<String, CustomerSegmentDTO> loadCgSegments(String authenticationToken)
+    {
+        try
+        {
+            List<CustomerSegmentDTO> allSegments =
+                    intershopClient.getAllCustomerSegments(authenticationToken);
+
+            return allSegments.stream()
+                    .filter(segmentDto -> hasCgPrefix(segmentDto.getId()))
+                    .collect(Collectors.toMap(
+                            CustomerSegmentDTO::getId,
+                            segmentDto -> segmentDto,
+                            (a, b) -> a,
+                            LinkedHashMap::new
+                    ));
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Could not load customer segments: " + ex.getMessage());
+            return new LinkedHashMap<>();
+        }
+    }
+
+    private void applySegments(
+            List<Customer> customers,
+            Map<String, List<String>> segmentIdsByCustomerNo,
+            Map<String, CustomerSegmentDTO> segmentById)
+    {
+        for (Customer customer : customers)
+        {
+            List<String> segmentIds =
+                    segmentIdsByCustomerNo.getOrDefault(customer.getCustomerNo(), List.of());
+
+            String segmentNames = segmentIds.stream()
+                    .map(segmentId -> {
+                        CustomerSegmentDTO dto = segmentById.get(segmentId);
+
+                        if (dto != null && dto.getName() != null && !dto.getName().isBlank())
+                        {
+                            return dto.getName();
+                        }
+
+                        return segmentId;
+                    })
+                    .distinct()
+                    .collect(Collectors.joining(", "));
+
+            customer.setSegment(segmentNames.isBlank() ? "-" : segmentNames);
+        }
+    }
+
+    private List<String> parseCustomerList(String value)
+    {
+        if (value == null || value.isBlank())
+        {
+            return List.of();
+        }
+
+        return List.of(value.split("[|,;\\s]+")).stream()
+                .map(String::trim)
+                .filter(item -> !item.isBlank())
+                .distinct()
+                .toList();
+    }
+
+    private Customer copyCustomer(Customer source)
+    {
+        Customer target = new Customer();
+        target.setId(source.getId());
+        target.setCustomerNo(source.getCustomerNo());
+        target.setCustomerType(source.getCustomerType());
+        target.setType(source.getType());
+        target.setDisplayName(source.getDisplayName());
+        target.setCompanyName(source.getCompanyName());
+        target.setEmail(source.getEmail());
+        target.setSegment(source.getSegment());
+        target.setActive(source.isActive());
+        target.setLocations(source.getLocations());
+        target.setCustomerList(source.getCustomerList());
+        target.setParentCustomerNo(source.getParentCustomerNo());
+        return target;
     }
 
     private boolean hasCgPrefix(String value)

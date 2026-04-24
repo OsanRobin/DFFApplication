@@ -5,7 +5,6 @@ import fenego.app.dto.CustomerUserDTO;
 import fenego.app.jpa.Customer;
 import fenego.app.jpa.CustomerAddress;
 import fenego.app.jpa.CustomerSegmentAssignment;
-
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -42,7 +41,8 @@ public class CustomerRepository
                 x.companyName,
                 x.email,
                 x.active,
-                x.locations
+                x.locations,
+                x.customerList
             from (
                 select
                     c.CUSTOMERNO as id,
@@ -57,6 +57,7 @@ public class CustomerRepository
                         else cast(0 as bit)
                     end as active,
                     count(distinct addrCount.ADDRESSID) as locations,
+                    customerListAv.customerList as customerList,
                     row_number() over (
                         partition by c.UUID
                         order by c.CUSTOMERNO
@@ -77,6 +78,13 @@ public class CustomerRepository
                       and av.NAME = 'CustomerType'
                     order by av.LOCALIZEDFLAG asc, av.LOCALEID asc
                 ) typeAv
+                outer apply (
+                    select top 1 coalesce(av.STRINGVALUE, av.TEXTVALUE) as customerList
+                    from CUSTOMER_AV av
+                    where av.OWNERID = c.UUID
+                      and av.NAME = 'CustomerList'
+                    order by av.LOCALIZEDFLAG asc, av.LOCALEID asc
+                ) customerListAv
                 left join CUSTOMERADDRESS addrCount
                     on addrCount.CUSTOMERID = c.UUID
                 where di.DOMAINNAME = :domainName
@@ -109,6 +117,7 @@ public class CustomerRepository
                     c.CUSTOMERTYPEID,
                     c.APPROVALSTATUS,
                     typeAv.STRINGVALUE,
+                    customerListAv.customerList,
                     mainAddr.COMPANYNAME1,
                     mainAddr.ADDRESSNAME,
                     mainAddr.EMAIL
@@ -128,19 +137,7 @@ public class CustomerRepository
                 .addValue("offset", offset)
                 .addValue("limit", limit);
 
-        return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
-            Customer customer = new Customer();
-            customer.setId(rs.getString("id"));
-            customer.setCustomerNo(rs.getString("customerNo"));
-            customer.setCustomerType(rs.getString("customerType"));
-            customer.setType(rs.getString("type"));
-            customer.setDisplayName(rs.getString("displayName"));
-            customer.setCompanyName(rs.getString("companyName"));
-            customer.setEmail(rs.getString("email"));
-            customer.setActive(rs.getBoolean("active"));
-            customer.setLocations(rs.getInt("locations"));
-            return customer;
-        });
+        return jdbcTemplate.query(sql, params, (rs, rowNum) -> mapCustomer(rs));
     }
 
     public int countCustomersByDomain(
@@ -261,23 +258,27 @@ public class CustomerRepository
                 select top 1 *
                 from CUSTOMERADDRESS a
                 where a.CUSTOMERID = c.UUID
+                order by a.ADDRESSID
             ) mainAddr
             outer apply (
                 select top 1 *
                 from CUSTOMERADDRESS a
                 where a.CUSTOMERID = c.UUID
+                order by a.ADDRESSID
             ) fallbackAddr
             outer apply (
                 select top 1 *
                 from CUSTOMERADDRESS a
                 where a.CUSTOMERID = c.UUID
                   and a.USAGE = 2
+                order by a.ADDRESSID
             ) invoiceAddr
             outer apply (
                 select top 1 *
                 from CUSTOMERADDRESS a
                 where a.CUSTOMERID = c.UUID
                   and a.USAGE = 3
+                order by a.ADDRESSID
             ) shipAddr
             outer apply (
                 select top 1 av.STRINGVALUE
@@ -351,8 +352,10 @@ public class CustomerRepository
         String sql = """
             select bp.BUSINESSPARTNERNO as businessPartnerNo
             from CUSTOMER c
-            join CUSTOMERPROFILEASSIGNMENT cpa on c.UUID = cpa.CUSTOMERID
-            join BASICPROFILE bp on cpa.PROFILEID = bp.UUID
+            join CUSTOMERPROFILEASSIGNMENT cpa
+                on c.UUID = cpa.CUSTOMERID
+            join BASICPROFILE bp
+                on cpa.PROFILEID = bp.UUID
             where c.CUSTOMERNO = :customerId
             order by bp.BUSINESSPARTNERNO
             """;
@@ -423,6 +426,91 @@ public class CustomerRepository
             assignment.setSegmentId(rs.getString("segmentId"));
             return assignment;
         });
+    }
+
+    public List<Customer> findCustomersByCustomerNos(String domainName, List<String> customerNos)
+    {
+        if (customerNos == null || customerNos.isEmpty())
+        {
+            return List.of();
+        }
+
+        String sql = """
+            select
+                c.CUSTOMERNO as id,
+                c.CUSTOMERNO as customerNo,
+                c.CUSTOMERTYPEID as customerType,
+                coalesce(typeAv.STRINGVALUE, 'Customer') as type,
+                coalesce(mainAddr.COMPANYNAME1, mainAddr.ADDRESSNAME, c.CUSTOMERNO) as displayName,
+                coalesce(mainAddr.COMPANYNAME1, mainAddr.ADDRESSNAME, c.CUSTOMERNO) as companyName,
+                mainAddr.EMAIL as email,
+                case
+                    when c.APPROVALSTATUS = 1 then cast(1 as bit)
+                    else cast(0 as bit)
+                end as active,
+                count(distinct addrCount.ADDRESSID) as locations,
+                customerListAv.customerList as customerList
+            from DOMAININFORMATION di
+            join CUSTOMER c
+                on di.DOMAINID = c.DOMAINID
+            outer apply (
+                select top 1 *
+                from CUSTOMERADDRESS ca
+                where ca.CUSTOMERID = c.UUID
+                order by ca.ADDRESSID
+            ) mainAddr
+            outer apply (
+                select top 1 av.STRINGVALUE
+                from CUSTOMER_AV av
+                where av.OWNERID = c.UUID
+                  and av.NAME = 'CustomerType'
+                order by av.LOCALIZEDFLAG asc, av.LOCALEID asc
+            ) typeAv
+            outer apply (
+                select top 1 coalesce(av.STRINGVALUE, av.TEXTVALUE) as customerList
+                from CUSTOMER_AV av
+                where av.OWNERID = c.UUID
+                  and av.NAME = 'CustomerList'
+                order by av.LOCALIZEDFLAG asc, av.LOCALEID asc
+            ) customerListAv
+            left join CUSTOMERADDRESS addrCount
+                on addrCount.CUSTOMERID = c.UUID
+            where di.DOMAINNAME = :domainName
+              and c.CUSTOMERNO in (:customerNos)
+            group by
+                c.UUID,
+                c.CUSTOMERNO,
+                c.CUSTOMERTYPEID,
+                c.APPROVALSTATUS,
+                typeAv.STRINGVALUE,
+                customerListAv.customerList,
+                mainAddr.COMPANYNAME1,
+                mainAddr.ADDRESSNAME,
+                mainAddr.EMAIL
+            order by c.CUSTOMERNO
+            """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("domainName", domainName)
+                .addValue("customerNos", customerNos);
+
+        return jdbcTemplate.query(sql, params, (rs, rowNum) -> mapCustomer(rs));
+    }
+
+    private Customer mapCustomer(java.sql.ResultSet rs) throws java.sql.SQLException
+    {
+        Customer customer = new Customer();
+        customer.setId(rs.getString("id"));
+        customer.setCustomerNo(rs.getString("customerNo"));
+        customer.setCustomerType(rs.getString("customerType"));
+        customer.setType(rs.getString("type"));
+        customer.setDisplayName(rs.getString("displayName"));
+        customer.setCompanyName(rs.getString("companyName"));
+        customer.setEmail(rs.getString("email"));
+        customer.setActive(rs.getBoolean("active"));
+        customer.setLocations(rs.getInt("locations"));
+        customer.setCustomerList(rs.getString("customerList"));
+        return customer;
     }
 
     private boolean isBlank(String value)

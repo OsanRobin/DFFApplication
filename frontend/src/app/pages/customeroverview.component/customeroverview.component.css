@@ -402,38 +402,127 @@ input[type='checkbox'] {
 }
 
 .name-cell.sub {
+  padding-left: 46px;
   color: #334155;
 }
 
+.name-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .name {
+  color: #0f172a;
   font-weight: 900;
+}
+
+.row-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.cluster-row td {
+  background: #eff6ff;
+  border-top: 1px solid #bfdbfe;
+  border-bottom: 1px solid #bfdbfe;
+}
+
+.cluster-row:hover td {
+  background: #dbeafe;
+}
+
+.cluster-row.expanded td {
+  background: #dbeafe;
+}
+
+.child-row td {
+  background: #ffffff;
+  color: #475569;
+}
+
+.child-row:hover td {
+  background: #f8fafc;
+}
+
+.expand-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.expand-btn:hover {
+  background: #bfdbfe;
+  border-color: #60a5fa;
+}
+
+.expand-btn span {
+  display: inline-block;
+  transition: transform 0.18s ease;
+}
+
+.expand-btn span.rotate {
+  transform: rotate(90deg);
+}
+
+.cluster-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  flex: 0 0 auto;
 }
 
 .tree {
   position: relative;
-  width: 22px;
-  height: 18px;
+  width: 28px;
+  height: 30px;
+  flex: 0 0 auto;
   display: inline-block;
 }
 
 .tree-v {
   position: absolute;
-  left: 9px;
-  top: -10px;
+  left: 12px;
+  top: -22px;
+  bottom: 14px;
   width: 2px;
-  height: 28px;
-  background: #e5e7eb;
+  background: #cbd5e1;
   border-radius: 2px;
 }
 
 .tree-h {
   position: absolute;
-  left: 9px;
-  top: 8px;
-  width: 12px;
+  left: 12px;
+  top: 14px;
+  width: 20px;
   height: 2px;
-  background: #e5e7eb;
+  background: #cbd5e1;
   border-radius: 2px;
+}
+
+.child-row .badge {
+  transform: scale(0.92);
+  transform-origin: left center;
 }
 
 .badge {

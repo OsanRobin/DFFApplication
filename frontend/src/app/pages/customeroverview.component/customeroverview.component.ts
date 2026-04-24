@@ -47,6 +47,7 @@ export class CustomeroverviewComponent {
   segmentFilter = '';
 
   selectedIds = new Set<string>();
+  expandedClusterIds = new Set<string>();
 
   loading = false;
   error = '';
@@ -88,7 +89,7 @@ export class CustomeroverviewComponent {
       this.segmentFilter
     ).subscribe({
       next: (response) => {
-        this.rows = (response.data ?? []).map(customer => this.mapCustomerToRow(customer));
+        this.rows = this.mapCustomersToRows(response.data ?? []);
         this.totalCount = response.count ?? 0;
         this.loading = false;
       },
@@ -203,25 +204,68 @@ export class CustomeroverviewComponent {
     this.onApplyFilters();
   }
 
- mapCustomerToRow(customer: CustomerDto): CustomerRow {
-  return {
-    id: customer.id,
-    name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
-    customerNo: customer.customerNo ?? '',
-    type: customer.type ?? 'Customer',
-    segment: customer.segment ?? '-',
-    status: customer.active ? 'Active' : 'Inactive',
-    locations: customer.locations ?? 0,
-    level: 0
-  };
+  private mapCustomersToRows(customers: CustomerDto[]): CustomerRow[] {
+  return customers.map(customer => {
+    const row = this.mapCustomerToRow(customer);
+
+    if (customer.parentCustomerNo) {
+      return {
+        ...row,
+        level: 1,
+        parentId: customer.parentCustomerNo
+      };
+    }
+
+    return {
+      ...row,
+      level: 0
+    };
+  });
 }
 
-  visibleRows(): CustomerRow[] {
-    return this.rows;
+
+  mapCustomerToRow(customer: CustomerDto): CustomerRow {
+    return {
+      id: customer.id,
+      name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
+      customerNo: customer.customerNo ?? '',
+      type: customer.type ?? 'Customer',
+      segment: customer.segment ?? '-',
+      status: customer.active ? 'Active' : 'Inactive',
+      locations: customer.locations ?? 0,
+      level: 0
+    };
   }
+
+  visibleRows(): CustomerRow[] {
+  return this.rows.filter(row => {
+    if (row.level === 0) {
+      return true;
+    }
+
+    return row.parentId ? this.expandedClusterIds.has(row.parentId) : true;
+  });
+}
+
+toggleCluster(row: CustomerRow): void {
+  if (row.type !== 'ClusterCustomer') {
+    return;
+  }
+
+  if (this.expandedClusterIds.has(row.customerNo)) {
+    this.expandedClusterIds.delete(row.customerNo);
+  } else {
+    this.expandedClusterIds.add(row.customerNo);
+  }
+}
+
+isClusterExpanded(row: CustomerRow): boolean {
+  return this.expandedClusterIds.has(row.customerNo);
+}
 
   onApplyFilters(): void {
     this.offset = 0;
+    this.expandedClusterIds.clear();
     this.loadCustomers();
     this.clearSelection();
   }
@@ -235,6 +279,7 @@ export class CustomeroverviewComponent {
     this.saveSearchError = '';
     this.saveSearchSuccess = '';
     this.offset = 0;
+    this.expandedClusterIds.clear();
     this.loadCustomers();
     this.clearSelection();
   }
@@ -351,6 +396,7 @@ export class CustomeroverviewComponent {
   previousPage(): void {
     if (this.offset >= this.limit) {
       this.offset -= this.limit;
+      this.expandedClusterIds.clear();
       this.loadCustomers();
       this.clearSelection();
     }
@@ -359,6 +405,7 @@ export class CustomeroverviewComponent {
   nextPage(): void {
     if (this.offset + this.limit < this.totalCount) {
       this.offset += this.limit;
+      this.expandedClusterIds.clear();
       this.loadCustomers();
       this.clearSelection();
     }
@@ -372,6 +419,7 @@ export class CustomeroverviewComponent {
     if (this.totalCount === 0) {
       return 1;
     }
+
     return Math.ceil(this.totalCount / this.limit);
   }
 
@@ -379,6 +427,7 @@ export class CustomeroverviewComponent {
     if (this.totalCount === 0) {
       return 0;
     }
+
     return this.offset + 1;
   }
 

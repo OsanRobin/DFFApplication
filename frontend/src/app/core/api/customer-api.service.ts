@@ -13,6 +13,8 @@ export interface CustomerDto {
   segment: string | null;
   active: boolean;
   locations: number;
+  customerList?: string | null;
+  parentCustomerNo?: string | null;
 }
 
 export interface CustomerListResponse {
@@ -103,6 +105,7 @@ export interface SaveCustomerSearchRequest {
   segmentFilter: string;
   overwrite: boolean;
 }
+
 export interface CustomerSegmentDto {
   id: string;
   name: string | null;
