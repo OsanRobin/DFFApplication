@@ -97,9 +97,7 @@ public class CustomerService
                 continue;
             }
 
-            List<String> childNos = parseCustomerList(customer.getCustomerList());
-
-            for (String childNo : childNos)
+            for (String childNo : parseCustomerList(customer.getCustomerList()))
             {
                 Customer child = linkedCustomerByNo.get(childNo);
 
@@ -129,7 +127,10 @@ public class CustomerService
         return response;
     }
 
-    public CustomerDetailResponse getCustomerById(String authenticationToken, String customerId)
+    public CustomerDetailResponse getCustomerById(
+            String authenticationToken,
+            String domainName,
+            String customerId)
     {
         CustomerDetailResponse response = customerRepository.findCustomerDetailById(customerId);
 
@@ -162,6 +163,16 @@ public class CustomerService
                 .toList();
 
         response.setSegments(segments);
+
+        List<Customer> subCustomers =
+                customerRepository.findSubCustomersForCluster(domainName, customerId);
+
+        List<Customer> parentClusterCustomers =
+                customerRepository.findParentClustersForSubCustomer(domainName, customerId);
+
+        response.setSubCustomers(subCustomers);
+        response.setParentClusterCustomers(parentClusterCustomers);
+
         return response;
     }
 
@@ -238,7 +249,7 @@ public class CustomerService
             return List.of();
         }
 
-        return List.of(value.split("[|,;\\s]+")).stream()
+        return List.of(value.split("[\\t|,;\\s]+")).stream()
                 .map(String::trim)
                 .filter(item -> !item.isBlank())
                 .distinct()

@@ -44,6 +44,12 @@ export interface CustomerAddressDto {
   company: string;
 }
 
+export interface CustomerSegmentDto {
+  id: string;
+  name: string | null;
+  description: string | null;
+}
+
 export interface CustomerDetailResponse {
   customerNo: string;
   companyName: string;
@@ -53,6 +59,8 @@ export interface CustomerDetailResponse {
   preferredInvoiceToAddress: CustomerAddressDto;
   preferredShipToAddress: CustomerAddressDto;
   segments: CustomerSegmentDto[];
+  subCustomers: CustomerDto[];
+  parentClusterCustomers: CustomerDto[];
 }
 
 export interface CustomerUserDto {
@@ -104,12 +112,6 @@ export interface SaveCustomerSearchRequest {
   statusFilter: string;
   segmentFilter: string;
   overwrite: boolean;
-}
-
-export interface CustomerSegmentDto {
-  id: string;
-  name: string | null;
-  description: string | null;
 }
 
 @Injectable({
@@ -166,13 +168,20 @@ export class CustomerApiService {
     });
   }
 
-  getCustomerById(authenticationToken: string, customerId: string): Observable<CustomerDetailResponse> {
+  getCustomerById(
+    authenticationToken: string,
+    domain: string,
+    customerId: string
+  ): Observable<CustomerDetailResponse> {
     const headers = new HttpHeaders({
       'authentication-token': authenticationToken
     });
 
+    const params = new HttpParams().set('domain', domain);
+
     return this.http.get<CustomerDetailResponse>(`${this.baseUrl}/${customerId}`, {
-      headers
+      headers,
+      params
     });
   }
 

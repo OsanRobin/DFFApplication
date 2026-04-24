@@ -55,11 +55,12 @@ public class CustomerController
         );
     }
 
-    @GetMapping("/{customerId}")
-    public CustomerDetailResponse getCustomerById(
-            @RequestHeader("authentication-token") String authenticationToken,
-            @PathVariable String customerId)
-    {
-        return customerService.getCustomerById(authenticationToken, customerId);
-    }
+   @GetMapping("/{customerId}")
+public CustomerDetailResponse getCustomerById(
+        @RequestHeader("authentication-token") String authenticationToken,
+        @RequestParam("domain") String domain,
+        @PathVariable String customerId)
+{
+    return customerService.getCustomerById(authenticationToken, domain, customerId);
+}
 }

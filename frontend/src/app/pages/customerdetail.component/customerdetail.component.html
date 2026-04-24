@@ -33,6 +33,7 @@
         <button class="tab" [class.on]="activeTab === 'attributes'" (click)="setTab('attributes')">Attributes</button>
         <button class="tab" [class.on]="activeTab === 'users'" (click)="setTab('users')">Users</button>
         <button class="tab" [class.on]="activeTab === 'segments'" (click)="setTab('segments')">Segments</button>
+        <button class="tab" [class.on]="activeTab === 'relations'" (click)="setTab('relations')">Relations</button>
       </div>
 
       @if (activeTab === 'overview') {
@@ -91,8 +92,6 @@
                 <div class="address-line">{{ line }}</div>
               }
 
-              
-
               <div class="kv compact">
                 <div class="k">Address Name</div>
                 <div class="v">{{ customer.preferredInvoiceToAddress?.addressName || '-' }}</div>
@@ -115,8 +114,6 @@
               @for (line of shippingAddressLines(); track $index) {
                 <div class="address-line">{{ line }}</div>
               }
-
-              
 
               <div class="kv compact">
                 <div class="k">Address Name</div>
@@ -199,6 +196,7 @@
                     <th>Status</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   @for (user of users; track user.login) {
                     <tr>
@@ -234,6 +232,7 @@
                     <th>Description</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   @for (segment of customer!.segments; track segment.id) {
                     <tr>
@@ -246,6 +245,80 @@
             </div>
           } @else {
             <div class="empty-state">No segments found for this customer.</div>
+          }
+        </section>
+      }
+
+      @if (activeTab === 'relations') {
+        <section class="card panel wide">
+          <div class="panel-title">Customer Relations</div>
+
+          @if (hasParentClusters()) {
+            <div class="panel-sub">This customer belongs to this cluster customer</div>
+
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Cluster Customer</th>
+                    <th>Customer No</th>
+                    <th>Type</th>
+                    <th class="col-actions"></th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  @for (cluster of customer!.parentClusterCustomers; track cluster.customerNo) {
+                    <tr>
+                      <td>{{ relationName(cluster) }}</td>
+                      <td>{{ cluster.customerNo }}</td>
+                      <td>{{ cluster.type || '-' }}</td>
+                      <td class="col-actions">
+                        <a class="link" [routerLink]="['/customers', cluster.customerNo]">
+                          View Details <span class="chev-r" aria-hidden="true">›</span>
+                        </a>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          @if (hasSubCustomers()) {
+            <div class="panel-sub">Subcustomers linked to this cluster customer</div>
+
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Subcustomer</th>
+                    <th>Customer No</th>
+                    <th>Type</th>
+                    <th class="col-actions"></th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  @for (sub of customer!.subCustomers; track sub.customerNo) {
+                    <tr>
+                      <td>{{ relationName(sub) }}</td>
+                      <td>{{ sub.customerNo }}</td>
+                      <td>{{ sub.type || '-' }}</td>
+                      <td class="col-actions">
+                        <a class="link" [routerLink]="['/customers', sub.customerNo]">
+                          View Details <span class="chev-r" aria-hidden="true">›</span>
+                        </a>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          @if (!hasRelations()) {
+            <div class="empty-state">No customer relations found.</div>
           }
         </section>
       }

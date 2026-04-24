@@ -9,6 +9,8 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 @Repository
@@ -497,7 +499,108 @@ public class CustomerRepository
         return jdbcTemplate.query(sql, params, (rs, rowNum) -> mapCustomer(rs));
     }
 
-    private Customer mapCustomer(java.sql.ResultSet rs) throws java.sql.SQLException
+    public List<Customer> findSubCustomersForCluster(String domainName, String clusterCustomerNo)
+    {
+        List<Customer> clusters = findCustomersByCustomerNos(domainName, List.of(clusterCustomerNo));
+
+        if (clusters.isEmpty())
+        {
+            return List.of();
+        }
+
+        List<String> customerNos = parseCustomerList(clusters.get(0).getCustomerList());
+
+        if (customerNos.isEmpty())
+        {
+            return List.of();
+        }
+
+        return findCustomersByCustomerNos(domainName, customerNos);
+    }
+
+    public List<Customer> findParentClustersForSubCustomer(String domainName, String subCustomerNo)
+    {
+        String sql = """
+            select
+                c.CUSTOMERNO as id,
+                c.CUSTOMERNO as customerNo,
+                c.CUSTOMERTYPEID as customerType,
+                coalesce(typeAv.STRINGVALUE, 'Customer') as type,
+                coalesce(mainAddr.COMPANYNAME1, mainAddr.ADDRESSNAME, c.CUSTOMERNO) as displayName,
+                coalesce(mainAddr.COMPANYNAME1, mainAddr.ADDRESSNAME, c.CUSTOMERNO) as companyName,
+                mainAddr.EMAIL as email,
+                case
+                    when c.APPROVALSTATUS = 1 then cast(1 as bit)
+                    else cast(0 as bit)
+                end as active,
+                count(distinct addrCount.ADDRESSID) as locations,
+                customerListAv.customerList as customerList
+            from DOMAININFORMATION di
+            join CUSTOMER c
+                on c.DOMAINID = di.DOMAINID
+            outer apply (
+                select top 1 *
+                from CUSTOMERADDRESS ca
+                where ca.CUSTOMERID = c.UUID
+                order by ca.ADDRESSID
+            ) mainAddr
+            outer apply (
+                select top 1 av.STRINGVALUE
+                from CUSTOMER_AV av
+                where av.OWNERID = c.UUID
+                  and av.NAME = 'CustomerType'
+                order by av.LOCALIZEDFLAG asc, av.LOCALEID asc
+            ) typeAv
+            outer apply (
+                select top 1 coalesce(av.STRINGVALUE, av.TEXTVALUE) as customerList
+                from CUSTOMER_AV av
+                where av.OWNERID = c.UUID
+                  and av.NAME = 'CustomerList'
+                order by av.LOCALIZEDFLAG asc, av.LOCALEID asc
+            ) customerListAv
+            left join CUSTOMERADDRESS addrCount
+                on addrCount.CUSTOMERID = c.UUID
+            where di.DOMAINNAME = :domainName
+              and coalesce(typeAv.STRINGVALUE, 'Customer') = 'ClusterCustomer'
+              and (
+                    customerListAv.customerList = :subCustomerNo
+                    or customerListAv.customerList like :subCustomerNo + char(9) + '%'
+                    or customerListAv.customerList like '%' + char(9) + :subCustomerNo
+                    or customerListAv.customerList like '%' + char(9) + :subCustomerNo + char(9) + '%'
+                    or customerListAv.customerList like :subCustomerNo + ' %'
+                    or customerListAv.customerList like '% ' + :subCustomerNo
+                    or customerListAv.customerList like '% ' + :subCustomerNo + ' %'
+                    or customerListAv.customerList like :subCustomerNo + '|%'
+                    or customerListAv.customerList like '%|' + :subCustomerNo
+                    or customerListAv.customerList like '%|' + :subCustomerNo + '|%'
+                    or customerListAv.customerList like :subCustomerNo + ',%'
+                    or customerListAv.customerList like '%,' + :subCustomerNo
+                    or customerListAv.customerList like '%,' + :subCustomerNo + ',%'
+                    or customerListAv.customerList like :subCustomerNo + ';%'
+                    or customerListAv.customerList like '%;' + :subCustomerNo
+                    or customerListAv.customerList like '%;' + :subCustomerNo + ';%'
+                  )
+            group by
+                c.UUID,
+                c.CUSTOMERNO,
+                c.CUSTOMERTYPEID,
+                c.APPROVALSTATUS,
+                typeAv.STRINGVALUE,
+                customerListAv.customerList,
+                mainAddr.COMPANYNAME1,
+                mainAddr.ADDRESSNAME,
+                mainAddr.EMAIL
+            order by c.CUSTOMERNO
+            """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("domainName", domainName)
+                .addValue("subCustomerNo", subCustomerNo);
+
+        return jdbcTemplate.query(sql, params, (rs, rowNum) -> mapCustomer(rs));
+    }
+
+    private Customer mapCustomer(ResultSet rs) throws SQLException
     {
         Customer customer = new Customer();
         customer.setId(rs.getString("id"));
@@ -511,6 +614,20 @@ public class CustomerRepository
         customer.setLocations(rs.getInt("locations"));
         customer.setCustomerList(rs.getString("customerList"));
         return customer;
+    }
+
+    private List<String> parseCustomerList(String value)
+    {
+        if (value == null || value.isBlank())
+        {
+            return List.of();
+        }
+
+        return List.of(value.split("[\\t|,;\\s]+")).stream()
+                .map(String::trim)
+                .filter(item -> !item.isBlank())
+                .distinct()
+                .toList();
     }
 
     private boolean isBlank(String value)

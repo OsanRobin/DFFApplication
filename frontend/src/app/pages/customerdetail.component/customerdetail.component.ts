@@ -1,19 +1,20 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HeaderComponent } from '../../shell/header.component/header.component';
 import {
   CustomerApiService,
   CustomerDetailResponse,
+  CustomerDto,
   CustomerUserDto
 } from '../../core/api/customer-api.service';
 import { AuthService } from '../../core/auth/auth.service';
 
-type TabKey = 'overview' | 'attributes' | 'users' | 'segments';
+type TabKey = 'overview' | 'attributes' | 'users' | 'segments' | 'relations';
 
 @Component({
   selector: 'app-customerdetail.component',
-  imports: [CommonModule, HeaderComponent],
+  imports: [CommonModule, RouterModule, HeaderComponent],
   templateUrl: './customerdetail.component.html',
   styleUrl: './customerdetail.component.css',
 })
@@ -22,6 +23,8 @@ export class CustomerdetailComponent {
   private router = inject(Router);
   private customerApi = inject(CustomerApiService);
   private authService = inject(AuthService);
+
+  private domainName = 'DailyFreshFood-B1-Anonymous';
 
   activeTab: TabKey = 'overview';
 
@@ -69,10 +72,9 @@ export class CustomerdetailComponent {
     this.loading = true;
     this.error = '';
 
-    this.customerApi.getCustomerById(authenticationToken, this.customerId).subscribe({
+    this.customerApi.getCustomerById(authenticationToken, this.domainName, this.customerId).subscribe({
       next: (response) => {
         this.customer = response;
-        console.log('Customer detail response:', response);
         this.loading = false;
       },
       error: (err) => {
@@ -147,11 +149,7 @@ export class CustomerdetailComponent {
   }
 
   customerTypeLabel(): string {
-    if (!this.customer?.customerType) {
-      return '-';
-    }
-
-    return this.customer.customerType;
+    return this.customer?.customerType || '-';
   }
 
   objectTypeLabel(): string {
@@ -168,6 +166,7 @@ export class CustomerdetailComponent {
 
   invoiceAddressLines(): string[] {
     const address = this.customer?.preferredInvoiceToAddress;
+
     if (!address) {
       return [];
     }
@@ -182,6 +181,7 @@ export class CustomerdetailComponent {
 
   shippingAddressLines(): string[] {
     const address = this.customer?.preferredShipToAddress;
+
     if (!address) {
       return [];
     }
@@ -206,5 +206,21 @@ export class CustomerdetailComponent {
 
   displayStatus(user: CustomerUserDto): string {
     return user.active ? 'Active' : 'Inactive';
+  }
+
+  relationName(customer: CustomerDto): string {
+    return customer.displayName || customer.companyName || customer.customerNo || '-';
+  }
+
+  hasParentClusters(): boolean {
+    return (this.customer?.parentClusterCustomers?.length ?? 0) > 0;
+  }
+
+  hasSubCustomers(): boolean {
+    return (this.customer?.subCustomers?.length ?? 0) > 0;
+  }
+
+  hasRelations(): boolean {
+    return this.hasParentClusters() || this.hasSubCustomers();
   }
 }

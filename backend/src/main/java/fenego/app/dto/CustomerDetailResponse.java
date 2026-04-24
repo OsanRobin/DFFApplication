@@ -1,5 +1,6 @@
 package fenego.app.dto;
 
+import fenego.app.jpa.Customer;
 import fenego.app.jpa.CustomerAddress;
 
 import java.util.ArrayList;
@@ -95,4 +96,26 @@ public class CustomerDetailResponse
     {
         this.segments = segments;
     }
+    private List<Customer> subCustomers = List.of();
+private List<Customer> parentClusterCustomers = List.of();
+
+public List<Customer> getSubCustomers()
+{
+    return subCustomers;
+}
+
+public void setSubCustomers(List<Customer> subCustomers)
+{
+    this.subCustomers = subCustomers;
+}
+
+public List<Customer> getParentClusterCustomers()
+{
+    return parentClusterCustomers;
+}
+
+public void setParentClusterCustomers(List<Customer> parentClusterCustomers)
+{
+    this.parentClusterCustomers = parentClusterCustomers;
+}
 }
