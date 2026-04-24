@@ -62,6 +62,17 @@ export class CustomeroverviewComponent {
   limit = 50;
   totalCount = 0;
 
+  searchModalOpen = false;
+  searchModalMode: 'create' | 'edit' = 'create';
+  editingSavedSearch: SavedCustomerSearchDto | null = null;
+
+  modalName = '';
+  modalQuery = '';
+  modalCustomerNo = '';
+  modalType = '';
+  modalStatus = '';
+  modalSegment = '';
+
   constructor() {
     this.loadCustomers();
     this.loadSavedSearches();
@@ -128,6 +139,48 @@ export class CustomeroverviewComponent {
   }
 
   saveCurrentSearch(): void {
+    this.openSaveSearchModal();
+  }
+
+  openSaveSearchModal(): void {
+    this.searchModalMode = 'create';
+    this.editingSavedSearch = null;
+
+    this.modalName = '';
+    this.modalQuery = this.query;
+    this.modalCustomerNo = this.customerNoFilter;
+    this.modalType = this.typeFilter;
+    this.modalStatus = this.statusFilter;
+    this.modalSegment = this.segmentFilter;
+
+    this.saveSearchError = '';
+    this.saveSearchSuccess = '';
+    this.searchModalOpen = true;
+  }
+
+  openEditSavedSearchModal(search: SavedCustomerSearchDto): void {
+    this.searchModalMode = 'edit';
+    this.editingSavedSearch = search;
+
+    this.modalName = search.name ?? '';
+    this.modalQuery = search.query ?? '';
+    this.modalCustomerNo = search.customerNo ?? '';
+    this.modalType = search.typeFilter ?? '';
+    this.modalStatus = search.statusFilter ?? '';
+    this.modalSegment = search.segmentFilter ?? '';
+
+    this.saveSearchError = '';
+    this.saveSearchSuccess = '';
+    this.searchModalOpen = true;
+  }
+
+  closeSearchModal(): void {
+    this.searchModalOpen = false;
+    this.editingSavedSearch = null;
+    this.saveSearchError = '';
+  }
+
+  submitSearchModal(): void {
     const authenticationToken = this.authService.getAuthenticationToken();
 
     if (!authenticationToken) {
@@ -135,63 +188,99 @@ export class CustomeroverviewComponent {
       return;
     }
 
-    this.saveSearchError = '';
-    this.saveSearchSuccess = '';
-
-    const name = window.prompt('Enter a name for this search');
-    if (!name || !name.trim()) {
+    if (!this.modalName.trim()) {
       this.saveSearchError = 'Search name is required.';
       return;
     }
 
+    this.saveSearchError = '';
+    this.saveSearchSuccess = '';
+
     const request: SaveCustomerSearchRequest = {
       domainName: this.domainName,
-      name: name.trim(),
-      query: this.query.trim(),
-      customerNo: this.customerNoFilter.trim(),
-      typeFilter: this.typeFilter,
-      statusFilter: this.statusFilter,
-      segmentFilter: this.segmentFilter.trim(),
-      overwrite: false
+      name: this.modalName.trim(),
+      query: this.modalQuery.trim(),
+      customerNo: this.modalCustomerNo.trim(),
+      typeFilter: this.modalType,
+      statusFilter: this.modalStatus,
+      segmentFilter: this.modalSegment.trim(),
+      overwrite: this.searchModalMode === 'edit'
     };
 
-    this.customerApi.saveSearch(authenticationToken, request).subscribe({
-      next: () => {
-        this.saveSearchSuccess = 'Search saved successfully.';
-        this.loadSavedSearches();
-      },
-      error: (err) => {
-        const backendMessage = err?.error?.message ?? '';
+    const saveFilters = (): void => {
+      this.customerApi.saveSearch(authenticationToken, request).subscribe({
+        next: () => {
+          this.saveSearchSuccess =
+            this.searchModalMode === 'edit'
+              ? 'Saved search updated successfully.'
+              : 'Search saved successfully.';
 
-        if (backendMessage.toLowerCase().includes('already exists')) {
-          const overwrite = window.confirm('A saved search with this name already exists. Overwrite it?');
+          this.closeSearchModal();
+          this.loadSavedSearches();
+        },
+        error: (err) => {
+          const backendMessage = err?.error?.message ?? '';
 
-          if (!overwrite) {
-            this.saveSearchError = 'Search was not overwritten.';
+          if (
+            this.searchModalMode === 'create' &&
+            backendMessage.toLowerCase().includes('already exists')
+          ) {
+            const overwrite = window.confirm(
+              'A saved search with this name already exists. Overwrite it?'
+            );
+
+            if (!overwrite) {
+              this.saveSearchError = 'Search was not overwritten.';
+              return;
+            }
+
+            this.customerApi.saveSearch(authenticationToken, {
+              ...request,
+              overwrite: true
+            }).subscribe({
+              next: () => {
+                this.saveSearchSuccess = 'Search overwritten successfully.';
+                this.closeSearchModal();
+                this.loadSavedSearches();
+              },
+              error: (overwriteErr) => {
+                console.error(overwriteErr);
+                this.saveSearchError =
+                  overwriteErr?.error?.message ?? 'Failed to overwrite saved search.';
+              }
+            });
+
             return;
           }
 
-          this.customerApi.saveSearch(authenticationToken, {
-            ...request,
-            overwrite: true
-          }).subscribe({
-            next: () => {
-              this.saveSearchSuccess = 'Search overwritten successfully.';
-              this.loadSavedSearches();
-            },
-            error: (overwriteErr) => {
-              console.error(overwriteErr);
-              this.saveSearchError = overwriteErr?.error?.message ?? 'Failed to overwrite saved search.';
-            }
-          });
-
-          return;
+          console.error(err);
+          this.saveSearchError = backendMessage || 'Failed to save search.';
         }
+      });
+    };
 
-        console.error(err);
-        this.saveSearchError = backendMessage || 'Failed to save search.';
-      }
-    });
+    if (
+      this.searchModalMode === 'edit' &&
+      this.editingSavedSearch &&
+      this.editingSavedSearch.name !== request.name
+    ) {
+      this.customerApi.updateSavedSearchName(
+        authenticationToken,
+        this.editingSavedSearch.id,
+        request.name
+      ).subscribe({
+        next: saveFilters,
+        error: (err) => {
+          console.error(err);
+          this.saveSearchError =
+            err?.error?.message ?? 'Failed to update saved search name.';
+        }
+      });
+
+      return;
+    }
+
+    saveFilters();
   }
 
   applySavedSearch(savedSearch: SavedCustomerSearchDto): void {
@@ -260,15 +349,15 @@ export class CustomeroverviewComponent {
   }
 
   private parseSegments(segment: string): string[] {
-  if (!segment.trim()) {
-    return [];
-  }
+    if (!segment.trim()) {
+      return [];
+    }
 
-  return segment
-    .split(/[,\n;|]+/)
-    .map(value => value.trim())
-    .filter(Boolean);
-}
+    return segment
+      .split(/[,\n;|]+/)
+      .map(value => value.trim())
+      .filter(Boolean);
+  }
 
   visibleRows(): CustomerRow[] {
     return this.rows.filter(row => {
@@ -330,21 +419,25 @@ export class CustomeroverviewComponent {
   }
 
   get allSelected(): boolean {
-    const ids = this.visibleRows().map((r) => r.id);
-    return ids.length > 0 && ids.every((id) => this.selectedIds.has(id));
+    const ids = this.visibleRows().map(row => row.id);
+    return ids.length > 0 && ids.every(id => this.selectedIds.has(id));
+  }
+
+  get someSelected(): boolean {
+    return this.visibleRows().some(row => this.selectedIds.has(row.id));
   }
 
   toggleAll(): void {
-    const ids = this.visibleRows().map((r) => r.id);
+    const ids = this.visibleRows().map(row => row.id);
 
     if (ids.length === 0) {
       return;
     }
 
-    if (ids.every((id) => this.selectedIds.has(id))) {
-      ids.forEach((id) => this.selectedIds.delete(id));
+    if (ids.every(id => this.selectedIds.has(id))) {
+      ids.forEach(id => this.selectedIds.delete(id));
     } else {
-      ids.forEach((id) => this.selectedIds.add(id));
+      ids.forEach(id => this.selectedIds.add(id));
     }
   }
 
@@ -397,33 +490,6 @@ export class CustomeroverviewComponent {
           console.error(err);
         }
       });
-  }
-
-  editSavedSearchName(search: SavedCustomerSearchDto): void {
-    const authenticationToken = this.authService.getAuthenticationToken();
-
-    if (!authenticationToken) {
-      return;
-    }
-
-    const newName = window.prompt('Edit search name', search.name);
-
-    if (!newName || !newName.trim()) {
-      return;
-    }
-
-    this.customerApi.updateSavedSearchName(
-      authenticationToken,
-      search.id,
-      newName.trim()
-    ).subscribe({
-      next: () => {
-        this.loadSavedSearches();
-      },
-      error: err => {
-        console.error(err);
-      }
-    });
   }
 
   previousPage(): void {

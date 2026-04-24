@@ -11,7 +11,7 @@
         <h1 class="title">Customer Overview</h1>
       </div>
 
-      <button class="btn-outline" type="button" (click)="saveCurrentSearch()">
+      <button class="btn-outline" type="button" (click)="openSaveSearchModal()">
         Save Search
       </button>
     </div>
@@ -39,7 +39,7 @@
               <button
                 type="button"
                 class="saved-action-btn"
-                (click)="editSavedSearchName(savedSearch); $event.stopPropagation()"
+                (click)="openEditSavedSearchModal(savedSearch); $event.stopPropagation()"
               >
                 Edit
               </button>
@@ -61,7 +61,7 @@
           <div class="state success">{{ saveSearchSuccess }}</div>
         }
 
-        @if (saveSearchError) {
+        @if (saveSearchError && !searchModalOpen) {
           <div class="state error">{{ saveSearchError }}</div>
         }
 
@@ -184,6 +184,7 @@
                       <input
                         type="checkbox"
                         [checked]="allSelected"
+                        [indeterminate]="someSelected && !allSelected"
                         (change)="toggleAll()"
                       />
                     </th>
@@ -348,4 +349,105 @@
       </div>
     </div>
   </main>
+
+  @if (searchModalOpen) {
+    <div class="modal-backdrop" (click)="closeSearchModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <div>
+            <h2 class="modal-title">
+              {{ searchModalMode === 'edit' ? 'Edit Saved Search' : 'Save Search' }}
+            </h2>
+
+            <p class="modal-sub">
+              {{
+                searchModalMode === 'edit'
+                  ? 'Update the name and filters for this saved search.'
+                  : 'Give this search a name and save the current filters.'
+              }}
+            </p>
+          </div>
+
+          <button class="modal-close" type="button" (click)="closeSearchModal()">
+            ×
+          </button>
+        </div>
+
+        @if (saveSearchError) {
+          <div class="state error modal-error">{{ saveSearchError }}</div>
+        }
+
+        <div class="modal-grid">
+          <div class="field full">
+            <label class="field-label">Search name</label>
+            <input
+              class="input"
+              type="text"
+              placeholder="Search name..."
+              [(ngModel)]="modalName"
+            />
+          </div>
+
+          <div class="field full">
+            <label class="field-label">Search query</label>
+            <input
+              class="input"
+              type="text"
+              placeholder="Name, customer number or segment..."
+              [(ngModel)]="modalQuery"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field-label">Customer number</label>
+            <input
+              class="input"
+              type="text"
+              placeholder="Customer number..."
+              [(ngModel)]="modalCustomerNo"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field-label">Segment</label>
+            <input
+              class="input"
+              type="text"
+              placeholder="Segment..."
+              [(ngModel)]="modalSegment"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field-label">Type</label>
+            <select class="select" [(ngModel)]="modalType">
+              <option value="">All types</option>
+              <option value="Customer">Customer</option>
+              <option value="ClusterCustomer">ClusterCustomer</option>
+              <option value="KSWCustomer">KSWCustomer</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Status</label>
+            <select class="select" [(ngModel)]="modalStatus">
+              <option value="">All statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-outline" type="button" (click)="closeSearchModal()">
+            Cancel
+          </button>
+
+          <button class="btn-primary" type="button" (click)="submitSearchModal()">
+            {{ searchModalMode === 'edit' ? 'Save changes' : 'Save search' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>
