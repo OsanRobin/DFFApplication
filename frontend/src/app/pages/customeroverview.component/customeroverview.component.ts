@@ -48,9 +48,11 @@ export class CustomeroverviewComponent {
   segmentFilter = '';
 
   selectedIds = new Set<string>();
+  selectedRows = new Map<string, CustomerRow>();
   expandedClusterIds = new Set<string>();
 
   loading = false;
+  selectingAll = false;
   error = '';
   saveSearchError = '';
   saveSearchSuccess = '';
@@ -289,7 +291,6 @@ export class CustomeroverviewComponent {
     this.typeFilter = savedSearch.typeFilter ?? '';
     this.statusFilter = savedSearch.statusFilter ?? '';
     this.segmentFilter = savedSearch.segmentFilter ?? '';
-    this.offset = 0;
 
     this.onApplyFilters();
   }
@@ -388,8 +389,8 @@ export class CustomeroverviewComponent {
   onApplyFilters(): void {
     this.offset = 0;
     this.expandedClusterIds.clear();
-    this.loadCustomers();
     this.clearSelection();
+    this.loadCustomers();
   }
 
   onClearFilters(): void {
@@ -402,48 +403,98 @@ export class CustomeroverviewComponent {
     this.saveSearchSuccess = '';
     this.offset = 0;
     this.expandedClusterIds.clear();
-    this.loadCustomers();
     this.clearSelection();
+    this.loadCustomers();
   }
 
   isSelected(id: string): boolean {
     return this.selectedIds.has(id);
   }
 
-  toggleRow(id: string): void {
-    if (this.selectedIds.has(id)) {
-      this.selectedIds.delete(id);
+  toggleRow(row: CustomerRow): void {
+    if (this.selectedIds.has(row.id)) {
+      this.selectedIds.delete(row.id);
+      this.selectedRows.delete(row.id);
     } else {
-      this.selectedIds.add(id);
+      this.selectedIds.add(row.id);
+      this.selectedRows.set(row.id, row);
     }
   }
 
-  get allSelected(): boolean {
-    const ids = this.visibleRows().map(row => row.id);
-    return ids.length > 0 && ids.every(id => this.selectedIds.has(id));
+  get allVisibleSelected(): boolean {
+    const rows = this.visibleRows();
+    return rows.length > 0 && rows.every(row => this.selectedIds.has(row.id));
   }
 
-  get someSelected(): boolean {
+  get someVisibleSelected(): boolean {
     return this.visibleRows().some(row => this.selectedIds.has(row.id));
   }
 
-  toggleAll(): void {
-    const ids = this.visibleRows().map(row => row.id);
+  toggleVisibleSelection(): void {
+    const rows = this.visibleRows();
 
-    if (ids.length === 0) {
+    if (rows.length === 0) {
       return;
     }
 
-    if (ids.every(id => this.selectedIds.has(id))) {
-      ids.forEach(id => this.selectedIds.delete(id));
-    } else {
-      ids.forEach(id => this.selectedIds.add(id));
+    const shouldUnselect = rows.every(row => this.selectedIds.has(row.id));
+
+    if (shouldUnselect) {
+      rows.forEach(row => {
+        this.selectedIds.delete(row.id);
+        this.selectedRows.delete(row.id);
+      });
+
+      return;
     }
+
+    rows.forEach(row => {
+      this.selectedIds.add(row.id);
+      this.selectedRows.set(row.id, row);
+    });
+  }
+
+  selectAll(): void {
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken || this.totalCount === 0) {
+      return;
+    }
+
+    this.selectingAll = true;
+    this.error = '';
+
+    this.customerApi.getCustomers(
+      authenticationToken,
+      this.domainName,
+      0,
+      this.totalCount,
+      this.customerNoFilter,
+      this.query,
+      this.typeFilter,
+      this.statusFilter,
+      this.segmentFilter
+    ).subscribe({
+      next: (response) => {
+        const allRows = this.mapCustomersToRows(response.data ?? []);
+
+        allRows.forEach(row => {
+          this.selectedIds.add(row.id);
+          this.selectedRows.set(row.id, row);
+        });
+
+        this.selectingAll = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.error = 'Failed to select all customers.';
+        this.selectingAll = false;
+      }
+    });
   }
 
   goToBulkActions(): void {
-    const selectedCustomers: SelectedCustomerRow[] = this.visibleRows()
-      .filter(row => this.selectedIds.has(row.id))
+    const selectedCustomers: SelectedCustomerRow[] = Array.from(this.selectedRows.values())
       .map(row => ({
         id: row.id,
         name: row.name,
@@ -466,6 +517,7 @@ export class CustomeroverviewComponent {
 
   clearSelection(): void {
     this.selectedIds.clear();
+    this.selectedRows.clear();
   }
 
   deleteSavedSearch(searchId: number): void {
@@ -497,7 +549,6 @@ export class CustomeroverviewComponent {
       this.offset -= this.limit;
       this.expandedClusterIds.clear();
       this.loadCustomers();
-      this.clearSelection();
     }
   }
 
@@ -506,7 +557,6 @@ export class CustomeroverviewComponent {
       this.offset += this.limit;
       this.expandedClusterIds.clear();
       this.loadCustomers();
-      this.clearSelection();
     }
   }
 
