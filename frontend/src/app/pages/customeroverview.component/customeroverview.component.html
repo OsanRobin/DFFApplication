@@ -6,7 +6,15 @@
       Home <span class="sep">›</span> <span class="current">Customers</span>
     </div>
 
-    <h1 class="title">Customer Overview</h1>
+    <div class="page-head">
+      <div>
+        <h1 class="title">Customer Overview</h1>
+      </div>
+
+      <button class="btn-outline" type="button" (click)="saveCurrentSearch()">
+        Save Search
+      </button>
+    </div>
 
     <div class="layout">
       <aside class="side card">
@@ -18,7 +26,11 @@
 
         @for (savedSearch of savedSearches; track savedSearch.id) {
           <div class="saved-row">
-            <button class="saved" type="button" (click)="applySavedSearch(savedSearch)">
+            <button
+              class="saved"
+              type="button"
+              (click)="applySavedSearch(savedSearch)"
+            >
               <span class="caret">›</span>
               <span class="saved-name">{{ savedSearch.name }}</span>
             </button>
@@ -45,17 +57,6 @@
       </aside>
 
       <section class="main card">
-        <div class="filters-head">
-          <div>
-            <div class="filters-title">Filter customers</div>
-            <div class="filters-meta">Search and refine your customer list</div>
-          </div>
-
-          <button class="btn-outline" type="button" (click)="saveCurrentSearch()">
-            Save Search
-          </button>
-        </div>
-
         @if (saveSearchSuccess) {
           <div class="state success">{{ saveSearchSuccess }}</div>
         }
@@ -64,65 +65,96 @@
           <div class="state error">{{ saveSearchError }}</div>
         }
 
-        <div class="toolbar">
-          <div class="field">
-            <label class="field-label">Search</label>
+        <div class="top-tools">
+          <div class="search-shell">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+
             <input
-              class="search"
+              class="global-search"
               type="text"
-              placeholder="Search by name or customer no..."
+              placeholder="Search by name, customer number or segment..."
               [(ngModel)]="query"
+              (keyup.enter)="onApplyFilters()"
             />
           </div>
 
-          <div class="field">
-            <label class="field-label">Customer number</label>
-            <input
-              class="search"
-              type="text"
-              placeholder="Customer number..."
-              [(ngModel)]="customerNoFilter"
-            />
-          </div>
+          <details class="filter-menu" #filterMenu>
+            <summary class="filter-trigger">
+              <span class="filter-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M4 6h16M7 12h10M10 18h4" />
+                </svg>
+              </span>
+              Filters
+            </summary>
 
-          <div class="field">
-            <label class="field-label">Type</label>
-            <select class="select" [(ngModel)]="typeFilter">
-              <option value="">All types</option>
-              <option value="Customer">Customer</option>
-              <option value="ClusterCustomer">ClusterCustomer</option>
-              <option value="KSWCustomer">KSWCustomer</option>
-            </select>
-          </div>
+            <div class="filter-panel">
+              <div class="field">
+                <label class="field-label">Customer number</label>
+                <input
+                  class="input"
+                  type="text"
+                  placeholder="Customer number..."
+                  [(ngModel)]="customerNoFilter"
+                />
+              </div>
 
-          <div class="field">
-            <label class="field-label">Status</label>
-            <select class="select" [(ngModel)]="statusFilter">
-              <option value="">All statuses</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
+              <div class="field">
+                <label class="field-label">Type</label>
+                <select class="select" [(ngModel)]="typeFilter">
+                  <option value="">All types</option>
+                  <option value="Customer">Customer</option>
+                  <option value="ClusterCustomer">ClusterCustomer</option>
+                  <option value="KSWCustomer">KSWCustomer</option>
+                </select>
+              </div>
 
-          <div class="field">
-            <label class="field-label">Segment</label>
-            <input
-              class="search"
-              type="text"
-              placeholder="Segment..."
-              [(ngModel)]="segmentFilter"
-            />
-          </div>
+              <div class="field">
+                <label class="field-label">Status</label>
+                <select class="select" [(ngModel)]="statusFilter">
+                  <option value="">All statuses</option>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
 
-          <div class="toolbar-actions">
-            <button class="btn-primary" type="button" (click)="onApplyFilters()">
-              Apply
-            </button>
+              <div class="field">
+                <label class="field-label">Segment</label>
+                <input
+                  class="input"
+                  type="text"
+                  placeholder="Segment..."
+                  [(ngModel)]="segmentFilter"
+                />
+              </div>
 
-            <button class="btn-outline" type="button" (click)="onClearFilters()">
-              Clear
-            </button>
-          </div>
+              <div class="filter-actions">
+                <button
+                  class="btn-primary"
+                  type="button"
+                  (click)="onApplyFilters(); filterMenu.removeAttribute('open')"
+                >
+                  Apply filters
+                </button>
+
+                <button
+                  class="btn-outline"
+                  type="button"
+                  (click)="onClearFilters(); filterMenu.removeAttribute('open')"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </details>
+
+          <button
+            class="btn-primary compact"
+            type="button"
+            (click)="onApplyFilters()"
+          >
+            Search
+          </button>
         </div>
 
         <div class="divider"></div>
@@ -137,9 +169,11 @@
 
         @if (!loading && !error) {
           <div>
-            <div class="pagination-info">
-              <span class="pagination-info-dot"></span>
-              <span>Showing {{ pageStart() }} - {{ pageEnd() }} of {{ totalCount }} customers</span>
+            <div class="table-head">
+              <div class="pagination-info">
+                Showing {{ pageStart() }} - {{ pageEnd() }} of
+                {{ totalCount }} customers
+              </div>
             </div>
 
             <div class="table-wrap">
@@ -147,14 +181,20 @@
                 <thead>
                   <tr>
                     <th class="col-check">
-                      <input type="checkbox" [checked]="allSelected" (change)="toggleAll()" />
+                      <input
+                        type="checkbox"
+                        [checked]="allSelected"
+                        (change)="toggleAll()"
+                      />
                     </th>
-                    <th>Customer Name</th>
-                    <th>Customer No</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Locations</th>
-                    <th>Segments</th>
+
+                    <th class="col-name">Customer Name</th>
+                    <th class="col-no">Customer No</th>
+                    <th class="col-type">Type</th>
+                    <th class="col-status">Status</th>
+                    <th class="col-locations">Locations</th>
+                    <th class="col-segments">Segments</th>
+                    <th class="col-flags">Flags</th>
                     <th class="col-actions"></th>
                   </tr>
                 </thead>
@@ -165,6 +205,7 @@
                       [class.cluster-row]="row.type === 'ClusterCustomer'"
                       [class.child-row]="row.level === 1"
                       [class.expanded]="row.type === 'ClusterCustomer' && isClusterExpanded(row)"
+                      [class.flagged-row]="row.flags.length > 0"
                     >
                       <td class="col-check">
                         <input
@@ -184,10 +225,10 @@
                               (click)="toggleCluster(row); $event.stopPropagation()"
                               [attr.aria-expanded]="isClusterExpanded(row)"
                             >
-                              <span [class.rotate]="isClusterExpanded(row)">›</span>
+                              <span [class.rotate]="isClusterExpanded(row)">
+                                ›
+                              </span>
                             </button>
-
-                            
                           }
 
                           @if (row.level === 1) {
@@ -197,18 +238,12 @@
                             </span>
                           }
 
-                          <div class="name-stack">
-                            <span class="name">{{ row.name }}</span>
-
-                           
-
-                          
-                          </div>
+                          <span class="name" [title]="row.name">{{ row.name }}</span>
                         </div>
                       </td>
 
-                      <td>{{ row.customerNo }}</td>
-                      <td>{{ row.type }}</td>
+                      <td [title]="row.customerNo">{{ row.customerNo }}</td>
+                      <td [title]="row.type">{{ row.type }}</td>
 
                       <td>
                         <span
@@ -221,7 +256,27 @@
                       </td>
 
                       <td>{{ row.locations }}</td>
-                      <td>{{ row.segment }}</td>
+
+                      <td>
+                        <span class="segment-cell" [title]="row.segment">
+                          {{ row.segment }}
+                        </span>
+                      </td>
+
+                      <td>
+                        @if (row.flags.length > 0) {
+                          <div class="flags-cell">
+                            @for (flag of row.flags; track flag) {
+                              <span class="flag-pill" [title]="flag">
+                                <span class="flag-icon" aria-hidden="true">
+                                  ⚑
+                                </span>
+                                <span>{{ flag }}</span>
+                              </span>
+                            }
+                          </div>
+                        }
+                      </td>
 
                       <td class="col-actions">
                         <a
@@ -229,7 +284,8 @@
                           [routerLink]="['/customers', row.customerNo]"
                           (click)="$event.stopPropagation()"
                         >
-                          View Details <span class="chev-r" aria-hidden="true">›</span>
+                          View Details
+                          <span class="chev-r" aria-hidden="true">›</span>
                         </a>
                       </td>
                     </tr>
@@ -245,14 +301,11 @@
                 (click)="previousPage()"
                 [disabled]="offset === 0"
               >
-                <span aria-hidden="true">‹</span>
-                <span>Previous</span>
+                ‹ Previous
               </button>
 
               <div class="pagination-center">
-                <span class="pagination-text">
-                  Page {{ currentPage() }} of {{ totalPages() }}
-                </span>
+                Page {{ currentPage() }} of {{ totalPages() }}
               </div>
 
               <button
@@ -261,30 +314,37 @@
                 (click)="nextPage()"
                 [disabled]="offset + limit >= totalCount"
               >
-                <span>Next</span>
-                <span aria-hidden="true">›</span>
+                Next ›
               </button>
             </div>
           </div>
         }
-
-        <div class="bottom-pad"></div>
       </section>
     </div>
 
     <div class="bulk" [class.show]="selectedIds.size > 0">
       <div class="bulk-inner">
-        <div class="bulk-left">
-          <div class="bulk-count">{{ selectedIds.size }} customers selected</div>
-
-          <div class="bulk-actions">
-            <button class="btn-white" type="button" (click)="goToBulkActions()">
-              Go to Bulk Actions
-            </button>
-          </div>
+        <div class="bulk-count">
+          {{ selectedIds.size }} customers selected
         </div>
 
-        <button class="bulk-clear" type="button" (click)="clearSelection()">Clear Selection</button>
+        <div class="bulk-actions">
+          <button
+            class="btn-white"
+            type="button"
+            (click)="goToBulkActions()"
+          >
+            Go to Bulk Actions
+          </button>
+
+          <button
+            class="bulk-clear"
+            type="button"
+            (click)="clearSelection()"
+          >
+            Clear Selection
+          </button>
+        </div>
       </div>
     </div>
   </main>

@@ -24,6 +24,7 @@ type CustomerRow = {
   locations: number;
   level: 0 | 1;
   parentId?: string;
+  flags: string[];
 };
 
 @Component({
@@ -205,63 +206,95 @@ export class CustomeroverviewComponent {
   }
 
   private mapCustomersToRows(customers: CustomerDto[]): CustomerRow[] {
-  return customers.map(customer => {
-    const row = this.mapCustomerToRow(customer);
+    return customers.map(customer => {
+      const row = this.mapCustomerToRow(customer);
 
-    if (customer.parentCustomerNo) {
+      if (customer.parentCustomerNo) {
+        return {
+          ...row,
+          level: 1,
+          parentId: customer.parentCustomerNo
+        };
+      }
+
       return {
         ...row,
-        level: 1,
-        parentId: customer.parentCustomerNo
+        level: 0
       };
-    }
-
-    return {
-      ...row,
-      level: 0
-    };
-  });
-}
-
+    });
+  }
 
   mapCustomerToRow(customer: CustomerDto): CustomerRow {
+    const segment = customer.segment ?? '';
+    const segments = this.parseSegments(segment);
+
+    const hasCgSegment = segments.some(segmentValue =>
+      segmentValue.toUpperCase().startsWith('CG')
+    );
+
+    const cfSegmentCount = segments.filter(segmentValue =>
+      segmentValue.toUpperCase().startsWith('CF')
+    ).length;
+
+    const flags: string[] = [];
+
+    if (!hasCgSegment) {
+      flags.push('Missing CG segment');
+    }
+
+    if (cfSegmentCount > 1) {
+      flags.push('Multiple CF segments');
+    }
+
     return {
       id: customer.id,
       name: customer.displayName || customer.companyName || customer.customerNo || 'Unnamed customer',
       customerNo: customer.customerNo ?? '',
       type: customer.type ?? 'Customer',
-      segment: customer.segment ?? '-',
+      segment,
       status: customer.active ? 'Active' : 'Inactive',
       locations: customer.locations ?? 0,
-      level: 0
+      level: 0,
+      flags
     };
   }
 
+  private parseSegments(segment: string): string[] {
+  if (!segment.trim()) {
+    return [];
+  }
+
+  return segment
+    .split(/[,\n;|]+/)
+    .map(value => value.trim())
+    .filter(Boolean);
+}
+
   visibleRows(): CustomerRow[] {
-  return this.rows.filter(row => {
-    if (row.level === 0) {
-      return true;
+    return this.rows.filter(row => {
+      if (row.level === 0) {
+        return true;
+      }
+
+      return row.parentId ? this.expandedClusterIds.has(row.parentId) : true;
+    });
+  }
+
+  toggleCluster(row: CustomerRow): void {
+    if (row.type !== 'ClusterCustomer') {
+      return;
     }
 
-    return row.parentId ? this.expandedClusterIds.has(row.parentId) : true;
-  });
-}
-
-toggleCluster(row: CustomerRow): void {
-  if (row.type !== 'ClusterCustomer') {
-    return;
+    if (this.expandedClusterIds.has(row.customerNo)) {
+      this.expandedClusterIds.delete(row.customerNo);
+    } else {
+      this.expandedClusterIds.add(row.customerNo);
+    }
   }
 
-  if (this.expandedClusterIds.has(row.customerNo)) {
-    this.expandedClusterIds.delete(row.customerNo);
-  } else {
-    this.expandedClusterIds.add(row.customerNo);
+  isClusterExpanded(row: CustomerRow): boolean {
+    return this.expandedClusterIds.has(row.customerNo);
   }
-}
-
-isClusterExpanded(row: CustomerRow): boolean {
-  return this.expandedClusterIds.has(row.customerNo);
-}
 
   onApplyFilters(): void {
     this.offset = 0;
