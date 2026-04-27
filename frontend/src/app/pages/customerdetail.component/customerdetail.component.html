@@ -136,33 +136,92 @@
 
       @if (activeTab === 'attributes') {
         <section class="card panel wide">
-          <div class="panel-title">Attributes</div>
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Attributes</div>
+              <div class="panel-sub">Add or edit customer attributes locally.</div>
+            </div>
 
-          @if (customer) {
-            <div class="attr-grid">
-              <div class="attr">
-                <div class="k">Budget Price Type</div>
-                <div class="v">{{ customer.budgetPriceType || '-' }}</div>
+            <div class="attr-actions">
+              <button class="btn-primary" type="button" (click)="startAddAttribute()">
+                Add Attribute
+              </button>
+            </div>
+          </div>
+
+          @if (editingAttribute) {
+            <div class="attr-form">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="attrName">Name</label>
+                  <input
+                    id="attrName"
+                    class="input"
+                    type="text"
+                    [(ngModel)]="attributeForm.name"
+                    placeholder="Attribute name"
+                  />
+                </div>
+
+                <div class="field">
+                  <label for="attrValue">Value</label>
+                  <input
+                    id="attrValue"
+                    class="input"
+                    type="text"
+                    [(ngModel)]="attributeForm.value"
+                    placeholder="Attribute value"
+                  />
+                </div>
               </div>
 
-              <div class="attr">
-                <div class="k">Customer Type ID</div>
-                <div class="v">{{ customer.customerType || '-' }}</div>
-              </div>
+              @if (attributeFormError) {
+                <div class="state error">{{ attributeFormError }}</div>
+              }
 
-              <div class="attr">
-                <div class="k">Customer Type</div>
-                <div class="v">{{ objectTypeLabel() }}</div>
-              </div>
-
-              <div class="attr">
-                <div class="k">Company Name</div>
-                <div class="v">{{ customer.companyName || '-' }}</div>
+              <div class="form-actions">
+                <button class="btn-outline" type="button" (click)="cancelAttributeEdit()">Cancel</button>
+                <button class="btn-primary" type="button" (click)="saveAttribute()">Save</button>
               </div>
             </div>
-          } @else {
-            <div class="empty-state">Customer attributes are not available yet.</div>
           }
+
+          @if (editableAttributes.length > 0) {
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  @for (attribute of editableAttributes; track attribute.id) {
+                    <tr>
+                      <td>{{ attribute.name }}</td>
+                      <td>{{ attribute.value || '-' }}</td>
+                      <td class="col-actions">
+                        <div class="row-actions">
+                          <button class="btn-outline btn-small" type="button" (click)="startEditAttribute(attribute.id)">
+                            Edit
+                          </button>
+                          <button class="btn-danger btn-small" type="button" (click)="removeAttribute(attribute.id)">
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div class="empty-state">No attributes available yet.</div>
+          }
+
+          
         </section>
       }
 
@@ -219,33 +278,33 @@
         </section>
       }
 
-     @if (activeTab === 'segments') {
-  <section class="card panel wide">
-    <div class="panel-title">Segments</div>
+      @if (activeTab === 'segments') {
+        <section class="card panel wide">
+          <div class="panel-title">Segments</div>
 
-    @if (customer?.segments?.length) {
-      <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Name</th>
-            </tr>
-          </thead>
+          @if (customer?.segments?.length) {
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                  </tr>
+                </thead>
 
-          <tbody>
-            @for (segment of customer!.segments; track segment.id) {
-              <tr>
-                <td>{{ segment.name || '-' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    } @else {
-      <div class="empty-state">No segments found for this customer.</div>
-    }
-  </section>
-}
+                <tbody>
+                  @for (segment of customer!.segments; track segment.id) {
+                    <tr>
+                      <td>{{ segment.name || '-' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div class="empty-state">No segments found for this customer.</div>
+          }
+        </section>
+      }
 
       @if (activeTab === 'relations') {
         <section class="card panel wide">
