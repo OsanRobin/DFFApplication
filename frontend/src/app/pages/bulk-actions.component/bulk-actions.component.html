@@ -53,7 +53,7 @@
         </div>
 
         @if (loadingOptions) {
-          <div class="message">Loading available attributes and segments...</div>
+          <div class="message">Loading available attributes...</div>
         }
 
         <div class="toolbar one-col">
@@ -63,7 +63,6 @@
               <option value="">Choose an action</option>
               <option value="add-attribute">Add Attribute</option>
               <option value="update-attribute">Update Attribute</option>
-              <option value="assign-segment">Assign to Segment</option>
             </select>
           </div>
 
@@ -88,20 +87,6 @@
                 [(ngModel)]="attributeValue"
                 placeholder="Enter attribute value"
               />
-            </div>
-          }
-
-          @if (selectedAction === 'assign-segment') {
-            <div class="field">
-              <label class="field-label">Segment</label>
-              <select class="select" [(ngModel)]="segmentId">
-                <option value="">Choose a segment</option>
-                @for (segment of availableSegments; track segment.id) {
-                  <option [value]="segment.id">
-                    {{ segment.name }}
-                  </option>
-                }
-              </select>
             </div>
           }
 

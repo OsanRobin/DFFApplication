@@ -17,7 +17,6 @@ export interface BulkActionRequest {
   action: string;
   attributeName?: string;
   attributeValue?: string;
-  segmentId?: string;
 }
 
 export interface BulkActionResponse {
@@ -33,11 +32,6 @@ export interface AttributeOption {
   displayName: string;
 }
 
-export interface SegmentOption {
-  id: string;
-  name: string;
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -45,7 +39,6 @@ export class BulkSelectionService {
   private readonly storageKey = 'bulkSelectedCustomers';
   private readonly bulkActionsUrl = 'http://localhost:8081/api/bulk-actions';
   private readonly attributesUrl = 'http://localhost:8081/api/bulk-actions/attributes';
-  private readonly segmentsUrl = 'http://localhost:8081/api/bulk-actions/segments';
 
   private selectedCustomers: SelectedCustomerRow[] = [];
   private http = inject(HttpClient);
@@ -106,12 +99,6 @@ export class BulkSelectionService {
 
   getAvailableAttributes(): Observable<AttributeOption[]> {
     return this.http.get<AttributeOption[]>(this.attributesUrl, {
-      withCredentials: true
-    });
-  }
-
-  getAvailableSegments(): Observable<SegmentOption[]> {
-    return this.http.get<SegmentOption[]>(this.segmentsUrl, {
       withCredentials: true
     });
   }

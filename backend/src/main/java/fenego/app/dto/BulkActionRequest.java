@@ -8,7 +8,6 @@ public class BulkActionRequest
     private String action;
     private String attributeName;
     private String attributeValue;
-    private String segmentId;
 
     public List<String> getCustomerIds()
     {
@@ -48,15 +47,5 @@ public class BulkActionRequest
     public void setAttributeValue(String attributeValue)
     {
         this.attributeValue = attributeValue;
-    }
-
-    public String getSegmentId()
-    {
-        return segmentId;
-    }
-
-    public void setSegmentId(String segmentId)
-    {
-        this.segmentId = segmentId;
     }
 }

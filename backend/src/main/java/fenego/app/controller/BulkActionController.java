@@ -1,4 +1,5 @@
 package fenego.app.controller;
+
 import fenego.app.dto.BulkActionRequest;
 import fenego.app.dto.BulkActionResponse;
 import fenego.app.jpa.AttributeOption;
@@ -24,8 +25,6 @@ public class BulkActionController
     {
         return bulkActionService.getAvailableAttributes();
     }
-
-  
 
     @PostMapping
     public BulkActionResponse executeBulkAction(@RequestBody BulkActionRequest request)
