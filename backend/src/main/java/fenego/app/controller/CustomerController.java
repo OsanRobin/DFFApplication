@@ -1,11 +1,15 @@
 package fenego.app.controller;
 
+import fenego.app.dto.CustomerAttributeRequest;
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerListResponse;
 import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.service.CustomerService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -55,12 +59,33 @@ public class CustomerController
         );
     }
 
-   @GetMapping("/{customerId}")
-public CustomerDetailResponse getCustomerById(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @RequestParam("domain") String domain,
-        @PathVariable String customerId)
-{
-    return customerService.getCustomerById(authenticationToken, domain, customerId);
-}
+    @GetMapping("/{customerId}")
+    public CustomerDetailResponse getCustomerById(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @PathVariable String customerId)
+    {
+        return customerService.getCustomerById(authenticationToken, domain, customerId);
+    }
+
+    @PostMapping("/{customerId}/attributes")
+    public void addCustomerAttribute(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @PathVariable String customerId,
+            @RequestBody CustomerAttributeRequest request)
+    {
+        customerService.addCustomerAttribute(authenticationToken, domain, customerId, request);
+    }
+
+    @PutMapping("/{customerId}/attributes/{attributeName}")
+    public void updateCustomerAttribute(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @PathVariable String customerId,
+            @PathVariable String attributeName,
+            @RequestBody CustomerAttributeRequest request)
+    {
+        customerService.updateCustomerAttribute(authenticationToken, domain, customerId, attributeName, request);
+    }
 }

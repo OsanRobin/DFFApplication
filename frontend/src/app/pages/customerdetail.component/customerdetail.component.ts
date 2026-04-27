@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HeaderComponent } from '../../shell/header.component/header.component';
 import {
   CustomerApiService,
+  CustomerAttributeDto,
   CustomerDetailResponse,
   CustomerDto,
   CustomerUserDto
@@ -50,6 +51,7 @@ export class CustomerdetailComponent {
   editingAttribute = false;
   editingAttributeId: string | null = null;
   attributeFormError = '';
+  attributeSaving = false;
 
   attributeForm = {
     name: '',
@@ -107,11 +109,12 @@ export class CustomerdetailComponent {
         this.customer = {
           ...response,
           segments: response.segments ?? [],
+          attributes: response.attributes ?? [],
           subCustomers: response.subCustomers ?? [],
           parentClusterCustomers: response.parentClusterCustomers ?? []
         };
 
-        this.editableAttributes = this.buildEditableAttributes(this.customer);
+        this.editableAttributes = this.buildEditableAttributes(this.customer.attributes);
         this.loading = false;
       },
       error: (err) => {
@@ -169,29 +172,12 @@ export class CustomerdetailComponent {
     });
   }
 
-  buildEditableAttributes(customer: CustomerDetailResponse): EditableAttribute[] {
-    return [
-      {
-        id: 'budgetPriceType',
-        name: 'Budget Price Type',
-        value: customer.budgetPriceType || ''
-      },
-      {
-        id: 'customerType',
-        name: 'Customer Type ID',
-        value: customer.customerType || ''
-      },
-      {
-        id: 'type',
-        name: 'Customer Type',
-        value: customer.type || ''
-      },
-      {
-        id: 'companyName',
-        name: 'Company Name',
-        value: customer.companyName || ''
-      }
-    ];
+  buildEditableAttributes(attributes: CustomerAttributeDto[] = []): EditableAttribute[] {
+    return attributes.map(attribute => ({
+      id: attribute.name,
+      name: attribute.name,
+      value: attribute.value ?? ''
+    }));
   }
 
   startAddAttribute(): void {
@@ -204,19 +190,26 @@ export class CustomerdetailComponent {
     };
   }
 
-  startEditAttribute(attributeId: string): void {
-    const attribute = this.editableAttributes.find(item => item.id === attributeId);
+  onEditAttributeClick(attributeName: string, event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.startEditAttribute(attributeName);
+  }
+
+  startEditAttribute(attributeName: string): void {
+    const attribute = this.editableAttributes.find(item => item.name === attributeName);
 
     if (!attribute) {
+      this.attributeFormError = `Attribute not found: ${attributeName}`;
       return;
     }
 
     this.editingAttribute = true;
-    this.editingAttributeId = attribute.id;
+    this.editingAttributeId = attribute.name;
     this.attributeFormError = '';
     this.attributeForm = {
       name: attribute.name,
-      value: attribute.value
+      value: attribute.value ?? ''
     };
   }
 
@@ -224,6 +217,7 @@ export class CustomerdetailComponent {
     this.editingAttribute = false;
     this.editingAttributeId = null;
     this.attributeFormError = '';
+    this.attributeSaving = false;
     this.attributeForm = {
       name: '',
       value: ''
@@ -239,9 +233,21 @@ export class CustomerdetailComponent {
       return;
     }
 
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken) {
+      this.attributeFormError = 'No authentication token found.';
+      return;
+    }
+
+    if (!this.customerId) {
+      this.attributeFormError = 'No customer id found.';
+      return;
+    }
+
     const duplicate = this.editableAttributes.some(attribute => {
       return attribute.name.toLowerCase() === name.toLowerCase()
-        && attribute.id !== this.editingAttributeId;
+        && attribute.name !== this.editingAttributeId;
     });
 
     if (duplicate) {
@@ -249,63 +255,73 @@ export class CustomerdetailComponent {
       return;
     }
 
-    if (this.editingAttributeId) {
-      this.editableAttributes = this.editableAttributes.map(attribute => {
-        if (attribute.id !== this.editingAttributeId) {
-          return attribute;
-        }
+    this.attributeSaving = true;
+    this.attributeFormError = '';
 
-        return {
-          ...attribute,
-          name,
-          value
-        };
+    if (this.editingAttributeId) {
+      this.customerApi.updateCustomerAttribute(
+        authenticationToken,
+        this.domainName,
+        this.customerId,
+        this.editingAttributeId,
+        { name, value }
+      ).subscribe({
+        next: () => {
+          this.attributeSaving = false;
+          this.cancelAttributeEdit();
+          this.loadCustomer();
+        },
+        error: (err) => {
+          console.error(err);
+          this.attributeSaving = false;
+
+          if (err.status === 401 || err.status === 403) {
+            this.attributeFormError = 'Your session expired. Please log in again.';
+            this.router.navigate(['/login']);
+            return;
+          }
+
+          this.attributeFormError = 'Failed to update attribute.';
+        }
       });
 
-      this.updateCustomerPreviewAttribute(this.editingAttributeId, value);
-      this.cancelAttributeEdit();
       return;
     }
 
-    this.editableAttributes = [
-      ...this.editableAttributes,
-      {
-        id: `custom-${Date.now()}`,
-        name,
-        value
+    this.customerApi.addCustomerAttribute(
+      authenticationToken,
+      this.domainName,
+      this.customerId,
+      { name, value }
+    ).subscribe({
+      next: () => {
+        this.attributeSaving = false;
+        this.cancelAttributeEdit();
+        this.loadCustomer();
+      },
+      error: (err) => {
+        console.error(err);
+        this.attributeSaving = false;
+
+        if (err.status === 401 || err.status === 403) {
+          this.attributeFormError = 'Your session expired. Please log in again.';
+          this.router.navigate(['/login']);
+          return;
+        }
+
+        this.attributeFormError = 'Failed to add attribute.';
       }
-    ];
-
-    this.cancelAttributeEdit();
+    });
   }
 
-  removeAttribute(attributeId: string): void {
-    this.editableAttributes = this.editableAttributes.filter(attribute => attribute.id !== attributeId);
+  removeAttribute(attributeName: string, event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
 
-    if (this.editingAttributeId === attributeId) {
+    this.editableAttributes = this.editableAttributes.filter(attribute => attribute.name !== attributeName);
+
+    if (this.editingAttributeId === attributeName) {
       this.cancelAttributeEdit();
-    }
-  }
-
-  updateCustomerPreviewAttribute(attributeId: string, value: string): void {
-    if (!this.customer) {
-      return;
-    }
-
-    if (attributeId === 'budgetPriceType') {
-      this.customer = { ...this.customer, budgetPriceType: value };
-    }
-
-    if (attributeId === 'customerType') {
-      this.customer = { ...this.customer, customerType: value };
-    }
-
-    if (attributeId === 'type') {
-      this.customer = { ...this.customer, type: value };
-    }
-
-    if (attributeId === 'companyName') {
-      this.customer = { ...this.customer, companyName: value };
     }
   }
 

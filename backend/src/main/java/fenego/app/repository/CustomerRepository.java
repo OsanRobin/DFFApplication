@@ -1,5 +1,6 @@
 package fenego.app.repository;
 
+import fenego.app.dto.CustomerAttributeDTO;
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerUserDTO;
 import fenego.app.jpa.Customer;
@@ -349,6 +350,94 @@ public class CustomerRepository
         return results.isEmpty() ? null : results.get(0);
     }
 
+    public List<CustomerAttributeDTO> findAttributesByCustomerNo(String customerNo)
+    {
+        String sql = """
+            select
+                av.NAME as name,
+                coalesce(av.STRINGVALUE, convert(nvarchar(max), av.TEXTVALUE)) as value
+            from CUSTOMER c
+            join CUSTOMER_AV av
+                on av.OWNERID = c.UUID
+            where c.CUSTOMERNO = :customerNo
+            order by av.NAME
+            """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("customerNo", customerNo);
+
+        return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            CustomerAttributeDTO dto = new CustomerAttributeDTO();
+            dto.setName(rs.getString("name"));
+            dto.setValue(rs.getString("value"));
+            return dto;
+        });
+    }
+
+   public void saveCustomerAttribute(String customerNo, String name, String value)
+{
+    String updateSql = """
+        update av
+        set
+            av.STRINGVALUE = :value,
+            av.TEXTVALUE = null,
+            av.LASTMODIFIED = getdate(),
+            av.OCA = av.OCA + 1
+        from CUSTOMER_AV av
+        join CUSTOMER c
+            on av.OWNERID = c.UUID
+        where c.CUSTOMERNO = :customerNo
+          and av.NAME = :name
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("customerNo", customerNo)
+            .addValue("name", name)
+            .addValue("value", value);
+
+    int updated = jdbcTemplate.update(updateSql, params);
+
+    if (updated > 0)
+    {
+        return;
+    }
+
+    String insertSql = """
+        insert into CUSTOMER_AV
+            (
+                OWNERID,
+                NAME,
+                STRINGVALUE,
+                TEXTVALUE,
+                LOCALIZEDFLAG,
+                LOCALEID,
+                LASTMODIFIED,
+                TYPE,
+                OCA
+            )
+        select
+            c.UUID,
+            :name,
+            :value,
+            null,
+            0,
+            '',
+            getdate(),
+            1,
+            0
+        from CUSTOMER c
+        where c.CUSTOMERNO = :customerNo
+        """;
+
+    int inserted = jdbcTemplate.update(insertSql, params);
+
+    if (inserted == 0)
+    {
+        throw new IllegalStateException(
+            "No CUSTOMER found with CUSTOMERNO: " + customerNo
+        );
+    }
+}
     public List<CustomerUserDTO> findUsersByCustomerId(String customerId)
     {
         String sql = """

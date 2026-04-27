@@ -1,5 +1,6 @@
 package fenego.app.service;
 
+import fenego.app.dto.CustomerAttributeRequest;
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerListResponse;
 import fenego.app.dto.CustomerSegmentDTO;
@@ -163,6 +164,7 @@ public class CustomerService
                 .toList();
 
         response.setSegments(segments);
+        response.setAttributes(customerRepository.findAttributesByCustomerNo(customerId));
 
         List<Customer> subCustomers =
                 customerRepository.findSubCustomersForCluster(domainName, customerId);
@@ -174,6 +176,90 @@ public class CustomerService
         response.setParentClusterCustomers(parentClusterCustomers);
 
         return response;
+    }
+
+ public void addCustomerAttribute(
+        String authenticationToken,
+        String domainName,
+        String customerId,
+        CustomerAttributeRequest request)
+{
+    if (domainName == null || domainName.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
+    }
+
+    if (customerId == null || customerId.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+    }
+
+    if (request == null || request.getName() == null || request.getName().isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute name is required");
+    }
+
+    String name = request.getName().trim();
+    String value = request.getValue() == null ? "" : request.getValue();
+
+    try
+    {
+        customerRepository.saveCustomerAttribute(customerId, name, value);
+    }
+    catch (Exception ex)
+    {
+        ex.printStackTrace();
+        throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Local DB save attribute failed: " + ex.getMessage()
+        );
+    }
+
+    try
+    {
+        intershopClient.addCustomerAttribute(authenticationToken, customerId, name, value);
+    }
+    catch (Exception ex)
+    {
+        System.err.println("Intershop add attribute failed, but local DB was updated: " + ex.getMessage());
+    }
+}
+
+    public void updateCustomerAttribute(
+            String authenticationToken,
+            String domainName,
+            String customerId,
+            String attributeName,
+            CustomerAttributeRequest request)
+    {
+        if (domainName == null || domainName.isBlank())
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
+        }
+
+        if (customerId == null || customerId.isBlank())
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+        }
+
+        if (attributeName == null || attributeName.isBlank())
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute name is required");
+        }
+
+        String name = attributeName.trim();
+        String value = request == null || request.getValue() == null ? "" : request.getValue();
+
+        customerRepository.saveCustomerAttribute(customerId, name, value);
+
+        try
+        {
+            intershopClient.updateCustomerAttribute(authenticationToken, customerId, name, value);
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Intershop update attribute failed, but local DB was updated: " + ex.getMessage());
+        }
     }
 
     public CustomerUserListResponse getCustomerUsers(String customerId)

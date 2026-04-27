@@ -16,6 +16,7 @@ public class CustomerDetailResponse
     private CustomerAddress preferredInvoiceToAddress;
     private CustomerAddress preferredShipToAddress;
     private List<CustomerSegmentDTO> segments = new ArrayList<>();
+    private List<CustomerAttributeDTO> attributes = new ArrayList<>();
 
     public String getCustomerNo()
     {
@@ -117,5 +118,14 @@ public List<Customer> getParentClusterCustomers()
 public void setParentClusterCustomers(List<Customer> parentClusterCustomers)
 {
     this.parentClusterCustomers = parentClusterCustomers;
+}
+public List<CustomerAttributeDTO> getAttributes()
+{
+    return attributes;
+}
+
+public void setAttributes(List<CustomerAttributeDTO> attributes)
+{
+    this.attributes = attributes;
 }
 }

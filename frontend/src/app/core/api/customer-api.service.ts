@@ -50,6 +50,16 @@ export interface CustomerSegmentDto {
   description: string | null;
 }
 
+export interface CustomerAttributeDto {
+  name: string;
+  value: string;
+}
+
+export interface CustomerAttributeRequest {
+  name: string;
+  value: string;
+}
+
 export interface CustomerDetailResponse {
   customerNo: string;
   companyName: string;
@@ -59,6 +69,7 @@ export interface CustomerDetailResponse {
   preferredInvoiceToAddress: CustomerAddressDto;
   preferredShipToAddress: CustomerAddressDto;
   segments: CustomerSegmentDto[];
+  attributes: CustomerAttributeDto[];
   subCustomers: CustomerDto[];
   parentClusterCustomers: CustomerDto[];
 }
@@ -193,6 +204,45 @@ export class CustomerApiService {
     return this.http.get<CustomerUserListResponse>(`${this.baseUrl}/${customerId}/users`, {
       headers
     });
+  }
+
+  addCustomerAttribute(
+    authenticationToken: string,
+    domain: string,
+    customerId: string,
+    request: CustomerAttributeRequest
+  ): Observable<void> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    const params = new HttpParams().set('domain', domain);
+
+    return this.http.post<void>(
+      `${this.baseUrl}/${customerId}/attributes`,
+      request,
+      { headers, params }
+    );
+  }
+
+  updateCustomerAttribute(
+    authenticationToken: string,
+    domain: string,
+    customerId: string,
+    attributeName: string,
+    request: CustomerAttributeRequest
+  ): Observable<void> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    const params = new HttpParams().set('domain', domain);
+
+    return this.http.put<void>(
+      `${this.baseUrl}/${customerId}/attributes/${encodeURIComponent(attributeName)}`,
+      request,
+      { headers, params }
+    );
   }
 
   getSavedSearches(authenticationToken: string, domain: string): Observable<SavedCustomerSearchListResponse> {

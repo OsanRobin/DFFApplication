@@ -139,11 +139,11 @@
           <div class="panel-head">
             <div>
               <div class="panel-title">Attributes</div>
-              <div class="panel-sub">Add or edit customer attributes locally.</div>
+              <div class="panel-sub">Add or edit customer attributes.</div>
             </div>
 
             <div class="attr-actions">
-              <button class="btn-primary" type="button" (click)="startAddAttribute()">
+              <button class="btn-primary" type="button" (click)="startAddAttribute()" [disabled]="attributeSaving">
                 Add Attribute
               </button>
             </div>
@@ -160,6 +160,7 @@
                     type="text"
                     [(ngModel)]="attributeForm.name"
                     placeholder="Attribute name"
+                    [disabled]="attributeSaving"
                   />
                 </div>
 
@@ -171,6 +172,7 @@
                     type="text"
                     [(ngModel)]="attributeForm.value"
                     placeholder="Attribute value"
+                    [disabled]="attributeSaving"
                   />
                 </div>
               </div>
@@ -180,8 +182,12 @@
               }
 
               <div class="form-actions">
-                <button class="btn-outline" type="button" (click)="cancelAttributeEdit()">Cancel</button>
-                <button class="btn-primary" type="button" (click)="saveAttribute()">Save</button>
+                <button class="btn-outline" type="button" (click)="cancelAttributeEdit()" [disabled]="attributeSaving">
+                  Cancel
+                </button>
+                <button class="btn-primary" type="button" (click)="saveAttribute()" [disabled]="attributeSaving">
+                  {{ attributeSaving ? 'Saving...' : 'Save' }}
+                </button>
               </div>
             </div>
           }
@@ -198,16 +204,26 @@
                 </thead>
 
                 <tbody>
-                  @for (attribute of editableAttributes; track attribute.id) {
+                  @for (attribute of editableAttributes; track attribute.name) {
                     <tr>
                       <td>{{ attribute.name }}</td>
                       <td>{{ attribute.value || '-' }}</td>
                       <td class="col-actions">
                         <div class="row-actions">
-                          <button class="btn-outline btn-small" type="button" (click)="startEditAttribute(attribute.id)">
+                          <button
+                            class="btn-outline btn-small"
+                            type="button"
+                            (click)="onEditAttributeClick(attribute.name, $event)"
+                          >
                             Edit
                           </button>
-                          <button class="btn-danger btn-small" type="button" (click)="removeAttribute(attribute.id)">
+
+                          <button
+                            class="btn-danger btn-small"
+                            type="button"
+                            (click)="removeAttribute(attribute.name, $event)"
+                            [disabled]="attributeSaving"
+                          >
                             Delete
                           </button>
                         </div>
@@ -220,8 +236,6 @@
           } @else {
             <div class="empty-state">No attributes available yet.</div>
           }
-
-          
         </section>
       }
 
