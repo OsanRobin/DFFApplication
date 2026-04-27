@@ -214,6 +214,7 @@
                             class="btn-outline btn-small"
                             type="button"
                             (click)="onEditAttributeClick(attribute.name, $event)"
+                            [disabled]="attributeSaving"
                           >
                             Edit
                           </button>
@@ -397,4 +398,44 @@
       }
     }
   </main>
+
+  @if (showDeleteAttributeConfirm) {
+    <div class="modal-backdrop" (click)="closeDeleteAttributeConfirm()">
+      <div class="confirm-modal" (click)="$event.stopPropagation()">
+        <div class="confirm-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M6 19c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4h-3.5z"
+            />
+          </svg>
+        </div>
+
+        <h3>Delete attribute?</h3>
+        <p>
+          Are you sure you want to delete the attribute
+          <strong>{{ attributeNameToDelete }}</strong>?
+        </p>
+
+        <div class="confirm-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="closeDeleteAttributeConfirm()"
+            [disabled]="attributeSaving"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            class="btn-danger"
+            (click)="confirmDeleteAttribute()"
+            [disabled]="attributeSaving"
+          >
+            {{ attributeSaving ? 'Deleting...' : 'Yes, delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

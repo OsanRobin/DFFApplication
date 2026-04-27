@@ -53,6 +53,9 @@ export class CustomerdetailComponent {
   attributeFormError = '';
   attributeSaving = false;
 
+  showDeleteAttributeConfirm = false;
+  attributeNameToDelete = '';
+
   attributeForm = {
     name: '',
     value: ''
@@ -70,6 +73,8 @@ export class CustomerdetailComponent {
       this.usersError = '';
       this.error = '';
       this.activeTab = 'overview';
+      this.showDeleteAttributeConfirm = false;
+      this.attributeNameToDelete = '';
       this.cancelAttributeEdit();
 
       this.loadCustomer();
@@ -315,53 +320,83 @@ export class CustomerdetailComponent {
   }
 
   removeAttribute(attributeName: string, event?: Event): void {
-  event?.preventDefault();
-  event?.stopPropagation();
+    event?.preventDefault();
+    event?.stopPropagation();
 
-  const authenticationToken = this.authService.getAuthenticationToken();
-
-  if (!authenticationToken) {
-    this.attributeFormError = 'No authentication token found.';
-    return;
-  }
-
-  if (!this.customerId) {
-    this.attributeFormError = 'No customer id found.';
-    return;
-  }
-
-  this.attributeSaving = true;
-  this.attributeFormError = '';
-
-  this.customerApi.deleteCustomerAttribute(
-    authenticationToken,
-    this.domainName,
-    this.customerId,
-    attributeName
-  ).subscribe({
-    next: () => {
-      this.attributeSaving = false;
-
-      if (this.editingAttributeId === attributeName) {
-        this.cancelAttributeEdit();
-      }
-
-      this.loadCustomer();
-    },
-    error: (err) => {
-      console.error(err);
-      this.attributeSaving = false;
-
-      if (err.status === 401 || err.status === 403) {
-        this.attributeFormError = 'Your session expired. Please log in again.';
-        this.router.navigate(['/login']);
-        return;
-      }
-
-      this.attributeFormError = 'Failed to delete attribute.';
+    if (this.attributeSaving) {
+      return;
     }
-  });
-}
+
+    this.attributeNameToDelete = attributeName;
+    this.showDeleteAttributeConfirm = true;
+  }
+
+  closeDeleteAttributeConfirm(): void {
+    if (this.attributeSaving) {
+      return;
+    }
+
+    this.showDeleteAttributeConfirm = false;
+    this.attributeNameToDelete = '';
+  }
+
+  confirmDeleteAttribute(): void {
+    const attributeName = this.attributeNameToDelete;
+
+    if (!attributeName) {
+      return;
+    }
+
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken) {
+      this.attributeFormError = 'No authentication token found.';
+      this.closeDeleteAttributeConfirm();
+      return;
+    }
+
+    if (!this.customerId) {
+      this.attributeFormError = 'No customer id found.';
+      this.closeDeleteAttributeConfirm();
+      return;
+    }
+
+    this.attributeSaving = true;
+    this.attributeFormError = '';
+
+    this.customerApi.deleteCustomerAttribute(
+      authenticationToken,
+      this.domainName,
+      this.customerId,
+      attributeName
+    ).subscribe({
+      next: () => {
+        this.attributeSaving = false;
+        this.showDeleteAttributeConfirm = false;
+
+        if (this.editingAttributeId === attributeName) {
+          this.cancelAttributeEdit();
+        }
+
+        this.attributeNameToDelete = '';
+        this.loadCustomer();
+      },
+      error: (err) => {
+        console.error(err);
+        this.attributeSaving = false;
+        this.showDeleteAttributeConfirm = false;
+        this.attributeNameToDelete = '';
+
+        if (err.status === 401 || err.status === 403) {
+          this.attributeFormError = 'Your session expired. Please log in again.';
+          this.router.navigate(['/login']);
+          return;
+        }
+
+        this.attributeFormError = 'Failed to delete attribute.';
+      }
+    });
+  }
 
   customerTitle(): string {
     if (this.customer?.companyName) {
