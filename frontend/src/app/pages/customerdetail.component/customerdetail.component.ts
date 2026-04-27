@@ -315,15 +315,53 @@ export class CustomerdetailComponent {
   }
 
   removeAttribute(attributeName: string, event?: Event): void {
-    event?.preventDefault();
-    event?.stopPropagation();
+  event?.preventDefault();
+  event?.stopPropagation();
 
-    this.editableAttributes = this.editableAttributes.filter(attribute => attribute.name !== attributeName);
+  const authenticationToken = this.authService.getAuthenticationToken();
 
-    if (this.editingAttributeId === attributeName) {
-      this.cancelAttributeEdit();
-    }
+  if (!authenticationToken) {
+    this.attributeFormError = 'No authentication token found.';
+    return;
   }
+
+  if (!this.customerId) {
+    this.attributeFormError = 'No customer id found.';
+    return;
+  }
+
+  this.attributeSaving = true;
+  this.attributeFormError = '';
+
+  this.customerApi.deleteCustomerAttribute(
+    authenticationToken,
+    this.domainName,
+    this.customerId,
+    attributeName
+  ).subscribe({
+    next: () => {
+      this.attributeSaving = false;
+
+      if (this.editingAttributeId === attributeName) {
+        this.cancelAttributeEdit();
+      }
+
+      this.loadCustomer();
+    },
+    error: (err) => {
+      console.error(err);
+      this.attributeSaving = false;
+
+      if (err.status === 401 || err.status === 403) {
+        this.attributeFormError = 'Your session expired. Please log in again.';
+        this.router.navigate(['/login']);
+        return;
+      }
+
+      this.attributeFormError = 'Failed to delete attribute.';
+    }
+  });
+}
 
   customerTitle(): string {
     if (this.customer?.companyName) {

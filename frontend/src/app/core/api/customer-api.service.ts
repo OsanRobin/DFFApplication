@@ -244,6 +244,23 @@ export class CustomerApiService {
       { headers, params }
     );
   }
+  deleteCustomerAttribute(
+  authenticationToken: string,
+  domain: string,
+  customerId: string,
+  attributeName: string
+): Observable<void> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  const params = new HttpParams().set('domain', domain);
+
+  return this.http.delete<void>(
+    `${this.baseUrl}/${customerId}/attributes/${encodeURIComponent(attributeName)}`,
+    { headers, params }
+  );
+}
 
   getSavedSearches(authenticationToken: string, domain: string): Observable<SavedCustomerSearchListResponse> {
     const headers = new HttpHeaders({

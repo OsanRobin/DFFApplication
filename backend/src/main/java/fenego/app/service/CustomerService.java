@@ -299,6 +299,29 @@ public class CustomerService
             return new LinkedHashMap<>();
         }
     }
+    public void deleteCustomerAttribute(
+        String authenticationToken,
+        String domainName,
+        String customerId,
+        String attributeName)
+{
+    if (domainName == null || domainName.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
+    }
+
+    if (customerId == null || customerId.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+    }
+
+    if (attributeName == null || attributeName.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute name is required");
+    }
+
+    customerRepository.deleteCustomerAttribute(customerId, attributeName.trim());
+}
 
     private void applySegments(
             List<Customer> customers,

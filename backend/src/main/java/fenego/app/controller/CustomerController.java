@@ -5,6 +5,7 @@ import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerListResponse;
 import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.service.CustomerService;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -87,5 +88,15 @@ public class CustomerController
             @RequestBody CustomerAttributeRequest request)
     {
         customerService.updateCustomerAttribute(authenticationToken, domain, customerId, attributeName, request);
+    }
+
+    @DeleteMapping("/{customerId}/attributes/{attributeName}")
+    public void deleteCustomerAttribute(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @PathVariable String customerId,
+            @PathVariable String attributeName)
+    {
+        customerService.deleteCustomerAttribute(authenticationToken, domain, customerId, attributeName);
     }
 }

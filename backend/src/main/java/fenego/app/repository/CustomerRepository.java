@@ -689,6 +689,23 @@ public class CustomerRepository
         return jdbcTemplate.query(sql, params, (rs, rowNum) -> mapCustomer(rs));
     }
 
+    public void deleteCustomerAttribute(String customerNo, String name)
+{
+    String sql = """
+        delete av
+        from CUSTOMER_AV av
+        join CUSTOMER c
+            on av.OWNERID = c.UUID
+        where c.CUSTOMERNO = :customerNo
+          and av.NAME = :name
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("customerNo", customerNo)
+            .addValue("name", name);
+
+    jdbcTemplate.update(sql, params);
+}
     private Customer mapCustomer(ResultSet rs) throws SQLException
     {
         Customer customer = new Customer();
