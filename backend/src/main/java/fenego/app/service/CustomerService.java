@@ -27,11 +27,16 @@ public class CustomerService
 {
     private final CustomerRepository customerRepository;
     private final IntershopClient intershopClient;
+    private final AuditLogService auditLogService;
 
-    public CustomerService(CustomerRepository customerRepository, IntershopClient intershopClient)
+    public CustomerService(
+            CustomerRepository customerRepository,
+            IntershopClient intershopClient,
+            AuditLogService auditLogService)
     {
         this.customerRepository = customerRepository;
         this.intershopClient = intershopClient;
+        this.auditLogService = auditLogService;
     }
 
     public CustomerListResponse getCustomers(
@@ -180,52 +185,64 @@ public class CustomerService
         return response;
     }
 
- public void addCustomerAttribute(
-        String authenticationToken,
-        String domainName,
-        String customerId,
-        CustomerAttributeRequest request)
-{
-    if (domainName == null || domainName.isBlank())
+    public void addCustomerAttribute(
+            String authenticationToken,
+            String domainName,
+            String customerId,
+            CustomerAttributeRequest request)
     {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
-    }
+        if (domainName == null || domainName.isBlank())
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
+        }
 
-    if (customerId == null || customerId.isBlank())
-    {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
-    }
+        if (customerId == null || customerId.isBlank())
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+        }
 
-    if (request == null || request.getName() == null || request.getName().isBlank())
-    {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute name is required");
-    }
+        if (request == null || request.getName() == null || request.getName().isBlank())
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute name is required");
+        }
 
-    String name = request.getName().trim();
-    String value = request.getValue() == null ? "" : request.getValue();
+        String name = request.getName().trim();
+        String value = request.getValue() == null ? "" : request.getValue();
+        String changedBy = "system";
 
-    try
-    {
-        customerRepository.saveCustomerAttribute(customerId, name, value);
-    }
-    catch (Exception ex)
-    {
-        ex.printStackTrace();
-        throw new ResponseStatusException(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Local DB save attribute failed: " + ex.getMessage()
-        );
-    }
+        try
+        {
+            customerRepository.saveCustomerAttribute(customerId, name, value);
 
-    try
-    {
-        intershopClient.addCustomerAttribute(authenticationToken, customerId, name, value);
+            auditLogService.logChange(
+                    "CUSTOMER_ATTRIBUTE",
+                    customerId,
+                    "CREATE",
+                    name,
+                    "",
+                    value,
+                    changedBy,
+                    "Customer attribute added"
+            );
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Local DB save attribute failed: " + ex.getMessage()
+            );
+        }
+
+        try
+        {
+            intershopClient.addCustomerAttribute(authenticationToken, customerId, name, value);
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Intershop add attribute failed, but local DB was updated: " + ex.getMessage());
+        }
     }
-    catch (Exception ex)
-    {
-        System.err.println("Intershop add attribute failed, but local DB was updated: " + ex.getMessage());
-    }
-}
 
     public void updateCustomerAttribute(
             String authenticationToken,
@@ -251,8 +268,20 @@ public class CustomerService
 
         String name = attributeName.trim();
         String value = request == null || request.getValue() == null ? "" : request.getValue();
+        String changedBy = "system";
 
         customerRepository.saveCustomerAttribute(customerId, name, value);
+
+        auditLogService.logChange(
+                "CUSTOMER_ATTRIBUTE",
+                customerId,
+                "UPDATE",
+                name,
+                "",
+                value,
+                changedBy,
+                "Customer attribute updated"
+        );
 
         try
         {
@@ -262,6 +291,44 @@ public class CustomerService
         {
             System.err.println("Intershop update attribute failed, but local DB was updated: " + ex.getMessage());
         }
+    }
+
+    public void deleteCustomerAttribute(
+            String authenticationToken,
+            String domainName,
+            String customerId,
+            String attributeName)
+    {
+        if (domainName == null || domainName.isBlank())
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
+        }
+
+        if (customerId == null || customerId.isBlank())
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+        }
+
+        if (attributeName == null || attributeName.isBlank())
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute name is required");
+        }
+
+        String name = attributeName.trim();
+        String changedBy = "system";
+
+        customerRepository.deleteCustomerAttribute(customerId, name);
+
+        auditLogService.logChange(
+                "CUSTOMER_ATTRIBUTE",
+                customerId,
+                "DELETE",
+                name,
+                "",
+                "",
+                changedBy,
+                "Customer attribute deleted"
+        );
     }
 
     public CustomerUserListResponse getCustomerUsers(String customerId)
@@ -276,6 +343,42 @@ public class CustomerService
         response.setLimit(50);
         response.setSortKeys(List.of("name"));
         response.setElements(users);
+        return response;
+    }
+
+    public CustomerUserDetailResponse getCustomerUserDetail(String customerId, String businessPartnerNo)
+    {
+        if (customerId == null || customerId.isBlank())
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+        }
+
+        if (businessPartnerNo == null || businessPartnerNo.isBlank())
+        {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Business partner no is required");
+        }
+
+        String normalizedBusinessPartnerNo = normalizeBusinessPartnerNo(businessPartnerNo);
+
+        CustomerUserDTO user = customerRepository.findUserByCustomerIdAndBusinessPartnerNo(
+                customerId,
+                normalizedBusinessPartnerNo
+        );
+
+        if (user == null)
+        {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found for this customer");
+        }
+
+        List<CustomerUserAttributeDTO> attributes =
+                customerRepository.findUserAttributesByCustomerIdAndBusinessPartnerNo(
+                        customerId,
+                        normalizedBusinessPartnerNo
+                );
+
+        CustomerUserDetailResponse response = new CustomerUserDetailResponse();
+        response.setUser(user);
+        response.setAttributes(attributes);
         return response;
     }
 
@@ -301,29 +404,6 @@ public class CustomerService
             return new LinkedHashMap<>();
         }
     }
-    public void deleteCustomerAttribute(
-        String authenticationToken,
-        String domainName,
-        String customerId,
-        String attributeName)
-{
-    if (domainName == null || domainName.isBlank())
-    {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
-    }
-
-    if (customerId == null || customerId.isBlank())
-    {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
-    }
-
-    if (attributeName == null || attributeName.isBlank())
-    {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute name is required");
-    }
-
-    customerRepository.deleteCustomerAttribute(customerId, attributeName.trim());
-}
 
     private void applySegments(
             List<Customer> customers,
@@ -352,66 +432,18 @@ public class CustomerService
             customer.setSegment(segmentNames.isBlank() ? "-" : segmentNames);
         }
     }
-    public CustomerUserDetailResponse getCustomerUserDetail(String customerId, String businessPartnerNo)
-{
-    if (customerId == null || customerId.isBlank())
+
+    private String normalizeBusinessPartnerNo(String value)
     {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
-    }
+        String normalized = value.trim();
 
-    if (businessPartnerNo == null || businessPartnerNo.isBlank())
-    {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Business partner no is required");
-    }
-
-    String normalizedBusinessPartnerNo = normalizeBusinessPartnerNo(businessPartnerNo);
-
-    CustomerUserDTO user = customerRepository.findUserByCustomerIdAndBusinessPartnerNo(
-            customerId,
-            normalizedBusinessPartnerNo
-    );
-
-    if (user == null)
-    {
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found for this customer");
-    }
-
-    List<CustomerUserAttributeDTO> attributes =
-            customerRepository.findUserAttributesByCustomerIdAndBusinessPartnerNo(
-                    customerId,
-                    normalizedBusinessPartnerNo
-            );
-
-    CustomerUserDetailResponse response = new CustomerUserDetailResponse();
-    response.setUser(user);
-    response.setAttributes(attributes);
-    return response;
-}
-
-private String normalizeBusinessPartnerNo(String value)
-{
-    String normalized = value.trim();
-
-    if (normalized.contains(":"))
-    {
-        normalized = normalized.substring(0, normalized.indexOf(":"));
-    }
-
-    return normalized;
-}
-
-private String firstNonBlank(String... values)
-{
-    for (String value : values)
-    {
-        if (value != null && !value.isBlank())
+        if (normalized.contains(":"))
         {
-            return value;
+            normalized = normalized.substring(0, normalized.indexOf(":"));
         }
-    }
 
-    return "";
-}
+        return normalized;
+    }
 
     private List<String> parseCustomerList(String value)
     {

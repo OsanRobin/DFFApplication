@@ -4,8 +4,8 @@ import { LoginComponent } from './pages/login.component/login.component';
 import { DashboardComponent } from './pages/dashboard.component/dashboard.component';
 import { CustomeroverviewComponent } from './pages/customeroverview.component/customeroverview.component';
 import { CustomerdetailComponent } from './pages/customerdetail.component/customerdetail.component';
-import { JobsComponent } from './pages/jobs.component/jobs.component';
 import { BulkActionsComponent } from './pages/bulk-actions.component/bulk-actions.component';
+import { AuditLogComponent } from './pages/audit-log.component/audit-log.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -16,7 +16,7 @@ export const routes: Routes = [
   { path: 'customers', component: CustomeroverviewComponent, canActivate: [authGuard] },
   { path: 'customers/bulk-actions', component: BulkActionsComponent, canActivate: [authGuard] },
   { path: 'customers/:id', component: CustomerdetailComponent, canActivate: [authGuard] },
-  { path: 'jobs', component: JobsComponent, canActivate: [authGuard] },
+  { path: 'audit-log', component: AuditLogComponent, canActivate: [authGuard] },
 
-  { path: '**', redirectTo: 'login' }
+  { path: '**', redirectTo: 'login' },
 ];

@@ -9,10 +9,14 @@ import org.springframework.stereotype.Service;
 public class SavedCustomerSearchService
 {
     private final SavedCustomerSearchRepository repository;
+    private final AuditLogService auditLogService;
 
-    public SavedCustomerSearchService(SavedCustomerSearchRepository repository)
+    public SavedCustomerSearchService(
+            SavedCustomerSearchRepository repository,
+            AuditLogService auditLogService)
     {
         this.repository = repository;
+        this.auditLogService = auditLogService;
     }
 
     public SavedCustomerSearchListResponse getSavedSearches(String domainName)
@@ -45,23 +49,69 @@ public class SavedCustomerSearchService
             }
 
             repository.update(request);
+
+            auditLogService.logChange(
+                    "SAVED_CUSTOMER_SEARCH",
+                    request.getName(),
+                    "UPDATE",
+                    "search",
+                    "",
+                    request.getName(),
+                    "system",
+                    "Saved customer search updated"
+            );
+
             return;
         }
 
         repository.insert(request);
+
+        auditLogService.logChange(
+                "SAVED_CUSTOMER_SEARCH",
+                request.getName(),
+                "CREATE",
+                "search",
+                "",
+                request.getName(),
+                "system",
+                "Saved customer search created"
+        );
     }
+
     public void deleteSearch(Long id)
-{
-    repository.deleteById(id);
-}
-
-public void updateSearchName(Long id, String name)
-{
-    if (name == null || name.isBlank())
     {
-        throw new RuntimeException("Search name is required");
+        repository.deleteById(id);
+
+        auditLogService.logChange(
+                "SAVED_CUSTOMER_SEARCH",
+                String.valueOf(id),
+                "DELETE",
+                "search",
+                "",
+                "",
+                "system",
+                "Saved customer search deleted"
+        );
     }
 
-    repository.updateName(id, name);
-}
+    public void updateSearchName(Long id, String name)
+    {
+        if (name == null || name.isBlank())
+        {
+            throw new RuntimeException("Search name is required");
+        }
+
+        repository.updateName(id, name);
+
+        auditLogService.logChange(
+                "SAVED_CUSTOMER_SEARCH",
+                String.valueOf(id),
+                "UPDATE",
+                "name",
+                "",
+                name,
+                "system",
+                "Saved customer search name updated"
+        );
+    }
 }

@@ -1,0 +1,75 @@
+<div class="page">
+  <app-header class="component"></app-header>
+
+  <main class="content">
+    <div class="crumb">
+      Home <span class="sep">›</span> <span class="current">Audit Log</span>
+    </div>
+
+    <div class="header-row">
+      <div>
+        <h1 class="title">Audit Log</h1>
+        <p class="subtitle">Overview of all changes made by users in the application</p>
+      </div>
+
+      <button class="refresh-btn" type="button" (click)="loadAuditLogs()">
+        Refresh
+      </button>
+    </div>
+
+    <section class="card panel">
+      <div class="panel-title">All Changes</div>
+      <div class="panel-sub">Track which user changed what and when</div>
+
+      @if (isLoading) {
+        <div class="state">Loading audit logs...</div>
+      }
+
+      @if (errorMessage) {
+        <div class="error">{{ errorMessage }}</div>
+      }
+
+      @if (!isLoading && !errorMessage && auditLogs.length === 0) {
+        <div class="state">No audit logs found yet.</div>
+      }
+
+      @if (!isLoading && !errorMessage && auditLogs.length > 0) {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Entity</th>
+                <th>Field</th>
+                <th>Old Value</th>
+                <th>New Value</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (log of auditLogs; track log.id) {
+                <tr>
+                  <td>{{ formatDate(log.changedAt) }}</td>
+                  <td class="user-cell">{{ displayValue(log.changedBy) }}</td>
+                  <td>
+                    <span [class]="auditActionClass(log.action)">
+                      {{ log.action }}
+                    </span>
+                  </td>
+                  <td>{{ displayValue(log.entityType) }} #{{ displayValue(log.entityId) }}</td>
+                  <td>{{ displayValue(log.fieldName) }}</td>
+                  <td class="muted">{{ displayValue(log.oldValue) }}</td>
+                  <td class="strong">{{ displayValue(log.newValue) }}</td>
+                  <td class="muted">{{ displayValue(log.message) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </main>
+</div>

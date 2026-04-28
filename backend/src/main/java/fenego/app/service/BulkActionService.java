@@ -11,6 +11,13 @@ import java.util.List;
 @Service
 public class BulkActionService
 {
+    private final AuditLogService auditLogService;
+
+    public BulkActionService(AuditLogService auditLogService)
+    {
+        this.auditLogService = auditLogService;
+    }
+
     public List<AttributeOption> getAvailableAttributes()
     {
         return List.of(
@@ -48,8 +55,36 @@ public class BulkActionService
                 switch (request.getAction())
                 {
                     case "add-attribute":
+                        validateAttributeAction(request);
+
+                        auditLogService.logChange(
+                                "CUSTOMER_ATTRIBUTE",
+                                customerId,
+                                "BULK_CREATE",
+                                request.getAttributeName(),
+                                "",
+                                request.getAttributeValue(),
+                                "system",
+                                "Bulk attribute added"
+                        );
+
+                        response.getProcessedCustomerIds().add(customerId);
+                        break;
+
                     case "update-attribute":
                         validateAttributeAction(request);
+
+                        auditLogService.logChange(
+                                "CUSTOMER_ATTRIBUTE",
+                                customerId,
+                                "BULK_UPDATE",
+                                request.getAttributeName(),
+                                "",
+                                request.getAttributeValue(),
+                                "system",
+                                "Bulk attribute updated"
+                        );
+
                         response.getProcessedCustomerIds().add(customerId);
                         break;
 
