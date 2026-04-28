@@ -4,7 +4,9 @@ import fenego.app.dto.CustomerAttributeRequest;
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerListResponse;
 import fenego.app.dto.CustomerSegmentDTO;
+import fenego.app.dto.CustomerUserAttributeDTO;
 import fenego.app.dto.CustomerUserDTO;
+import fenego.app.dto.CustomerUserDetailResponse;
 import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.intershop.IntershopClient;
 import fenego.app.jpa.Customer;
@@ -350,6 +352,66 @@ public class CustomerService
             customer.setSegment(segmentNames.isBlank() ? "-" : segmentNames);
         }
     }
+    public CustomerUserDetailResponse getCustomerUserDetail(String customerId, String businessPartnerNo)
+{
+    if (customerId == null || customerId.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+    }
+
+    if (businessPartnerNo == null || businessPartnerNo.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Business partner no is required");
+    }
+
+    String normalizedBusinessPartnerNo = normalizeBusinessPartnerNo(businessPartnerNo);
+
+    CustomerUserDTO user = customerRepository.findUserByCustomerIdAndBusinessPartnerNo(
+            customerId,
+            normalizedBusinessPartnerNo
+    );
+
+    if (user == null)
+    {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found for this customer");
+    }
+
+    List<CustomerUserAttributeDTO> attributes =
+            customerRepository.findUserAttributesByCustomerIdAndBusinessPartnerNo(
+                    customerId,
+                    normalizedBusinessPartnerNo
+            );
+
+    CustomerUserDetailResponse response = new CustomerUserDetailResponse();
+    response.setUser(user);
+    response.setAttributes(attributes);
+    return response;
+}
+
+private String normalizeBusinessPartnerNo(String value)
+{
+    String normalized = value.trim();
+
+    if (normalized.contains(":"))
+    {
+        normalized = normalized.substring(0, normalized.indexOf(":"));
+    }
+
+    return normalized;
+}
+
+private String firstNonBlank(String... values)
+{
+    for (String value : values)
+    {
+        if (value != null && !value.isBlank())
+        {
+            return value;
+        }
+    }
+
+    return "";
+}
 
     private List<String> parseCustomerList(String value)
     {

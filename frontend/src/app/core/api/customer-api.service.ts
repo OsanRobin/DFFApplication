@@ -124,6 +124,15 @@ export interface SaveCustomerSearchRequest {
   segmentFilter: string;
   overwrite: boolean;
 }
+export interface CustomerUserAttributeDto {
+  name: string;
+  value: string;
+}
+
+export interface CustomerUserDetailResponse {
+  user: CustomerUserDto;
+  attributes: CustomerUserAttributeDto[];
+}
 
 @Injectable({
   providedIn: 'root'
@@ -298,4 +307,18 @@ export class CustomerApiService {
 
     return this.http.put(`${this.savedSearchBaseUrl}/${id}/name`, name, { headers });
   }
+getCustomerUserDetail(
+  authenticationToken: string,
+  customerId: string,
+  businessPartnerNo: string
+): Observable<CustomerUserDetailResponse> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  return this.http.get<CustomerUserDetailResponse>(
+    `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}`,
+    { headers }
+  );
+}
 }

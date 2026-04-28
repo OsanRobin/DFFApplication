@@ -3,6 +3,7 @@ package fenego.app.controller;
 import fenego.app.dto.CustomerAttributeRequest;
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerListResponse;
+import fenego.app.dto.CustomerUserDetailResponse;
 import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.service.CustomerService;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -99,4 +100,11 @@ public class CustomerController
     {
         customerService.deleteCustomerAttribute(authenticationToken, domain, customerId, attributeName);
     }
+    @GetMapping("/{customerId}/users/{businessPartnerNo}")
+public CustomerUserDetailResponse getCustomerUserDetail(
+        @PathVariable String customerId,
+        @PathVariable String businessPartnerNo)
+{
+    return customerService.getCustomerUserDetail(customerId, businessPartnerNo);
+}
 }

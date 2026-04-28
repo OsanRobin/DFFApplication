@@ -2,6 +2,7 @@ package fenego.app.repository;
 
 import fenego.app.dto.CustomerAttributeDTO;
 import fenego.app.dto.CustomerDetailResponse;
+import fenego.app.dto.CustomerUserAttributeDTO;
 import fenego.app.dto.CustomerUserDTO;
 import fenego.app.jpa.Customer;
 import fenego.app.jpa.CustomerAddress;
@@ -705,6 +706,74 @@ public class CustomerRepository
             .addValue("name", name);
 
     jdbcTemplate.update(sql, params);
+}
+public CustomerUserDTO findUserByCustomerIdAndBusinessPartnerNo(String customerId, String businessPartnerNo)
+{
+    String sql = """
+        select top 1
+            bp.BUSINESSPARTNERNO as businessPartnerNo
+        from CUSTOMER c
+        join CUSTOMERPROFILEASSIGNMENT cpa
+            on c.UUID = cpa.CUSTOMERID
+        join BASICPROFILE bp
+            on cpa.PROFILEID = bp.UUID
+        where c.CUSTOMERNO = :customerId
+          and bp.BUSINESSPARTNERNO = :businessPartnerNo
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("customerId", customerId)
+            .addValue("businessPartnerNo", businessPartnerNo);
+
+    List<CustomerUserDTO> results = jdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        CustomerUserDTO dto = new CustomerUserDTO();
+        dto.setBusinessPartnerNo(rs.getString("businessPartnerNo"));
+        dto.setLogin(rs.getString("businessPartnerNo"));
+        dto.setName(rs.getString("businessPartnerNo"));
+        dto.setFirstName("");
+        dto.setLastName("");
+        dto.setActive(true);
+        dto.setRoleIds(List.of());
+        dto.setRoleNames(List.of());
+        dto.setBudgetPeriod("none");
+        dto.setPendingOneTimeRequisitionsCount(0);
+        dto.setPendingRecurringRequisitionsCount(0);
+        return dto;
+    });
+
+    return results.isEmpty() ? null : results.get(0);
+}
+
+public List<CustomerUserAttributeDTO> findUserAttributesByCustomerIdAndBusinessPartnerNo(
+        String customerId,
+        String businessPartnerNo)
+{
+    String sql = """
+        select
+            av.NAME as name,
+            coalesce(av.STRINGVALUE, convert(nvarchar(max), av.TEXTVALUE)) as value
+        from CUSTOMER c
+        join CUSTOMERPROFILEASSIGNMENT cpa
+            on c.UUID = cpa.CUSTOMERID
+        join BASICPROFILE bp
+            on cpa.PROFILEID = bp.UUID
+        join BASICPROFILE_AV av
+            on av.OWNERID = bp.UUID
+        where c.CUSTOMERNO = :customerId
+          and bp.BUSINESSPARTNERNO = :businessPartnerNo
+        order by av.NAME
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("customerId", customerId)
+            .addValue("businessPartnerNo", businessPartnerNo);
+
+    return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        CustomerUserAttributeDTO dto = new CustomerUserAttributeDTO();
+        dto.setName(rs.getString("name"));
+        dto.setValue(rs.getString("value"));
+        return dto;
+    });
 }
     private Customer mapCustomer(ResultSet rs) throws SQLException
     {

@@ -264,25 +264,34 @@
                   <tr>
                     <th>User</th>
                     <th>Login</th>
-                    <th>Role</th>
                     <th>Business Partner No</th>
                     <th>Budget Period</th>
                     <th>Status</th>
+                    <th class="col-actions"></th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  @for (user of users; track user.login) {
+                  @for (user of users; track user.businessPartnerNo) {
                     <tr>
                       <td>{{ user.name }}</td>
                       <td>{{ user.login }}</td>
-                      <td>{{ displayRoles(user) }}</td>
                       <td>{{ user.businessPartnerNo }}</td>
                       <td>{{ user.budgetPeriod }}</td>
                       <td>
                         <span class="badge" [class.active]="user.active" [class.inactive]="!user.active">
                           {{ displayStatus(user) }}
                         </span>
+                      </td>
+                      <td class="col-actions">
+                        <button
+                          class="link"
+                          type="button"
+                          (click)="viewUserDetails(user)"
+                        >
+                          <span>View Details</span>
+                          <span class="chev-r" aria-hidden="true">›</span>
+                        </button>
                       </td>
                     </tr>
                   }
@@ -291,6 +300,110 @@
             </div>
           }
         </section>
+
+        @if (userDetailLoading) {
+          <section class="card panel wide">
+            <div class="empty-state">Loading user details...</div>
+          </section>
+        }
+
+        @if (userDetailError) {
+          <section class="card panel wide">
+            <div class="state error">{{ userDetailError }}</div>
+          </section>
+        }
+
+        @if (selectedUserDetail && !userDetailLoading) {
+          <section class="card panel wide">
+            <div class="panel-head">
+              <div>
+                <div class="panel-title">{{ userDetailTitle() }}</div>
+                <div class="panel-sub">
+                  Business Partner No: {{ selectedUserDetail.user.businessPartnerNo }}
+                </div>
+              </div>
+
+              <button class="btn-outline" type="button" (click)="closeUserDetails()">
+                Close
+              </button>
+            </div>
+
+            <section class="grid2">
+              <div>
+                <div class="kv">
+                  <div class="k">Name</div>
+                  <div class="v">{{ selectedUserDetail.user.name || '-' }}</div>
+                </div>
+
+                <div class="kv">
+                  <div class="k">Login</div>
+                  <div class="v">{{ selectedUserDetail.user.login || '-' }}</div>
+                </div>
+
+                <div class="kv">
+                  <div class="k">First Name</div>
+                  <div class="v">{{ selectedUserDetail.user.firstName || '-' }}</div>
+                </div>
+
+                <div class="kv">
+                  <div class="k">Last Name</div>
+                  <div class="v">{{ selectedUserDetail.user.lastName || '-' }}</div>
+                </div>
+              </div>
+
+              <div>
+                <div class="kv">
+                  <div class="k">Status</div>
+                  <div class="v">
+                    <span
+                      class="badge"
+                      [class.active]="selectedUserDetail.user.active"
+                      [class.inactive]="!selectedUserDetail.user.active"
+                    >
+                      {{ displayStatus(selectedUserDetail.user) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="kv">
+                  <div class="k">Roles</div>
+                  <div class="v">{{ displayRoles(selectedUserDetail.user) }}</div>
+                </div>
+
+                <div class="kv">
+                  <div class="k">Budget Period</div>
+                  <div class="v">{{ selectedUserDetail.user.budgetPeriod || '-' }}</div>
+                </div>
+              </div>
+            </section>
+
+            <div class="panel-title">User Attributes</div>
+
+            @if (selectedUserDetail.attributes.length > 0) {
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    @for (attribute of selectedUserDetail.attributes; track attribute.name) {
+                      <tr>
+                        <td>{{ attribute.name }}</td>
+                        <td>{{ attribute.value || '-' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <div class="empty-state">No user attributes found.</div>
+            }
+          </section>
+        }
       }
 
       @if (activeTab === 'segments') {
@@ -347,7 +460,7 @@
                       <td>{{ cluster.type || '-' }}</td>
                       <td class="col-actions">
                         <a class="link" [routerLink]="['/customers', cluster.customerNo]">
-                          <span>View<br />Details</span>
+                          <span>View Details</span>
                           <span class="chev-r" aria-hidden="true">›</span>
                         </a>
                       </td>
@@ -380,7 +493,7 @@
                       <td>{{ sub.type || '-' }}</td>
                       <td class="col-actions">
                         <a class="link" [routerLink]="['/customers', sub.customerNo]">
-                          <span>View<br />Details</span>
+                          <span>View Details</span>
                           <span class="chev-r" aria-hidden="true">›</span>
                         </a>
                       </td>

@@ -8,6 +8,7 @@ import {
   CustomerAttributeDto,
   CustomerDetailResponse,
   CustomerDto,
+  CustomerUserDetailResponse,
   CustomerUserDto
 } from '../../core/api/customer-api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -43,6 +44,10 @@ export class CustomerdetailComponent {
   usersError = '';
   usersLoaded = false;
 
+  userDetailLoading = false;
+  userDetailError = '';
+  selectedUserDetail: CustomerUserDetailResponse | null = null;
+
   customerId = '';
   customer: CustomerDetailResponse | null = null;
   users: CustomerUserDto[] = [];
@@ -71,6 +76,9 @@ export class CustomerdetailComponent {
       this.usersLoaded = false;
       this.usersLoading = false;
       this.usersError = '';
+      this.userDetailLoading = false;
+      this.userDetailError = '';
+      this.selectedUserDetail = null;
       this.error = '';
       this.activeTab = 'overview';
       this.showDeleteAttributeConfirm = false;
@@ -87,6 +95,10 @@ export class CustomerdetailComponent {
 
   setTab(tab: TabKey): void {
     this.activeTab = tab;
+
+    if (tab !== 'users') {
+      this.closeUserDetails();
+    }
 
     if (tab === 'users' && !this.usersLoaded && !this.usersLoading) {
       this.loadUsers();
@@ -175,6 +187,73 @@ export class CustomerdetailComponent {
         this.usersLoading = false;
       }
     });
+  }
+
+  viewUserDetails(user: CustomerUserDto): void {
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken) {
+      this.userDetailError = 'No authentication token found.';
+      return;
+    }
+
+    if (!this.customerId || !user.businessPartnerNo) {
+      this.userDetailError = 'Unable to load user details.';
+      return;
+    }
+
+    this.selectedUserDetail = null;
+    this.userDetailLoading = true;
+    this.userDetailError = '';
+
+    this.customerApi.getCustomerUserDetail(
+      authenticationToken,
+      this.customerId,
+      user.businessPartnerNo
+    ).subscribe({
+      next: (response) => {
+        this.selectedUserDetail = {
+          ...response,
+          attributes: response.attributes ?? []
+        };
+
+        this.userDetailLoading = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.userDetailLoading = false;
+
+        if (err.status === 401 || err.status === 403) {
+          this.userDetailError = 'Your session expired. Please log in again.';
+          this.router.navigate(['/login']);
+          return;
+        }
+
+        if (err.status === 404) {
+          this.userDetailError = 'User details not found.';
+          return;
+        }
+
+        this.userDetailError = 'Failed to load user details.';
+      }
+    });
+  }
+
+  closeUserDetails(): void {
+    this.selectedUserDetail = null;
+    this.userDetailLoading = false;
+    this.userDetailError = '';
+  }
+
+  userDetailTitle(): string {
+    if (!this.selectedUserDetail?.user) {
+      return 'User Details';
+    }
+
+    return this.selectedUserDetail.user.name
+      || this.selectedUserDetail.user.login
+      || this.selectedUserDetail.user.businessPartnerNo
+      || 'User Details';
   }
 
   buildEditableAttributes(attributes: CustomerAttributeDto[] = []): EditableAttribute[] {
