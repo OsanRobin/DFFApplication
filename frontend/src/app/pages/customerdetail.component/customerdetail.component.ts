@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { HeaderComponent } from '../../shell/header.component/header.component';
 import {
   CustomerApiService,
@@ -48,6 +49,9 @@ export class CustomerdetailComponent {
   userDetailError = '';
   selectedUserDetail: CustomerUserDetailResponse | null = null;
 
+  userCustomerListCustomers: CustomerDto[] = [];
+  userCustomerListLoading = false;
+
   customerId = '';
   customer: CustomerDetailResponse | null = null;
   users: CustomerUserDto[] = [];
@@ -70,6 +74,9 @@ export class CustomerdetailComponent {
     this.route.paramMap.subscribe(params => {
       this.customerId = params.get('id') ?? '';
 
+      const tabFromQuery = this.route.snapshot.queryParamMap.get('tab') as TabKey | null;
+      this.activeTab = tabFromQuery ?? 'overview';
+
       this.customer = null;
       this.users = [];
       this.editableAttributes = [];
@@ -79,17 +86,33 @@ export class CustomerdetailComponent {
       this.userDetailLoading = false;
       this.userDetailError = '';
       this.selectedUserDetail = null;
+      this.userCustomerListCustomers = [];
+      this.userCustomerListLoading = false;
       this.error = '';
-      this.activeTab = 'overview';
       this.showDeleteAttributeConfirm = false;
       this.attributeNameToDelete = '';
       this.cancelAttributeEdit();
 
       this.loadCustomer();
+
+      if (this.activeTab === 'users') {
+        this.loadUsers();
+      }
     });
   }
 
   goBack(): void {
+    const returnCustomerId = this.route.snapshot.queryParamMap.get('returnCustomerId');
+
+    if (returnCustomerId) {
+      this.router.navigate(['/customers', returnCustomerId], {
+        queryParams: {
+          tab: 'users'
+        }
+      });
+      return;
+    }
+
     this.router.navigate(['/customers']);
   }
 
@@ -103,6 +126,38 @@ export class CustomerdetailComponent {
     if (tab === 'users' && !this.usersLoaded && !this.usersLoading) {
       this.loadUsers();
     }
+  }
+
+  displayText(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '-';
+    }
+
+    const text = String(value).trim();
+
+    if (!text || text.toLowerCase() === 'none' || text.toLowerCase() === 'null' || text.toLowerCase() === 'undefined') {
+      return '-';
+    }
+
+    return text;
+  }
+
+  displayAttributeValue(attribute: { name: string; value: string | null | undefined }): string {
+    const value = this.displayText(attribute.value);
+
+    if (value === '-') {
+      return '-';
+    }
+
+    if (attribute.name.toLowerCase().includes('days')) {
+      return value
+        .split(/[\t|,;\s]+/)
+        .map(item => item.trim())
+        .filter(Boolean)
+        .join(', ');
+    }
+
+    return value;
   }
 
   loadCustomer(): void {
@@ -203,6 +258,8 @@ export class CustomerdetailComponent {
     }
 
     this.selectedUserDetail = null;
+    this.userCustomerListCustomers = [];
+    this.userCustomerListLoading = false;
     this.userDetailLoading = true;
     this.userDetailError = '';
 
@@ -212,11 +269,16 @@ export class CustomerdetailComponent {
       user.businessPartnerNo
     ).subscribe({
       next: (response) => {
+        const attributes = response.attributes ?? [];
+
         this.selectedUserDetail = {
           ...response,
-          attributes: response.attributes ?? []
+          attributes: attributes.filter(attribute =>
+            attribute.name.toLowerCase() !== 'customerlist'
+          )
         };
 
+        this.loadUserCustomerListCustomers(attributes);
         this.userDetailLoading = false;
       },
       error: (err) => {
@@ -239,10 +301,71 @@ export class CustomerdetailComponent {
     });
   }
 
+  private loadUserCustomerListCustomers(attributes: { name: string; value: string }[]): void {
+    const customerListAttribute = attributes.find(attribute =>
+      attribute.name.toLowerCase() === 'customerlist'
+    );
+
+    this.userCustomerListCustomers = [];
+
+    if (!customerListAttribute?.value?.trim()) {
+      return;
+    }
+
+    const customerNos = customerListAttribute.value
+      .split(/[\t|,;\s]+/)
+      .map(value => value.trim())
+      .filter(Boolean);
+
+    if (customerNos.length === 0) {
+      return;
+    }
+
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken) {
+      return;
+    }
+
+    this.userCustomerListLoading = true;
+
+    forkJoin(
+      customerNos.map(customerNo =>
+        this.customerApi.getCustomers(
+          authenticationToken,
+          this.domainName,
+          0,
+          20,
+          customerNo
+        )
+      )
+    ).subscribe({
+      next: responses => {
+        const unique = new Map<string, CustomerDto>();
+
+        responses
+          .flatMap(response => response.data ?? [])
+          .filter(customer => customerNos.includes(customer.customerNo))
+          .forEach(customer => {
+            unique.set(customer.customerNo, customer);
+          });
+
+        this.userCustomerListCustomers = Array.from(unique.values());
+        this.userCustomerListLoading = false;
+      },
+      error: err => {
+        console.error(err);
+        this.userCustomerListLoading = false;
+      }
+    });
+  }
+
   closeUserDetails(): void {
     this.selectedUserDetail = null;
     this.userDetailLoading = false;
     this.userDetailError = '';
+    this.userCustomerListCustomers = [];
+    this.userCustomerListLoading = false;
   }
 
   userDetailTitle(): string {
@@ -250,18 +373,34 @@ export class CustomerdetailComponent {
       return 'User Details';
     }
 
-    return this.selectedUserDetail.user.name
+    return this.displayText(
+      this.selectedUserDetail.user.name
       || this.selectedUserDetail.user.login
       || this.selectedUserDetail.user.businessPartnerNo
-      || 'User Details';
+      || 'User Details'
+    );
   }
 
   buildEditableAttributes(attributes: CustomerAttributeDto[] = []): EditableAttribute[] {
-    return attributes.map(attribute => ({
-      id: attribute.name,
-      name: attribute.name,
-      value: attribute.value ?? ''
-    }));
+    return attributes
+      .filter(attribute => attribute.name.toLowerCase() !== 'customerlist')
+      .map(attribute => ({
+        id: attribute.name,
+        name: attribute.name,
+        value: attribute.value ?? ''
+      }));
+  }
+
+  customerListCustomers(): CustomerDto[] {
+    return this.customer?.subCustomers ?? [];
+  }
+
+  hasCustomerListCustomers(): boolean {
+    return this.customerListCustomers().length > 0;
+  }
+
+  hasUserCustomerListCustomers(): boolean {
+    return this.userCustomerListCustomers.length > 0;
   }
 
   startAddAttribute(): void {
@@ -478,31 +617,19 @@ export class CustomerdetailComponent {
   }
 
   customerTitle(): string {
-    if (this.customer?.companyName) {
-      return this.customer.companyName;
-    }
-
-    if (this.customer?.customerNo) {
-      return this.customer.customerNo;
-    }
-
-    return this.customerId || 'Customer Detail';
+    return this.displayText(this.customer?.companyName || this.customer?.customerNo || this.customerId || 'Customer Detail');
   }
 
   customerNumber(): string {
-    return this.customer?.customerNo || this.customerId || '-';
+    return this.displayText(this.customer?.customerNo || this.customerId);
   }
 
   customerTypeLabel(): string {
-    return this.customer?.customerType || '-';
+    return this.displayText(this.customer?.customerType);
   }
 
   objectTypeLabel(): string {
-    if (!this.customer?.type || !this.customer.type.trim()) {
-      return '-';
-    }
-
-    return this.customer.type;
+    return this.displayText(this.customer?.type);
   }
 
   statusLabel(): string {
@@ -521,7 +648,7 @@ export class CustomerdetailComponent {
       address.addressLine1 || address.street,
       `${address.postalCode ?? ''} ${address.city ?? ''}`.trim(),
       address.country
-    ].filter((line): line is string => !!line && line.trim().length > 0);
+    ].map(line => this.displayText(line)).filter(line => line !== '-');
   }
 
   shippingAddressLines(): string[] {
@@ -536,11 +663,13 @@ export class CustomerdetailComponent {
       address.addressLine1 || address.street,
       `${address.postalCode ?? ''} ${address.city ?? ''}`.trim(),
       address.country
-    ].filter((line): line is string => !!line && line.trim().length > 0);
+    ].map(line => this.displayText(line)).filter(line => line !== '-');
   }
 
   displayRoles(user: CustomerUserDto): string {
-    const roles = (user.roleNames ?? []).filter((role) => !!role && role.trim().length > 0);
+    const roles = (user.roleNames ?? [])
+      .map(role => this.displayText(role))
+      .filter(role => role !== '-');
 
     if (roles.length > 0) {
       return roles.join(', ');
@@ -554,7 +683,7 @@ export class CustomerdetailComponent {
   }
 
   relationName(customer: CustomerDto): string {
-    return customer.displayName || customer.companyName || customer.customerNo || '-';
+    return this.displayText(customer.displayName || customer.companyName || customer.customerNo);
   }
 
   hasParentClusters(): boolean {

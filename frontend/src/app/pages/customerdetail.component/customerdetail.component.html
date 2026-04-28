@@ -9,7 +9,7 @@
 
     <button class="back" type="button" (click)="goBack()">
       <span class="back-ico" aria-hidden="true">←</span>
-      Back to Customers
+      Back
     </button>
 
     @if (loading) {
@@ -60,7 +60,7 @@
 
               <div class="kv">
                 <div class="k">Budget Price Type</div>
-                <div class="v">{{ customer.budgetPriceType || '-' }}</div>
+                <div class="v">{{ displayText(customer.budgetPriceType) }}</div>
               </div>
 
               <div class="kv">
@@ -74,12 +74,12 @@
 
               <div class="kv">
                 <div class="k">Company Name</div>
-                <div class="v">{{ customer.companyName || '-' }}</div>
+                <div class="v">{{ displayText(customer.companyName) }}</div>
               </div>
 
               <div class="kv">
                 <div class="k">Customer No</div>
-                <div class="v">{{ customer.customerNo || '-' }}</div>
+                <div class="v">{{ displayText(customer.customerNo) }}</div>
               </div>
             </div>
           </section>
@@ -94,7 +94,7 @@
 
               <div class="kv compact">
                 <div class="k">Address Name</div>
-                <div class="v">{{ customer.preferredInvoiceToAddress?.addressName || '-' }}</div>
+                <div class="v">{{ displayText(customer.preferredInvoiceToAddress?.addressName) }}</div>
               </div>
 
               <div class="kv compact">
@@ -117,7 +117,7 @@
 
               <div class="kv compact">
                 <div class="k">Address Name</div>
-                <div class="v">{{ customer.preferredShipToAddress?.addressName || '-' }}</div>
+                <div class="v">{{ displayText(customer.preferredShipToAddress?.addressName) }}</div>
               </div>
 
               <div class="kv compact">
@@ -148,6 +148,56 @@
               </button>
             </div>
           </div>
+
+          @if (hasCustomerListCustomers()) {
+            <div class="customer-list-block">
+              <div class="panel-title">CustomerList Customers</div>
+              <div class="panel-sub">
+                Customers linked through the CustomerList attribute.
+              </div>
+
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Customer Name</th>
+                      <th>Customer No</th>
+                      <th>Type</th>
+                      <th>Status</th>
+                      <th>Locations</th>
+                      <th class="col-actions"></th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    @for (customer of customerListCustomers(); track customer.customerNo) {
+                      <tr>
+                        <td>{{ relationName(customer) }}</td>
+                        <td>{{ displayText(customer.customerNo) }}</td>
+                        <td>{{ displayText(customer.type) }}</td>
+                        <td>
+                          <span class="badge" [class.active]="customer.active" [class.inactive]="!customer.active">
+                            {{ customer.active ? 'Active' : 'Inactive' }}
+                          </span>
+                        </td>
+                        <td>{{ customer.locations ?? 0 }}</td>
+                        <td class="col-actions">
+                          <a
+                            class="link"
+                            [routerLink]="['/customers', customer.customerNo]"
+                            [queryParams]="{ returnCustomerId: customerId, tab: 'attributes' }"
+                          >
+                            <span>View Details</span>
+                            <span class="chev-r" aria-hidden="true">›</span>
+                          </a>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
 
           @if (editingAttribute) {
             <div class="attr-form">
@@ -206,8 +256,8 @@
                 <tbody>
                   @for (attribute of editableAttributes; track attribute.name) {
                     <tr>
-                      <td>{{ attribute.name }}</td>
-                      <td>{{ attribute.value || '-' }}</td>
+                      <td>{{ displayText(attribute.name) }}</td>
+                      <td>{{ displayAttributeValue(attribute) }}</td>
                       <td class="col-actions">
                         <div class="row-actions">
                           <button
@@ -235,7 +285,9 @@
               </table>
             </div>
           } @else {
-            <div class="empty-state">No attributes available yet.</div>
+            @if (!hasCustomerListCustomers()) {
+              <div class="empty-state">No attributes available yet.</div>
+            }
           }
         </section>
       }
@@ -274,21 +326,17 @@
                 <tbody>
                   @for (user of users; track user.businessPartnerNo) {
                     <tr>
-                      <td>{{ user.name }}</td>
-                      <td>{{ user.login }}</td>
-                      <td>{{ user.businessPartnerNo }}</td>
-                      <td>{{ user.budgetPeriod }}</td>
+                      <td>{{ displayText(user.name) }}</td>
+                      <td>{{ displayText(user.login) }}</td>
+                      <td>{{ displayText(user.businessPartnerNo) }}</td>
+                      <td>{{ displayText(user.budgetPeriod) }}</td>
                       <td>
                         <span class="badge" [class.active]="user.active" [class.inactive]="!user.active">
                           {{ displayStatus(user) }}
                         </span>
                       </td>
                       <td class="col-actions">
-                        <button
-                          class="link"
-                          type="button"
-                          (click)="viewUserDetails(user)"
-                        >
+                        <button class="link" type="button" (click)="viewUserDetails(user)">
                           <span>View Details</span>
                           <span class="chev-r" aria-hidden="true">›</span>
                         </button>
@@ -319,7 +367,7 @@
               <div>
                 <div class="panel-title">{{ userDetailTitle() }}</div>
                 <div class="panel-sub">
-                  Business Partner No: {{ selectedUserDetail.user.businessPartnerNo }}
+                  Business Partner No: {{ displayText(selectedUserDetail.user.businessPartnerNo) }}
                 </div>
               </div>
 
@@ -332,22 +380,22 @@
               <div>
                 <div class="kv">
                   <div class="k">Name</div>
-                  <div class="v">{{ selectedUserDetail.user.name || '-' }}</div>
+                  <div class="v">{{ displayText(selectedUserDetail.user.name) }}</div>
                 </div>
 
                 <div class="kv">
                   <div class="k">Login</div>
-                  <div class="v">{{ selectedUserDetail.user.login || '-' }}</div>
+                  <div class="v">{{ displayText(selectedUserDetail.user.login) }}</div>
                 </div>
 
                 <div class="kv">
                   <div class="k">First Name</div>
-                  <div class="v">{{ selectedUserDetail.user.firstName || '-' }}</div>
+                  <div class="v">{{ displayText(selectedUserDetail.user.firstName) }}</div>
                 </div>
 
                 <div class="kv">
                   <div class="k">Last Name</div>
-                  <div class="v">{{ selectedUserDetail.user.lastName || '-' }}</div>
+                  <div class="v">{{ displayText(selectedUserDetail.user.lastName) }}</div>
                 </div>
               </div>
 
@@ -355,11 +403,7 @@
                 <div class="kv">
                   <div class="k">Status</div>
                   <div class="v">
-                    <span
-                      class="badge"
-                      [class.active]="selectedUserDetail.user.active"
-                      [class.inactive]="!selectedUserDetail.user.active"
-                    >
+                    <span class="badge" [class.active]="selectedUserDetail.user.active" [class.inactive]="!selectedUserDetail.user.active">
                       {{ displayStatus(selectedUserDetail.user) }}
                     </span>
                   </div>
@@ -372,36 +416,99 @@
 
                 <div class="kv">
                   <div class="k">Budget Period</div>
-                  <div class="v">{{ selectedUserDetail.user.budgetPeriod || '-' }}</div>
+                  <div class="v">{{ displayText(selectedUserDetail.user.budgetPeriod) }}</div>
                 </div>
               </div>
             </section>
 
-            <div class="panel-title">User Attributes</div>
-
-            @if (selectedUserDetail.attributes.length > 0) {
-              <div class="table-wrap">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Value</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    @for (attribute of selectedUserDetail.attributes; track attribute.name) {
-                      <tr>
-                        <td>{{ attribute.name }}</td>
-                        <td>{{ attribute.value || '-' }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            } @else {
-              <div class="empty-state">No user attributes found.</div>
+            @if (userCustomerListLoading) {
+              <div class="empty-state">Loading CustomerList customers...</div>
             }
+
+            @if (hasUserCustomerListCustomers()) {
+              <div class="user-customer-list-section">
+                <div class="user-section-head">
+                  <div>
+                    <div class="user-section-title">User CustomerList Customers</div>
+                    <div class="user-section-sub">Customers linked to this user.</div>
+                  </div>
+                </div>
+
+                <div class="table-wrap">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Customer Name</th>
+                        <th>Customer No</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Locations</th>
+                        <th class="col-actions"></th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      @for (customer of userCustomerListCustomers; track customer.customerNo) {
+                        <tr>
+                          <td>{{ relationName(customer) }}</td>
+                          <td>{{ displayText(customer.customerNo) }}</td>
+                          <td>{{ displayText(customer.type) }}</td>
+                          <td>
+                            <span class="badge" [class.active]="customer.active" [class.inactive]="!customer.active">
+                              {{ customer.active ? 'Active' : 'Inactive' }}
+                            </span>
+                          </td>
+                          <td>{{ customer.locations ?? 0 }}</td>
+                          <td class="col-actions">
+                            <a
+                              class="link"
+                              [routerLink]="['/customers', customer.customerNo]"
+                              [queryParams]="{ returnCustomerId: customerId, tab: 'users' }"
+                            >
+                              <span>View Details</span>
+                              <span class="chev-r" aria-hidden="true">›</span>
+                            </a>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+
+            <div class="user-attributes-section">
+              <div class="user-section-head">
+                <div>
+                  <div class="user-section-title">User Attributes</div>
+                  <div class="user-section-sub">Attributes linked to this user.</div>
+                </div>
+              </div>
+
+              @if (selectedUserDetail.attributes.length > 0) {
+                <div class="table-wrap">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      @for (attribute of selectedUserDetail.attributes; track attribute.name) {
+                        <tr>
+                          <td>{{ displayText(attribute.name) }}</td>
+                          <td>{{ displayAttributeValue(attribute) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <div class="empty-state">No user attributes found.</div>
+              }
+            </div>
           </section>
         }
       }
@@ -422,7 +529,7 @@
                 <tbody>
                   @for (segment of customer!.segments; track segment.id) {
                     <tr>
-                      <td>{{ segment.name || '-' }}</td>
+                      <td>{{ displayText(segment.name) }}</td>
                     </tr>
                   }
                 </tbody>
@@ -456,10 +563,14 @@
                   @for (cluster of customer!.parentClusterCustomers; track cluster.customerNo) {
                     <tr>
                       <td>{{ relationName(cluster) }}</td>
-                      <td>{{ cluster.customerNo }}</td>
-                      <td>{{ cluster.type || '-' }}</td>
+                      <td>{{ displayText(cluster.customerNo) }}</td>
+                      <td>{{ displayText(cluster.type) }}</td>
                       <td class="col-actions">
-                        <a class="link" [routerLink]="['/customers', cluster.customerNo]">
+                        <a
+                          class="link"
+                          [routerLink]="['/customers', cluster.customerNo]"
+                          [queryParams]="{ returnCustomerId: customerId, tab: 'relations' }"
+                        >
                           <span>View Details</span>
                           <span class="chev-r" aria-hidden="true">›</span>
                         </a>
@@ -489,10 +600,14 @@
                   @for (sub of customer!.subCustomers; track sub.customerNo) {
                     <tr>
                       <td>{{ relationName(sub) }}</td>
-                      <td>{{ sub.customerNo }}</td>
-                      <td>{{ sub.type || '-' }}</td>
+                      <td>{{ displayText(sub.customerNo) }}</td>
+                      <td>{{ displayText(sub.type) }}</td>
                       <td class="col-actions">
-                        <a class="link" [routerLink]="['/customers', sub.customerNo]">
+                        <a
+                          class="link"
+                          [routerLink]="['/customers', sub.customerNo]"
+                          [queryParams]="{ returnCustomerId: customerId, tab: 'relations' }"
+                        >
                           <span>View Details</span>
                           <span class="chev-r" aria-hidden="true">›</span>
                         </a>

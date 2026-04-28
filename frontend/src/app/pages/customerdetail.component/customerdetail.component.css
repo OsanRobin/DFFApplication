@@ -99,6 +99,7 @@
 .badge.inactive {
   background: #f2f4f7;
   color: #344054;
+  border-color: #e5e7eb;
 }
 
 .tabs {
@@ -171,18 +172,6 @@
   font-weight: 900;
 }
 
-.attr-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.attr {
-  border: 1px solid #eef0f6;
-  border-radius: 12px;
-  padding: 14px;
-}
-
 .attr-actions {
   display: flex;
   gap: 10px;
@@ -190,7 +179,7 @@
 }
 
 .attr-form {
-  margin: 16px 0;
+  margin: 18px 0 26px;
   padding: 16px;
   border: 1px solid #eef0f6;
   border-radius: 14px;
@@ -383,32 +372,68 @@ tbody tr:last-child td {
   color: #374151;
 }
 
-.link span {
-  text-decoration: none;
-}
-
 .chev-r {
   color: #6b7280;
   font-size: 17px;
   line-height: 1;
-  text-decoration: none;
 }
 
-.chips {
+.customer-list-block {
+  margin: 24px 0 34px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid #eef0f6;
+  background: #fbfdff;
+}
+
+.attribute-table-section {
+  margin-top: 34px;
+  padding-top: 24px;
+  border-top: 1px solid #eef0f6;
+}
+
+.section-title-row {
+  margin-bottom: 14px;
+}
+
+.user-customer-list-section {
+  margin-top: 34px;
+  margin-bottom: 52px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid #eef0f6;
+  background: #fbfdff;
+}
+
+.user-attributes-section {
+  margin-top: 52px;
+  padding-top: 32px;
+  border-top: 1px solid #e4e7ec;
+}
+
+.user-customer-list-section + .user-attributes-section {
+  margin-top: 56px;
+}
+
+.user-section-head {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
-.chip {
-  display: inline-flex;
-  padding: 8px 10px;
-  border-radius: 999px;
-  border: 1px solid #e8eaf1;
-  background: #fff;
-  font-weight: 900;
-  color: #111827;
+.user-section-title {
+  font-size: 16px;
+  font-weight: 950;
+  color: #0f172a;
+}
+
+.user-section-sub {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .hint,
@@ -545,7 +570,6 @@ tbody tr:last-child td {
 
 @media (max-width: 980px) {
   .grid2,
-  .attr-grid,
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -557,6 +581,12 @@ tbody tr:last-child td {
 }
 
 @media (max-width: 760px) {
+  .tabs {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 18px;
+  }
+
   .confirm-actions {
     flex-direction: column;
   }
@@ -564,5 +594,14 @@ tbody tr:last-child td {
   .btn-secondary,
   .btn-danger {
     width: 100%;
+  }
+
+  .user-customer-list-section {
+    margin-bottom: 48px;
+  }
+
+  .user-attributes-section {
+    margin-top: 48px;
+    padding-top: 32px;
   }
 }
