@@ -125,6 +125,17 @@
                 <input class="input" type="text" placeholder="Segment..." [(ngModel)]="segmentFilter" />
               </div>
 
+              <div class="field">
+                <label class="field-label">Flags</label>
+                <select class="select" [(ngModel)]="flagFilter">
+                  <option value="">All flags</option>
+                  <option value="Missing CG segment">Missing CG segment</option>
+                  <option value="Multiple CF segments">Multiple CF segments</option>
+                  <option value="Any flag">Any flag</option>
+                  <option value="No flags">No flags</option>
+                </select>
+              </div>
+
               <div class="filter-actions">
                 <button class="btn-primary" type="button" (click)="onApplyFilters(); filterMenu.removeAttribute('open')">
                   Apply filters
@@ -360,6 +371,17 @@
               <option value="">All statuses</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+
+          <div class="field full">
+            <label class="field-label">Flags</label>
+            <select class="select" [(ngModel)]="modalFlag">
+              <option value="">All flags</option>
+              <option value="Missing CG segment">Missing CG segment</option>
+              <option value="Multiple CF segments">Multiple CF segments</option>
+              <option value="Any flag">Any flag</option>
+              <option value="No flags">No flags</option>
             </select>
           </div>
         </div>

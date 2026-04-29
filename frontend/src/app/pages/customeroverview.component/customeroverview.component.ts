@@ -46,6 +46,7 @@ export class CustomeroverviewComponent {
   typeFilter = '';
   statusFilter = '';
   segmentFilter = '';
+  flagFilter = '';
 
   selectedIds = new Set<string>();
   selectedRows = new Map<string, CustomerRow>();
@@ -74,6 +75,7 @@ export class CustomeroverviewComponent {
   modalType = '';
   modalStatus = '';
   modalSegment = '';
+  modalFlag = '';
 
   constructor() {
     this.loadCustomers();
@@ -91,11 +93,15 @@ export class CustomeroverviewComponent {
     this.loading = true;
     this.error = '';
 
+    const usesFlagFilter = !!this.flagFilter.trim();
+    const requestOffset = usesFlagFilter ? 0 : this.offset;
+    const requestLimit = usesFlagFilter ? 1500 : this.limit;
+
     this.customerApi.getCustomers(
       authenticationToken,
       this.domainName,
-      this.offset,
-      this.limit,
+      requestOffset,
+      requestLimit,
       this.customerNoFilter,
       this.query,
       this.typeFilter,
@@ -103,8 +109,17 @@ export class CustomeroverviewComponent {
       this.segmentFilter
     ).subscribe({
       next: (response) => {
-        this.rows = this.mapCustomersToRows(response.data ?? []);
-        this.totalCount = response.count ?? 0;
+        const mappedRows = this.mapCustomersToRows(response.data ?? []);
+        const filteredRows = this.applyFlagFilter(mappedRows);
+
+        if (usesFlagFilter) {
+          this.totalCount = filteredRows.length;
+          this.rows = filteredRows.slice(this.offset, this.offset + this.limit);
+        } else {
+          this.rows = filteredRows;
+          this.totalCount = response.count ?? 0;
+        }
+
         this.loading = false;
       },
       error: (err) => {
@@ -154,6 +169,7 @@ export class CustomeroverviewComponent {
     this.modalType = this.typeFilter;
     this.modalStatus = this.statusFilter;
     this.modalSegment = this.segmentFilter;
+    this.modalFlag = this.flagFilter;
 
     this.saveSearchError = '';
     this.saveSearchSuccess = '';
@@ -170,6 +186,7 @@ export class CustomeroverviewComponent {
     this.modalType = search.typeFilter ?? '';
     this.modalStatus = search.statusFilter ?? '';
     this.modalSegment = search.segmentFilter ?? '';
+    this.modalFlag = search.flagFilter ?? '';
 
     this.saveSearchError = '';
     this.saveSearchSuccess = '';
@@ -206,6 +223,7 @@ export class CustomeroverviewComponent {
       typeFilter: this.modalType,
       statusFilter: this.modalStatus,
       segmentFilter: this.modalSegment.trim(),
+      flagFilter: this.modalFlag,
       overwrite: this.searchModalMode === 'edit'
     };
 
@@ -291,6 +309,7 @@ export class CustomeroverviewComponent {
     this.typeFilter = savedSearch.typeFilter ?? '';
     this.statusFilter = savedSearch.statusFilter ?? '';
     this.segmentFilter = savedSearch.segmentFilter ?? '';
+    this.flagFilter = savedSearch.flagFilter ?? '';
 
     this.onApplyFilters();
   }
@@ -360,6 +379,22 @@ export class CustomeroverviewComponent {
       .filter(Boolean);
   }
 
+  private applyFlagFilter(rows: CustomerRow[]): CustomerRow[] {
+    if (!this.flagFilter.trim()) {
+      return rows;
+    }
+
+    if (this.flagFilter === 'Any flag') {
+      return rows.filter(row => row.flags.length > 0);
+    }
+
+    if (this.flagFilter === 'No flags') {
+      return rows.filter(row => row.flags.length === 0);
+    }
+
+    return rows.filter(row => row.flags.includes(this.flagFilter));
+  }
+
   visibleRows(): CustomerRow[] {
     return this.rows.filter(row => {
       if (row.level === 0) {
@@ -399,6 +434,7 @@ export class CustomeroverviewComponent {
     this.typeFilter = '';
     this.statusFilter = '';
     this.segmentFilter = '';
+    this.flagFilter = '';
     this.saveSearchError = '';
     this.saveSearchSuccess = '';
     this.offset = 0;
@@ -468,7 +504,7 @@ export class CustomeroverviewComponent {
       authenticationToken,
       this.domainName,
       0,
-      this.totalCount,
+      this.flagFilter ? 1500 : this.totalCount,
       this.customerNoFilter,
       this.query,
       this.typeFilter,
@@ -476,7 +512,7 @@ export class CustomeroverviewComponent {
       this.segmentFilter
     ).subscribe({
       next: (response) => {
-        const allRows = this.mapCustomersToRows(response.data ?? []);
+        const allRows = this.applyFlagFilter(this.mapCustomersToRows(response.data ?? []));
 
         allRows.forEach(row => {
           this.selectedIds.add(row.id);
@@ -519,9 +555,10 @@ export class CustomeroverviewComponent {
     this.selectedIds.clear();
     this.selectedRows.clear();
   }
+
   goBack(): void {
-  this.router.navigate(['/dashboard']);
-}
+    this.router.navigate(['/dashboard']);
+  }
 
   deleteSavedSearch(searchId: number): void {
     const authenticationToken = this.authService.getAuthenticationToken();

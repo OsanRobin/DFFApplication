@@ -107,6 +107,7 @@ export interface SavedCustomerSearchDto {
   typeFilter: string;
   statusFilter: string;
   segmentFilter: string;
+  flagFilter?: string;
 }
 
 export interface SavedCustomerSearchListResponse {
@@ -122,6 +123,7 @@ export interface SaveCustomerSearchRequest {
   typeFilter: string;
   statusFilter: string;
   segmentFilter: string;
+  flagFilter?: string;
   overwrite: boolean;
 }
 
