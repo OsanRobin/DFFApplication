@@ -9,6 +9,7 @@ import {
   CustomerAttributeDto,
   CustomerDetailResponse,
   CustomerDto,
+  CustomerUserAttributeDto,
   CustomerUserDetailResponse,
   CustomerUserDto
 } from '../../core/api/customer-api.service';
@@ -77,6 +78,18 @@ export class CustomerdetailComponent {
     value: ''
   };
 
+  editingUserAttribute = false;
+  editingUserAttributeId: string | null = null;
+  userAttributeSaving = false;
+  userAttributeFormError = '';
+  showDeleteUserAttributeConfirm = false;
+  userAttributeNameToDelete = '';
+
+  userAttributeForm = {
+    name: '',
+    value: ''
+  };
+
   constructor() {
     this.route.paramMap.subscribe(params => {
       this.customerId = params.get('id') ?? '';
@@ -105,6 +118,7 @@ export class CustomerdetailComponent {
       this.showDeleteAttributeConfirm = false;
       this.attributeNameToDelete = '';
       this.cancelAttributeEdit();
+      this.cancelUserAttributeEdit();
 
       this.loadCustomer();
 
@@ -278,6 +292,7 @@ export class CustomerdetailComponent {
     this.showUserCustomerAddForm = false;
     this.showDeleteUserCustomerConfirm = false;
     this.userCustomerNoToDelete = '';
+    this.cancelUserAttributeEdit();
     this.userDetailLoading = true;
     this.userDetailError = '';
 
@@ -391,6 +406,7 @@ export class CustomerdetailComponent {
     this.showUserCustomerAddForm = false;
     this.showDeleteUserCustomerConfirm = false;
     this.userCustomerNoToDelete = '';
+    this.cancelUserAttributeEdit();
   }
 
   userDetailTitle(): string {
@@ -407,13 +423,11 @@ export class CustomerdetailComponent {
   }
 
   buildEditableAttributes(attributes: CustomerAttributeDto[] = []): EditableAttribute[] {
-    return attributes
-      .filter(attribute => attribute.name.toLowerCase() !== 'customerlist')
-      .map(attribute => ({
-        id: attribute.name,
-        name: attribute.name,
-        value: attribute.value ?? ''
-      }));
+    return attributes.map(attribute => ({
+      id: attribute.name,
+      name: attribute.name,
+      value: attribute.value ?? ''
+    }));
   }
 
   customerListCustomers(): CustomerDto[] {
@@ -426,6 +440,14 @@ export class CustomerdetailComponent {
 
   hasUserCustomerListCustomers(): boolean {
     return this.userCustomerListCustomers.length > 0;
+  }
+
+  userAttributes(): CustomerUserAttributeDto[] {
+    return this.selectedUserDetail?.attributes ?? [];
+  }
+
+  hasUserAttributes(): boolean {
+    return this.userAttributes().length > 0;
   }
 
   startAddAttribute(): void {
@@ -637,6 +659,215 @@ export class CustomerdetailComponent {
         }
 
         this.attributeFormError = 'Failed to delete attribute.';
+      }
+    });
+  }
+
+  startAddUserAttribute(): void {
+    this.editingUserAttribute = true;
+    this.editingUserAttributeId = null;
+    this.userAttributeFormError = '';
+    this.userAttributeForm = {
+      name: '',
+      value: ''
+    };
+  }
+
+  onEditUserAttributeClick(attributeName: string, event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.startEditUserAttribute(attributeName);
+  }
+
+  startEditUserAttribute(attributeName: string): void {
+    const attribute = this.userAttributes().find(item => item.name === attributeName);
+
+    if (!attribute) {
+      this.userAttributeFormError = `Attribute not found: ${attributeName}`;
+      return;
+    }
+
+    this.editingUserAttribute = true;
+    this.editingUserAttributeId = attribute.name;
+    this.userAttributeFormError = '';
+    this.userAttributeForm = {
+      name: attribute.name,
+      value: attribute.value ?? ''
+    };
+  }
+
+  cancelUserAttributeEdit(): void {
+    this.editingUserAttribute = false;
+    this.editingUserAttributeId = null;
+    this.userAttributeSaving = false;
+    this.userAttributeFormError = '';
+    this.showDeleteUserAttributeConfirm = false;
+    this.userAttributeNameToDelete = '';
+    this.userAttributeForm = {
+      name: '',
+      value: ''
+    };
+  }
+
+  saveUserAttribute(): void {
+    const name = this.userAttributeForm.name.trim();
+    const value = this.userAttributeForm.value.trim();
+
+    if (!name) {
+      this.userAttributeFormError = 'Attribute name is required.';
+      return;
+    }
+
+    if (name.toLowerCase() === 'customerlist') {
+      this.userAttributeFormError = 'CustomerList is managed in the User CustomerList Customers table.';
+      return;
+    }
+
+    const authenticationToken = this.authService.getAuthenticationToken();
+    const businessPartnerNo = this.selectedUserDetail?.user.businessPartnerNo;
+
+    if (!authenticationToken || !this.customerId || !businessPartnerNo) {
+      this.userAttributeFormError = 'Unable to save user attribute.';
+      return;
+    }
+
+    const duplicate = this.userAttributes().some(attribute =>
+      attribute.name.toLowerCase() === name.toLowerCase()
+      && attribute.name !== this.editingUserAttributeId
+    );
+
+    if (duplicate) {
+      this.userAttributeFormError = 'An attribute with this name already exists.';
+      return;
+    }
+
+    this.userAttributeSaving = true;
+    this.userAttributeFormError = '';
+
+    if (this.editingUserAttributeId) {
+      this.customerApi.updateCustomerUserAttribute(
+        authenticationToken,
+        this.customerId,
+        businessPartnerNo,
+        this.editingUserAttributeId,
+        { name, value }
+      ).subscribe({
+        next: () => {
+          const user = this.selectedUserDetail!.user;
+          this.userAttributeSaving = false;
+          this.cancelUserAttributeEdit();
+          this.viewUserDetails(user);
+        },
+        error: err => {
+          console.error(err);
+          this.userAttributeSaving = false;
+
+          if (err.status === 401 || err.status === 403) {
+            this.userAttributeFormError = 'Your session expired. Please log in again.';
+            this.router.navigate(['/login']);
+            return;
+          }
+
+          this.userAttributeFormError = 'Failed to update user attribute.';
+        }
+      });
+
+      return;
+    }
+
+    this.customerApi.addCustomerUserAttribute(
+      authenticationToken,
+      this.customerId,
+      businessPartnerNo,
+      { name, value }
+    ).subscribe({
+      next: () => {
+        const user = this.selectedUserDetail!.user;
+        this.userAttributeSaving = false;
+        this.cancelUserAttributeEdit();
+        this.viewUserDetails(user);
+      },
+      error: err => {
+        console.error(err);
+        this.userAttributeSaving = false;
+
+        if (err.status === 401 || err.status === 403) {
+          this.userAttributeFormError = 'Your session expired. Please log in again.';
+          this.router.navigate(['/login']);
+          return;
+        }
+
+        this.userAttributeFormError = 'Failed to add user attribute.';
+      }
+    });
+  }
+
+  removeUserAttribute(attributeName: string, event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    if (this.userAttributeSaving) {
+      return;
+    }
+
+    this.userAttributeNameToDelete = attributeName;
+    this.showDeleteUserAttributeConfirm = true;
+  }
+
+  closeDeleteUserAttributeConfirm(): void {
+    if (this.userAttributeSaving) {
+      return;
+    }
+
+    this.showDeleteUserAttributeConfirm = false;
+    this.userAttributeNameToDelete = '';
+  }
+
+  confirmDeleteUserAttribute(): void {
+    const attributeName = this.userAttributeNameToDelete;
+    const authenticationToken = this.authService.getAuthenticationToken();
+    const businessPartnerNo = this.selectedUserDetail?.user.businessPartnerNo;
+
+    if (!authenticationToken || !this.customerId || !businessPartnerNo || !attributeName) {
+      this.userAttributeFormError = 'Unable to delete user attribute.';
+      this.closeDeleteUserAttributeConfirm();
+      return;
+    }
+
+    this.userAttributeSaving = true;
+    this.userAttributeFormError = '';
+
+    this.customerApi.deleteCustomerUserAttribute(
+      authenticationToken,
+      this.customerId,
+      businessPartnerNo,
+      attributeName
+    ).subscribe({
+      next: () => {
+        const user = this.selectedUserDetail!.user;
+        this.userAttributeSaving = false;
+        this.showDeleteUserAttributeConfirm = false;
+
+        if (this.editingUserAttributeId === attributeName) {
+          this.cancelUserAttributeEdit();
+        }
+
+        this.userAttributeNameToDelete = '';
+        this.viewUserDetails(user);
+      },
+      error: err => {
+        console.error(err);
+        this.userAttributeSaving = false;
+        this.showDeleteUserAttributeConfirm = false;
+        this.userAttributeNameToDelete = '';
+
+        if (err.status === 401 || err.status === 403) {
+          this.userAttributeFormError = 'Your session expired. Please log in again.';
+          this.router.navigate(['/login']);
+          return;
+        }
+
+        this.userAttributeFormError = 'Failed to delete user attribute.';
       }
     });
   }

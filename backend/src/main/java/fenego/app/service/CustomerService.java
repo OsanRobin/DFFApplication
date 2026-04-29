@@ -537,6 +537,152 @@ public void removeCustomerFromUserCustomerList(
 
         return normalized;
     }
+    public void addCustomerUserAttribute(
+        String authenticationToken,
+        String customerId,
+        String businessPartnerNo,
+        CustomerAttributeRequest request)
+{
+    if (customerId == null || customerId.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+    }
+
+    if (businessPartnerNo == null || businessPartnerNo.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Business partner no is required");
+    }
+
+    if (request == null || request.getName() == null || request.getName().isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute name is required");
+    }
+
+    String normalizedBusinessPartnerNo = normalizeBusinessPartnerNo(businessPartnerNo);
+    String name = request.getName().trim();
+    String value = request.getValue() == null ? "" : request.getValue();
+
+    CustomerUserDTO user = customerRepository.findUserByCustomerIdAndBusinessPartnerNo(
+            customerId,
+            normalizedBusinessPartnerNo
+    );
+
+    if (user == null)
+    {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found for this customer");
+    }
+
+    customerRepository.saveUserAttribute(normalizedBusinessPartnerNo, name, value);
+
+    auditLogService.logChange(
+            "USER_ATTRIBUTE",
+            normalizedBusinessPartnerNo,
+            "CREATE",
+            name,
+            "",
+            value,
+            "system",
+            "User attribute added"
+    );
+}
+
+public void updateCustomerUserAttribute(
+        String authenticationToken,
+        String customerId,
+        String businessPartnerNo,
+        String attributeName,
+        CustomerAttributeRequest request)
+{
+    if (customerId == null || customerId.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+    }
+
+    if (businessPartnerNo == null || businessPartnerNo.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Business partner no is required");
+    }
+
+    if (attributeName == null || attributeName.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute name is required");
+    }
+
+    String normalizedBusinessPartnerNo = normalizeBusinessPartnerNo(businessPartnerNo);
+    String name = attributeName.trim();
+    String value = request == null || request.getValue() == null ? "" : request.getValue();
+
+    CustomerUserDTO user = customerRepository.findUserByCustomerIdAndBusinessPartnerNo(
+            customerId,
+            normalizedBusinessPartnerNo
+    );
+
+    if (user == null)
+    {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found for this customer");
+    }
+
+    customerRepository.saveUserAttribute(normalizedBusinessPartnerNo, name, value);
+
+    auditLogService.logChange(
+            "USER_ATTRIBUTE",
+            normalizedBusinessPartnerNo,
+            "UPDATE",
+            name,
+            "",
+            value,
+            "system",
+            "User attribute updated"
+    );
+}
+
+public void deleteCustomerUserAttribute(
+        String authenticationToken,
+        String customerId,
+        String businessPartnerNo,
+        String attributeName)
+{
+    if (customerId == null || customerId.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+    }
+
+    if (businessPartnerNo == null || businessPartnerNo.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Business partner no is required");
+    }
+
+    if (attributeName == null || attributeName.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute name is required");
+    }
+
+    String normalizedBusinessPartnerNo = normalizeBusinessPartnerNo(businessPartnerNo);
+    String name = attributeName.trim();
+
+    CustomerUserDTO user = customerRepository.findUserByCustomerIdAndBusinessPartnerNo(
+            customerId,
+            normalizedBusinessPartnerNo
+    );
+
+    if (user == null)
+    {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found for this customer");
+    }
+
+    customerRepository.deleteUserAttribute(normalizedBusinessPartnerNo, name);
+
+    auditLogService.logChange(
+            "USER_ATTRIBUTE",
+            normalizedBusinessPartnerNo,
+            "DELETE",
+            name,
+            "",
+            "",
+            "system",
+            "User attribute deleted"
+    );
+}
 
     private List<String> parseCustomerList(String value)
     {

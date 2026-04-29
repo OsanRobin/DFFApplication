@@ -124,6 +124,7 @@ export interface SaveCustomerSearchRequest {
   segmentFilter: string;
   overwrite: boolean;
 }
+
 export interface CustomerUserAttributeDto {
   name: string;
   value: string;
@@ -205,7 +206,10 @@ export class CustomerApiService {
     });
   }
 
-  getCustomerUsers(authenticationToken: string, customerId: string): Observable<CustomerUserListResponse> {
+  getCustomerUsers(
+    authenticationToken: string,
+    customerId: string
+  ): Observable<CustomerUserListResponse> {
     const headers = new HttpHeaders({
       'authentication-token': authenticationToken
     });
@@ -213,6 +217,21 @@ export class CustomerApiService {
     return this.http.get<CustomerUserListResponse>(`${this.baseUrl}/${customerId}/users`, {
       headers
     });
+  }
+
+  getCustomerUserDetail(
+    authenticationToken: string,
+    customerId: string,
+    businessPartnerNo: string
+  ): Observable<CustomerUserDetailResponse> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    return this.http.get<CustomerUserDetailResponse>(
+      `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}`,
+      { headers }
+    );
   }
 
   addCustomerAttribute(
@@ -245,33 +264,132 @@ export class CustomerApiService {
       'authentication-token': authenticationToken
     });
 
-    const params = new HttpParams().set('domain', domain);
+    const params = new HttpParams()
+      .set('domain', domain)
+      .set('attributeName', attributeName);
 
     return this.http.put<void>(
-      `${this.baseUrl}/${customerId}/attributes/${encodeURIComponent(attributeName)}`,
+      `${this.baseUrl}/${customerId}/attributes`,
       request,
       { headers, params }
     );
   }
+
   deleteCustomerAttribute(
-  authenticationToken: string,
-  domain: string,
-  customerId: string,
-  attributeName: string
-): Observable<void> {
-  const headers = new HttpHeaders({
-    'authentication-token': authenticationToken
-  });
+    authenticationToken: string,
+    domain: string,
+    customerId: string,
+    attributeName: string
+  ): Observable<void> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
 
-  const params = new HttpParams().set('domain', domain);
+    const params = new HttpParams()
+      .set('domain', domain)
+      .set('attributeName', attributeName);
 
-  return this.http.delete<void>(
-    `${this.baseUrl}/${customerId}/attributes/${encodeURIComponent(attributeName)}`,
-    { headers, params }
-  );
-}
+    return this.http.delete<void>(
+      `${this.baseUrl}/${customerId}/attributes`,
+      { headers, params }
+    );
+  }
 
-  getSavedSearches(authenticationToken: string, domain: string): Observable<SavedCustomerSearchListResponse> {
+  addCustomerUserAttribute(
+    authenticationToken: string,
+    customerId: string,
+    businessPartnerNo: string,
+    request: CustomerAttributeRequest
+  ): Observable<void> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    return this.http.post<void>(
+      `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}/attributes`,
+      request,
+      { headers }
+    );
+  }
+
+  updateCustomerUserAttribute(
+    authenticationToken: string,
+    customerId: string,
+    businessPartnerNo: string,
+    attributeName: string,
+    request: CustomerAttributeRequest
+  ): Observable<void> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    const params = new HttpParams().set('attributeName', attributeName);
+
+    return this.http.put<void>(
+      `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}/attributes`,
+      request,
+      { headers, params }
+    );
+  }
+
+  deleteCustomerUserAttribute(
+    authenticationToken: string,
+    customerId: string,
+    businessPartnerNo: string,
+    attributeName: string
+  ): Observable<void> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    const params = new HttpParams().set('attributeName', attributeName);
+
+    return this.http.delete<void>(
+      `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}/attributes`,
+      { headers, params }
+    );
+  }
+
+  addCustomerToUserCustomerList(
+    authenticationToken: string,
+    customerId: string,
+    businessPartnerNo: string,
+    customerNo: string
+  ): Observable<void> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    return this.http.post<void>(
+      `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}/customer-list`,
+      {
+        name: 'CustomerList',
+        value: customerNo
+      },
+      { headers }
+    );
+  }
+
+  removeCustomerFromUserCustomerList(
+    authenticationToken: string,
+    customerId: string,
+    businessPartnerNo: string,
+    customerNo: string
+  ): Observable<void> {
+    const headers = new HttpHeaders({
+      'authentication-token': authenticationToken
+    });
+
+    return this.http.delete<void>(
+      `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}/customer-list/${encodeURIComponent(customerNo)}`,
+      { headers }
+    );
+  }
+
+  getSavedSearches(
+    authenticationToken: string,
+    domain: string
+  ): Observable<SavedCustomerSearchListResponse> {
     const headers = new HttpHeaders({
       'authentication-token': authenticationToken
     });
@@ -284,7 +402,10 @@ export class CustomerApiService {
     });
   }
 
-  saveSearch(authenticationToken: string, request: SaveCustomerSearchRequest): Observable<void> {
+  saveSearch(
+    authenticationToken: string,
+    request: SaveCustomerSearchRequest
+  ): Observable<void> {
     const headers = new HttpHeaders({
       'authentication-token': authenticationToken
     });
@@ -292,68 +413,23 @@ export class CustomerApiService {
     return this.http.post<void>(this.savedSearchBaseUrl, request, { headers });
   }
 
-  deleteSavedSearch(authenticationToken: string, id: number) {
+  deleteSavedSearch(authenticationToken: string, id: number): Observable<void> {
     const headers = new HttpHeaders({
       'authentication-token': authenticationToken
     });
 
-    return this.http.delete(`${this.savedSearchBaseUrl}/${id}`, { headers });
+    return this.http.delete<void>(`${this.savedSearchBaseUrl}/${id}`, { headers });
   }
 
-  updateSavedSearchName(authenticationToken: string, id: number, name: string) {
+  updateSavedSearchName(
+    authenticationToken: string,
+    id: number,
+    name: string
+  ): Observable<void> {
     const headers = new HttpHeaders({
       'authentication-token': authenticationToken
     });
 
-    return this.http.put(`${this.savedSearchBaseUrl}/${id}/name`, name, { headers });
+    return this.http.put<void>(`${this.savedSearchBaseUrl}/${id}/name`, name, { headers });
   }
-getCustomerUserDetail(
-  authenticationToken: string,
-  customerId: string,
-  businessPartnerNo: string
-): Observable<CustomerUserDetailResponse> {
-  const headers = new HttpHeaders({
-    'authentication-token': authenticationToken
-  });
-
-  return this.http.get<CustomerUserDetailResponse>(
-    `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}`,
-    { headers }
-  );
-}
-addCustomerToUserCustomerList(
-  authenticationToken: string,
-  customerId: string,
-  businessPartnerNo: string,
-  customerNo: string
-): Observable<void> {
-  const headers = new HttpHeaders({
-    'authentication-token': authenticationToken
-  });
-
-  return this.http.post<void>(
-    `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}/customer-list`,
-    {
-      name: 'CustomerList',
-      value: customerNo
-    },
-    { headers }
-  );
-}
-
-removeCustomerFromUserCustomerList(
-  authenticationToken: string,
-  customerId: string,
-  businessPartnerNo: string,
-  customerNo: string
-): Observable<void> {
-  const headers = new HttpHeaders({
-    'authentication-token': authenticationToken
-  });
-
-  return this.http.delete<void>(
-    `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}/customer-list/${encodeURIComponent(customerNo)}`,
-    { headers }
-  );
-}
 }

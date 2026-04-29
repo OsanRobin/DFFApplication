@@ -97,17 +97,17 @@
 
               <div class="kv compact">
                 <div class="k">Address Name</div>
-                <div class="v">{{ displayText(customer.preferredInvoiceToAddress.addressName) }}</div>
+                <div class="v">{{ displayText(customer.preferredInvoiceToAddress?.addressName) }}</div>
               </div>
 
               <div class="kv compact">
                 <div class="k">Invoice Address</div>
-                <div class="v">{{ customer.preferredInvoiceToAddress.invoiceToAddress ? 'Yes' : 'No' }}</div>
+                <div class="v">{{ customer.preferredInvoiceToAddress?.invoiceToAddress ? 'Yes' : 'No' }}</div>
               </div>
 
               <div class="kv compact">
                 <div class="k">Ship To Address</div>
-                <div class="v">{{ customer.preferredInvoiceToAddress.shipToAddress ? 'Yes' : 'No' }}</div>
+                <div class="v">{{ customer.preferredInvoiceToAddress?.shipToAddress ? 'Yes' : 'No' }}</div>
               </div>
             </div>
 
@@ -120,17 +120,17 @@
 
               <div class="kv compact">
                 <div class="k">Address Name</div>
-                <div class="v">{{ displayText(customer.preferredShipToAddress.addressName) }}</div>
+                <div class="v">{{ displayText(customer.preferredShipToAddress?.addressName) }}</div>
               </div>
 
               <div class="kv compact">
                 <div class="k">Invoice Address</div>
-                <div class="v">{{ customer.preferredShipToAddress.invoiceToAddress ? 'Yes' : 'No' }}</div>
+                <div class="v">{{ customer.preferredShipToAddress?.invoiceToAddress ? 'Yes' : 'No' }}</div>
               </div>
 
               <div class="kv compact">
                 <div class="k">Ship To Address</div>
-                <div class="v">{{ customer.preferredShipToAddress.shipToAddress ? 'Yes' : 'No' }}</div>
+                <div class="v">{{ customer.preferredShipToAddress?.shipToAddress ? 'Yes' : 'No' }}</div>
               </div>
             </div>
           </section>
@@ -142,7 +142,7 @@
           <div class="panel-head">
             <div>
               <div class="panel-title">Attributes</div>
-              <div class="panel-sub">Add or edit customer attributes.</div>
+              <div class="panel-sub">Add, edit or delete customer attributes.</div>
             </div>
 
             <div class="attr-actions">
@@ -211,7 +211,7 @@
                     type="text"
                     [(ngModel)]="attributeForm.name"
                     placeholder="Attribute name"
-                    [disabled]="attributeSaving"
+                    [disabled]="attributeSaving || editingAttributeId !== null"
                   />
                 </div>
 
@@ -244,46 +244,63 @@
           }
 
           @if (editableAttributes.length > 0) {
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Value</th>
-                    <th class="col-actions">Actions</th>
-                  </tr>
-                </thead>
+            <div class="attribute-table-section">
+              <div class="user-section-head">
+                <div>
+                  <div class="user-section-title">Customer Attributes</div>
+                  <div class="user-section-sub">All attributes linked to this customer.</div>
+                </div>
+              </div>
 
-                <tbody>
-                  @for (attribute of editableAttributes; track attribute.name) {
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
                     <tr>
-                      <td>{{ displayText(attribute.name) }}</td>
-                      <td>{{ displayAttributeValue(attribute) }}</td>
-                      <td class="col-actions">
-                        <div class="row-actions">
-                          <button
-                            class="btn-outline btn-small"
-                            type="button"
-                            (click)="onEditAttributeClick(attribute.name, $event)"
-                            [disabled]="attributeSaving"
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            class="btn-danger btn-small"
-                            type="button"
-                            (click)="removeAttribute(attribute.name, $event)"
-                            [disabled]="attributeSaving"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
+                      <th>Name</th>
+                      <th>Value</th>
+                      <th class="col-actions">Actions</th>
                     </tr>
-                  }
-                </tbody>
-              </table>
+                  </thead>
+
+                  <tbody>
+                    @for (attribute of editableAttributes; track attribute.name) {
+                      <tr>
+                        <td>{{ displayText(attribute.name) }}</td>
+                        <td>{{ displayAttributeValue(attribute) }}</td>
+                        <td class="col-actions">
+                          <div class="row-actions">
+                            <button
+                              class="icon-action"
+                              type="button"
+                              title="Edit attribute"
+                              aria-label="Edit attribute"
+                              (click)="onEditAttributeClick(attribute.name, $event)"
+                              [disabled]="attributeSaving"
+                            >
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 17.25V21h3.75L18.81 9.94l-3.75-3.75L4 17.25Zm16.71-10.04a1 1 0 0 0 0-1.42l-2.5-2.5a1 1 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 2-1.66Z" />
+                              </svg>
+                            </button>
+
+                            <button
+                              class="icon-danger"
+                              type="button"
+                              title="Delete attribute"
+                              aria-label="Delete attribute"
+                              (click)="removeAttribute(attribute.name, $event)"
+                              [disabled]="attributeSaving"
+                            >
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
             </div>
           } @else {
             @if (!hasCustomerListCustomers()) {
@@ -540,29 +557,112 @@
               }
             </div>
 
-            <div class="user-attributes-section">
+            <div class="user-customer-list-section user-attributes-list-section">
               <div class="user-section-head">
                 <div>
                   <div class="user-section-title">User Attributes</div>
-                  <div class="user-section-sub">Attributes linked to this user.</div>
+                  <div class="user-section-sub">Add, edit or delete attributes linked to this user.</div>
                 </div>
+
+                @if (!editingUserAttribute) {
+                  <button
+                    class="btn-primary btn-add-customer"
+                    type="button"
+                    (click)="startAddUserAttribute()"
+                    [disabled]="userAttributeSaving"
+                  >
+                    Add Attribute
+                  </button>
+                }
               </div>
 
-              @if (selectedUserDetail.attributes.length > 0) {
+              @if (editingUserAttribute) {
+                <div class="inline-add user-attribute-inline-add">
+                  <input
+                    class="input user-attribute-name-input"
+                    type="text"
+                    [(ngModel)]="userAttributeForm.name"
+                    placeholder="Attribute name"
+                    [disabled]="userAttributeSaving || editingUserAttributeId !== null"
+                  />
+
+                  <input
+                    class="input user-attribute-value-input"
+                    type="text"
+                    [(ngModel)]="userAttributeForm.value"
+                    placeholder="Attribute value"
+                    [disabled]="userAttributeSaving"
+                  />
+
+                  <button
+                    class="btn-primary btn-add-customer"
+                    type="button"
+                    (click)="saveUserAttribute()"
+                    [disabled]="userAttributeSaving"
+                  >
+                    {{ userAttributeSaving ? 'Saving...' : 'Save' }}
+                  </button>
+
+                  <button
+                    class="btn-outline btn-add-customer"
+                    type="button"
+                    (click)="cancelUserAttributeEdit()"
+                    [disabled]="userAttributeSaving"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              }
+
+              @if (userAttributeFormError) {
+                <div class="state error">{{ userAttributeFormError }}</div>
+              }
+
+              @if (hasUserAttributes()) {
                 <div class="table-wrap">
                   <table class="table">
                     <thead>
                       <tr>
                         <th>Name</th>
                         <th>Value</th>
+                        <th class="col-actions">Actions</th>
                       </tr>
                     </thead>
 
                     <tbody>
-                      @for (attribute of selectedUserDetail.attributes; track attribute.name) {
+                      @for (attribute of userAttributes(); track attribute.name) {
                         <tr>
                           <td>{{ displayText(attribute.name) }}</td>
                           <td>{{ displayAttributeValue(attribute) }}</td>
+                          <td class="col-actions">
+                            <div class="row-actions">
+                              <button
+                                class="icon-action"
+                                type="button"
+                                title="Edit user attribute"
+                                aria-label="Edit user attribute"
+                                (click)="onEditUserAttributeClick(attribute.name, $event)"
+                                [disabled]="userAttributeSaving"
+                              >
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="M4 17.25V21h3.75L18.81 9.94l-3.75-3.75L4 17.25Zm16.71-10.04a1 1 0 0 0 0-1.42l-2.5-2.5a1 1 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 2-1.66Z" />
+                                </svg>
+                              </button>
+
+                              <button
+                                class="icon-danger"
+                                type="button"
+                                title="Delete user attribute"
+                                aria-label="Delete user attribute"
+                                (click)="removeUserAttribute(attribute.name, $event)"
+                                [disabled]="userAttributeSaving"
+                              >
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       }
                     </tbody>
@@ -751,6 +851,44 @@
             [disabled]="userCustomerListSaving"
           >
             {{ userCustomerListSaving ? 'Removing...' : 'Yes, remove' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showDeleteUserAttributeConfirm) {
+    <div class="modal-backdrop" (click)="closeDeleteUserAttributeConfirm()">
+      <div class="confirm-modal" (click)="$event.stopPropagation()">
+        <div class="confirm-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+          </svg>
+        </div>
+
+        <h3>Delete user attribute?</h3>
+        <p>
+          Are you sure you want to delete the user attribute
+          <strong>{{ userAttributeNameToDelete }}</strong>?
+        </p>
+
+        <div class="confirm-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="closeDeleteUserAttributeConfirm()"
+            [disabled]="userAttributeSaving"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            class="btn-danger"
+            (click)="confirmDeleteUserAttribute()"
+            [disabled]="userAttributeSaving"
+          >
+            {{ userAttributeSaving ? 'Deleting...' : 'Yes, delete' }}
           </button>
         </div>
       </div>

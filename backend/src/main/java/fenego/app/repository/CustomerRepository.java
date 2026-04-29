@@ -858,6 +858,24 @@ public String findUserAttributeValue(String businessPartnerNo, String name)
 
     return results.isEmpty() ? "" : results.get(0);
 }
+public void deleteUserAttribute(String businessPartnerNo, String name)
+{
+    String sql = """
+        delete av
+        from BASICPROFILE_AV av
+        join BASICPROFILE bp
+            on av.OWNERID = bp.UUID
+        where bp.BUSINESSPARTNERNO = :businessPartnerNo
+          and av.NAME = :name
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("businessPartnerNo", businessPartnerNo)
+            .addValue("name", name);
+
+    jdbcTemplate.update(sql, params);
+}
+
     private Customer mapCustomer(ResultSet rs) throws SQLException
     {
         Customer customer = new Customer();

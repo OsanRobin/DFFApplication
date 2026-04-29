@@ -83,37 +83,66 @@ public class CustomerController {
         customerService.addCustomerAttribute(authenticationToken, domain, customerId, request);
     }
 
-    @PutMapping("/{customerId}/attributes/{attributeName}")
+    @PutMapping("/{customerId}/attributes")
     public void updateCustomerAttribute(
             @RequestHeader("authentication-token") String authenticationToken,
             @RequestParam("domain") String domain,
             @PathVariable String customerId,
-            @PathVariable String attributeName,
+            @RequestParam("attributeName") String attributeName,
             @RequestBody CustomerAttributeRequest request) {
         customerService.updateCustomerAttribute(authenticationToken, domain, customerId, attributeName, request);
     }
 
-    @DeleteMapping("/{customerId}/attributes/{attributeName}")
+    @DeleteMapping("/{customerId}/attributes")
     public void deleteCustomerAttribute(
             @RequestHeader("authentication-token") String authenticationToken,
             @RequestParam("domain") String domain,
             @PathVariable String customerId,
-            @PathVariable String attributeName) {
+            @RequestParam("attributeName") String attributeName) {
         customerService.deleteCustomerAttribute(authenticationToken, domain, customerId, attributeName);
     }
-    @PostMapping("/{customerId}/users/{businessPartnerNo}/customer-list")
-public void addCustomerToUserCustomerList(
-        @PathVariable String customerId,
-        @PathVariable String businessPartnerNo,
-        @RequestBody CustomerAttributeRequest request) {
-    customerService.addCustomerToUserCustomerList(customerId, businessPartnerNo, request);
-}
 
-@DeleteMapping("/{customerId}/users/{businessPartnerNo}/customer-list/{customerNo}")
-public void removeCustomerFromUserCustomerList(
-        @PathVariable String customerId,
-        @PathVariable String businessPartnerNo,
-        @PathVariable String customerNo) {
-    customerService.removeCustomerFromUserCustomerList(customerId, businessPartnerNo, customerNo);
-}
+    @PostMapping("/{customerId}/users/{businessPartnerNo}/attributes")
+    public void addCustomerUserAttribute(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @PathVariable String customerId,
+            @PathVariable String businessPartnerNo,
+            @RequestBody CustomerAttributeRequest request) {
+        customerService.addCustomerUserAttribute(authenticationToken, customerId, businessPartnerNo, request);
+    }
+
+    @PutMapping("/{customerId}/users/{businessPartnerNo}/attributes")
+    public void updateCustomerUserAttribute(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @PathVariable String customerId,
+            @PathVariable String businessPartnerNo,
+            @RequestParam("attributeName") String attributeName,
+            @RequestBody CustomerAttributeRequest request) {
+        customerService.updateCustomerUserAttribute(authenticationToken, customerId, businessPartnerNo, attributeName, request);
+    }
+
+    @DeleteMapping("/{customerId}/users/{businessPartnerNo}/attributes")
+    public void deleteCustomerUserAttribute(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @PathVariable String customerId,
+            @PathVariable String businessPartnerNo,
+            @RequestParam("attributeName") String attributeName) {
+        customerService.deleteCustomerUserAttribute(authenticationToken, customerId, businessPartnerNo, attributeName);
+    }
+
+    @PostMapping("/{customerId}/users/{businessPartnerNo}/customer-list")
+    public void addCustomerToUserCustomerList(
+            @PathVariable String customerId,
+            @PathVariable String businessPartnerNo,
+            @RequestBody CustomerAttributeRequest request) {
+        customerService.addCustomerToUserCustomerList(customerId, businessPartnerNo, request);
+    }
+
+    @DeleteMapping("/{customerId}/users/{businessPartnerNo}/customer-list/{customerNo}")
+    public void removeCustomerFromUserCustomerList(
+            @PathVariable String customerId,
+            @PathVariable String businessPartnerNo,
+            @PathVariable String customerNo) {
+        customerService.removeCustomerFromUserCustomerList(customerId, businessPartnerNo, customerNo);
+    }
 }
