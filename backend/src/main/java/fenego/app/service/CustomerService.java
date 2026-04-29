@@ -4,6 +4,8 @@ import fenego.app.dto.CustomerAttributeRequest;
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerListResponse;
 import fenego.app.dto.CustomerSegmentDTO;
+import fenego.app.dto.CustomerSegmentRequest;
+import fenego.app.dto.CustomerSegmentSummaryDTO;
 import fenego.app.dto.CustomerUserAttributeDTO;
 import fenego.app.dto.CustomerUserDTO;
 import fenego.app.dto.CustomerUserDetailResponse;
@@ -833,6 +835,81 @@ public void removeSubCustomerFromCluster(
     {
         System.err.println("Intershop relation update failed, but local DB was updated: " + ex.getMessage());
     }
+}
+public List<CustomerSegmentSummaryDTO> getSegments(String authenticationToken, String domainName)
+{
+    Map<String, CustomerSegmentDTO> segmentById = new LinkedHashMap<>();
+
+    Map<String, CustomerSegmentDTO> intershopSegments = loadCgSegments(authenticationToken);
+    segmentById.putAll(intershopSegments);
+
+    for (CustomerSegmentDTO localSegment : customerRepository.findLocalSegments())
+    {
+        segmentById.put(localSegment.getId(), localSegment);
+    }
+
+    List<CustomerSegmentAssignment> assignments =
+            customerRepository.findCustomerSegmentAssignmentsByDomain(domainName);
+
+    Map<String, Long> countBySegmentId = assignments.stream()
+            .filter(a -> a.getSegmentId() != null && !a.getSegmentId().isBlank())
+            .collect(Collectors.groupingBy(
+                    CustomerSegmentAssignment::getSegmentId,
+                    LinkedHashMap::new,
+                    Collectors.counting()
+            ));
+
+    for (String segmentId : countBySegmentId.keySet())
+    {
+        segmentById.computeIfAbsent(segmentId, id -> {
+            CustomerSegmentDTO dto = new CustomerSegmentDTO();
+            dto.setId(id);
+            dto.setName(id);
+            dto.setDescription("Loaded from local database");
+            return dto;
+        });
+    }
+
+    return segmentById.values().stream()
+            .map(segment -> {
+                CustomerSegmentSummaryDTO dto = new CustomerSegmentSummaryDTO();
+                dto.setId(segment.getId());
+                dto.setName(segment.getName());
+                dto.setDescription(segment.getDescription());
+                dto.setCustomerCount(countBySegmentId.getOrDefault(segment.getId(), 0L).intValue());
+                return dto;
+            })
+            .sorted((a, b) -> a.getId().compareToIgnoreCase(b.getId()))
+            .toList();
+}
+
+public void createSegment(String authenticationToken, String domainName, CustomerSegmentRequest request)
+{
+    if (request == null || request.getId() == null || request.getId().isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Segment id is required");
+    }
+
+    if (request.getName() == null || request.getName().isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Segment name is required");
+    }
+
+    customerRepository.saveLocalSegment(
+            request.getId().trim(),
+            request.getName().trim(),
+            request.getDescription() == null ? "" : request.getDescription().trim()
+    );
+}
+
+public void deleteSegment(String authenticationToken, String domainName, String segmentId)
+{
+    if (segmentId == null || segmentId.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Segment id is required");
+    }
+
+    customerRepository.deleteLocalSegment(segmentId.trim());
 }
 
     private List<String> parseCustomerList(String value)

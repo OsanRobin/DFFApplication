@@ -6,6 +6,7 @@ import { CustomeroverviewComponent } from './pages/customeroverview.component/cu
 import { CustomerdetailComponent } from './pages/customerdetail.component/customerdetail.component';
 import { BulkActionsComponent } from './pages/bulk-actions.component/bulk-actions.component';
 import { AuditLogComponent } from './pages/audit-log.component/audit-log.component';
+import { SegmentsComponents } from './pages/segments.components/segments.components';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -16,6 +17,7 @@ export const routes: Routes = [
   { path: 'customers', component: CustomeroverviewComponent, canActivate: [authGuard] },
   { path: 'customers/bulk-actions', component: BulkActionsComponent, canActivate: [authGuard] },
   { path: 'customers/:id', component: CustomerdetailComponent, canActivate: [authGuard] },
+  { path: 'segments', component: SegmentsComponents, canActivate: [authGuard] },
   { path: 'audit-log', component: AuditLogComponent, canActivate: [authGuard] },
 
   { path: '**', redirectTo: 'login' },

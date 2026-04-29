@@ -1,0 +1,111 @@
+<div class="page">
+  <app-header class="component"></app-header>
+
+  <main class="content">
+    <div class="crumb">
+      <a class="crumb-link" routerLink="/dashboard">Home</a>
+      <span class="sep">›</span>
+      <span class="current">Segments</span>
+    </div>
+
+    <div class="header-row">
+      <div>
+        <h1 class="title">Segments</h1>
+        <p class="subtitle">Manage customer segments and view customer counts per segment.</p>
+      </div>
+    </div>
+
+    @if (error) {
+      <div class="alert">{{ error }}</div>
+    }
+
+    <section class="card add-card">
+      <div>
+        <h2>Add Segment</h2>
+        <p>Create a new customer segment.</p>
+      </div>
+
+      <div class="add-form">
+        <input
+          type="text"
+          placeholder="Segment ID, e.g. cg_new_segment"
+          [(ngModel)]="newSegment.id"
+        />
+
+        <input
+          type="text"
+          placeholder="Segment name"
+          [(ngModel)]="newSegment.name"
+        />
+
+        <input
+          type="text"
+          placeholder="Description"
+          [(ngModel)]="newSegment.description"
+        />
+
+        <button type="button" class="btn-primary" (click)="addSegment()" [disabled]="loading">
+          Add Segment
+        </button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="table-head">
+        <div>
+          <h2>Segment List</h2>
+          <p>{{ segments.length }} segments found</p>
+        </div>
+      </div>
+
+      @if (loading) {
+        <div class="state">Loading segments...</div>
+      }
+
+      @if (!loading && segments.length === 0) {
+        <div class="state">No segments found.</div>
+      }
+
+      @if (!loading && segments.length > 0) {
+        <div class="table">
+          <div class="row head">
+            <div>Segment</div>
+            <div>Description</div>
+            <div>Customers</div>
+            <div></div>
+          </div>
+
+          @for (segment of segments; track segment.id) {
+            <div class="row">
+              <div>
+                <strong>{{ segment.name }}</strong>
+                <span>{{ segment.id }}</span>
+              </div>
+
+              <div>{{ segment.description || '-' }}</div>
+
+              <div>
+                <span class="count-pill">{{ segment.customerCount }}</span>
+              </div>
+
+              <div class="actions">
+                <button
+                  type="button"
+                  class="icon-btn danger"
+                  title="Delete segment"
+                  (click)="deleteSegment(segment)"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9h6V9h2v11H7V9z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  </main>
+</div>

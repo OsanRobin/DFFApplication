@@ -2,6 +2,7 @@ package fenego.app.repository;
 
 import fenego.app.dto.CustomerAttributeDTO;
 import fenego.app.dto.CustomerDetailResponse;
+import fenego.app.dto.CustomerSegmentDTO;
 import fenego.app.dto.CustomerUserAttributeDTO;
 import fenego.app.dto.CustomerUserDTO;
 import fenego.app.jpa.Customer;
@@ -492,33 +493,59 @@ public class CustomerRepository
         return jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("segmentId"));
     }
 
-    public List<CustomerSegmentAssignment> findCustomerSegmentAssignmentsByDomain(String domainName)
+   public List<CustomerSegmentAssignment> findCustomerSegmentAssignmentsByDomain(String domainName)
+{
+    String sql = """
+        select distinct
+            c.CUSTOMERNO as customerNo,
+            ugua.USERGROUPID as segmentId
+        from DOMAININFORMATION di
+        join CUSTOMER c
+            on di.DOMAINID = c.DOMAINID
+        join CUSTOMERPROFILEASSIGNMENT cpa
+            on c.UUID = cpa.CUSTOMERID
+        join USERGROUPUSERASSIGNMENT ugua
+            on ugua.USERID = cpa.PROFILEID
+        where di.DOMAINNAME = :domainName
+        order by c.CUSTOMERNO, ugua.USERGROUPID
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("domainName", domainName);
+
+    List<CustomerSegmentAssignment> results = jdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        CustomerSegmentAssignment assignment = new CustomerSegmentAssignment();
+        assignment.setCustomerNo(rs.getString("customerNo"));
+        assignment.setSegmentId(rs.getString("segmentId"));
+        return assignment;
+    });
+
+    if (!results.isEmpty())
     {
-        String sql = """
-            select distinct
-                c.CUSTOMERNO as customerNo,
-                ugua.USERGROUPID as segmentId
-            from DOMAININFORMATION di
-            join CUSTOMER c
-                on di.DOMAINID = c.DOMAINID
-            join CUSTOMERPROFILEASSIGNMENT cpa
-                on c.UUID = cpa.CUSTOMERID
-            join USERGROUPUSERASSIGNMENT ugua
-                on ugua.USERID = cpa.PROFILEID
-            where di.DOMAINNAME = :domainName
-            order by c.CUSTOMERNO, ugua.USERGROUPID
-            """;
-
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("domainName", domainName);
-
-        return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
-            CustomerSegmentAssignment assignment = new CustomerSegmentAssignment();
-            assignment.setCustomerNo(rs.getString("customerNo"));
-            assignment.setSegmentId(rs.getString("segmentId"));
-            return assignment;
-        });
+        return results;
     }
+
+    String fallbackSql = """
+        select distinct
+            c.CUSTOMERNO as customerNo,
+            ugua.USERGROUPID as segmentId
+        from CUSTOMER c
+        join CUSTOMERPROFILEASSIGNMENT cpa
+            on c.UUID = cpa.CUSTOMERID
+        join USERGROUPUSERASSIGNMENT ugua
+            on ugua.USERID = cpa.PROFILEID
+        where ugua.USERGROUPID is not null
+          and ugua.USERGROUPID <> ''
+        order by c.CUSTOMERNO, ugua.USERGROUPID
+        """;
+
+    return jdbcTemplate.query(fallbackSql, new MapSqlParameterSource(), (rs, rowNum) -> {
+        CustomerSegmentAssignment assignment = new CustomerSegmentAssignment();
+        assignment.setCustomerNo(rs.getString("customerNo"));
+        assignment.setSegmentId(rs.getString("segmentId"));
+        return assignment;
+    });
+}
 
     public List<Customer> findCustomersByCustomerNos(String domainName, List<String> customerNos)
     {
@@ -837,6 +864,95 @@ public void saveUserAttribute(String businessPartnerNo, String name, String valu
         throw new IllegalStateException("No BASICPROFILE found with BUSINESSPARTNERNO: " + businessPartnerNo);
     }
 }
+public void saveLocalSegment(String id, String name, String description)
+{
+    String createTableSql = """
+        if object_id('LOCAL_CUSTOMER_SEGMENT', 'U') is null
+        begin
+            create table LOCAL_CUSTOMER_SEGMENT (
+                ID nvarchar(255) not null primary key,
+                NAME nvarchar(255) not null,
+                DESCRIPTION nvarchar(max) null,
+                CREATED_AT datetime not null default getdate()
+            )
+        end
+        """;
+
+    jdbcTemplate.getJdbcTemplate().execute(createTableSql);
+
+    String updateSql = """
+        update LOCAL_CUSTOMER_SEGMENT
+        set NAME = :name,
+            DESCRIPTION = :description
+        where ID = :id
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("id", id)
+            .addValue("name", name)
+            .addValue("description", description);
+
+    int updated = jdbcTemplate.update(updateSql, params);
+
+    if (updated > 0)
+    {
+        return;
+    }
+
+    String insertSql = """
+        insert into LOCAL_CUSTOMER_SEGMENT (ID, NAME, DESCRIPTION)
+        values (:id, :name, :description)
+        """;
+
+    jdbcTemplate.update(insertSql, params);
+}
+
+public void deleteLocalSegment(String id)
+{
+    String sql = """
+        if object_id('LOCAL_CUSTOMER_SEGMENT', 'U') is not null
+        begin
+            delete from LOCAL_CUSTOMER_SEGMENT
+            where ID = :id
+        end
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("id", id);
+
+    jdbcTemplate.update(sql, params);
+}
+
+public List<CustomerSegmentDTO> findLocalSegments()
+{
+    String createTableSql = """
+        if object_id('LOCAL_CUSTOMER_SEGMENT', 'U') is null
+        begin
+            create table LOCAL_CUSTOMER_SEGMENT (
+                ID nvarchar(255) not null primary key,
+                NAME nvarchar(255) not null,
+                DESCRIPTION nvarchar(max) null,
+                CREATED_AT datetime not null default getdate()
+            )
+        end
+        """;
+
+    jdbcTemplate.getJdbcTemplate().execute(createTableSql);
+
+    String sql = """
+        select ID, NAME, DESCRIPTION
+        from LOCAL_CUSTOMER_SEGMENT
+        order by NAME
+        """;
+
+    return jdbcTemplate.query(sql, new MapSqlParameterSource(), (rs, rowNum) -> {
+        CustomerSegmentDTO dto = new CustomerSegmentDTO();
+        dto.setId(rs.getString("ID"));
+        dto.setName(rs.getString("NAME"));
+        dto.setDescription(rs.getString("DESCRIPTION"));
+        return dto;
+    });
+}
 
 public String findUserAttributeValue(String businessPartnerNo, String name)
 {
@@ -891,6 +1007,7 @@ public void deleteUserAttribute(String businessPartnerNo, String name)
         customer.setCustomerList(rs.getString("customerList"));
         return customer;
     }
+    
 
     private List<String> parseCustomerList(String value)
     {

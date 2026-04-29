@@ -3,9 +3,14 @@ package fenego.app.controller;
 import fenego.app.dto.CustomerAttributeRequest;
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerListResponse;
+import fenego.app.dto.CustomerSegmentRequest;
+import fenego.app.dto.CustomerSegmentSummaryDTO;
 import fenego.app.dto.CustomerUserDetailResponse;
 import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.service.CustomerService;
+
+import java.util.List;
+
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -179,5 +184,27 @@ public void unassignCustomerFromCluster(
         @PathVariable String customerId,
         @PathVariable String clusterCustomerNo) {
     customerService.removeSubCustomerFromCluster(authenticationToken, domain, clusterCustomerNo, customerId);
+}
+@GetMapping("/segments")
+public List<CustomerSegmentSummaryDTO> getSegments(
+        @RequestHeader("authentication-token") String authenticationToken,
+        @RequestParam("domain") String domain) {
+    return customerService.getSegments(authenticationToken, domain);
+}
+
+@PostMapping("/segments")
+public void createSegment(
+        @RequestHeader("authentication-token") String authenticationToken,
+        @RequestParam("domain") String domain,
+        @RequestBody CustomerSegmentRequest request) {
+    customerService.createSegment(authenticationToken, domain, request);
+}
+
+@DeleteMapping("/segments/{segmentId}")
+public void deleteSegment(
+        @RequestHeader("authentication-token") String authenticationToken,
+        @RequestParam("domain") String domain,
+        @PathVariable String segmentId) {
+    customerService.deleteSegment(authenticationToken, domain, segmentId);
 }
 }
