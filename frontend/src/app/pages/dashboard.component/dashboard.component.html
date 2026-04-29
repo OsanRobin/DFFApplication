@@ -4,112 +4,124 @@
   <main class="content">
     <div class="crumb">Home</div>
 
-    <section class="hero">
-      <h1>Dashboard Overview</h1>
-      <p>Welcome to Intershop Customer Governance</p>
+    <section class="hero card">
+      <div>
+        <h1>Dashboard Overview</h1>
+        <p>Manage customers and track audit activity.</p>
+      </div>
+
+      <button class="refresh-btn" type="button" (click)="loadDashboard()">
+        Refresh
+      </button>
     </section>
+
+    @if (errorMessage) {
+      <div class="error">{{ errorMessage }}</div>
+    }
 
     <section class="kpis">
       <div class="kpi card">
-        <div class="kpi-top">
-          <div class="kpi-title">Active Customers</div>
-        </div>
-        <div class="kpi-value">10</div>
-        <div class="kpi-sub">of 12 total</div>
+        <div class="kpi-title">Customers</div>
+        <div class="kpi-value">{{ isLoading ? '...' : totalCustomers }}</div>
+        <div class="kpi-sub">available customer records</div>
       </div>
 
       <div class="kpi card">
-        <div class="kpi-top">
-          <div class="kpi-title">Running Jobs</div>
-        </div>
-        <div class="kpi-value">1</div>
-        <div class="kpi-sub">currently processing</div>
+        <div class="kpi-title">Active Customers</div>
+        <div class="kpi-value">{{ isLoading ? '...' : activeCustomers }}</div>
+        <div class="kpi-sub">currently active</div>
       </div>
 
       <div class="kpi card">
-        <div class="kpi-top">
-          <div class="kpi-title">Segments</div>
-        </div>
-        <div class="kpi-value">4</div>
-        <div class="kpi-sub">active segments</div>
+        <div class="kpi-title">Audit Events</div>
+        <div class="kpi-value">{{ isLoading ? '...' : auditEvents }}</div>
+        <div class="kpi-sub">logged system actions</div>
       </div>
 
       <div class="kpi card">
-        <div class="kpi-top">
-          <div class="kpi-title">Attributes</div>
-        </div>
-        <div class="kpi-value">6</div>
-        <div class="kpi-sub">defined attributes</div>
+        <div class="kpi-title">Latest Activity</div>
+        <div class="kpi-value">{{ isLoading ? '...' : latestActivity }}</div>
+        <div class="kpi-sub">last recorded action</div>
       </div>
     </section>
 
-    <section class="grid2">
+    <section class="overview-grid">
       <div class="panel card">
-        <div class="panel-title">Customer Management</div>
-        <div class="panel-sub">View and manage customer records</div>
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Customer Management</div>
+            <div class="panel-sub">View, search and manage customer records.</div>
+          </div>
+
+          <div class="panel-icon">👤</div>
+        </div>
 
         <a class="action" routerLink="/customers">
-          <span>View All Customers</span>
+          <span>Open Customers</span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
 
-        <div class="panel-foot">Manage 12 customers including clusters and subcustomers</div>
+        <div class="panel-foot">
+          Access customer details, attributes and related customer data.
+        </div>
       </div>
 
       <div class="panel card">
-        <div class="panel-title">Segment Management</div>
-        <div class="panel-sub">Configure customer segments and rules</div>
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Audit Log</div>
+            <div class="panel-sub">Review changes, actions and system activity.</div>
+          </div>
 
-        <a class="action" routerLink="/segments">
-          <span>View All Segments</span>
+          <div class="panel-icon">↺</div>
+        </div>
+
+        <a class="action" routerLink="/audit-log">
+          <span>Open Audit Log</span>
           <span class="arrow" aria-hidden="true">→</span>
         </a>
 
-        <div class="panel-foot">4 segments with auto-update rules active</div>
-      </div>
-
-      <div class="panel card">
-        <div class="panel-title">Attribute Configuration</div>
-        <div class="panel-sub">Manage customer attributes and properties</div>
-
-        <a class="action" routerLink="/attributes">
-          <span>View All Attributes</span>
-          <span class="arrow" aria-hidden="true">→</span>
-        </a>
-
-        <div class="panel-foot">6 attributes available for customer classification</div>
-      </div>
-
-      <div class="panel card">
-        <div class="panel-title">Job Monitoring</div>
-        <div class="panel-sub">Track bulk actions and system jobs</div>
-
-        <a class="action" routerLink="/jobs">
-          <span>View All Jobs</span>
-          <span class="arrow" aria-hidden="true">→</span>
-        </a>
-
-        <div class="panel-foot">5 jobs in the system, 1 currently running</div>
+        <div class="panel-foot">
+          Track who changed what, and when the action happened.
+        </div>
       </div>
     </section>
 
     <section class="recent card">
       <div class="recent-head">
-        <div class="recent-title">Recent Activity</div>
-        <div class="recent-sub">Latest updates and changes</div>
+        <div>
+          <div class="recent-title">Recent Activity</div>
+          <div class="recent-sub">Latest customer and audit updates</div>
+        </div>
+
+      
       </div>
 
-      <div class="activity">
-        @for (a of activities; track a.at) {
-          <div class="activity-row">
-            <div class="activity-main">
-              <div class="activity-title">{{ a.title }}</div>
-              <div class="activity-by">by {{ a.by }}</div>
+      @if (isLoading) {
+        <div class="state">Loading recent activity...</div>
+      }
+
+      @if (!isLoading && activities.length === 0) {
+        <div class="state">No recent activity found yet.</div>
+      }
+
+      @if (!isLoading && activities.length > 0) {
+        <div class="activity">
+          @for (a of activities; track a.at) {
+            <div class="activity-row">
+              <div class="activity-main">
+                <div class="activity-title">{{ a.title }}</div>
+                <div class="activity-by">by {{ a.by }}</div>
+              </div>
+
+              <div class="activity-meta">
+                
+                <span class="activity-time">{{ a.at }}</span>
+              </div>
             </div>
-            <div class="activity-time">{{ a.at }}</div>
-          </div>
-        }
-      </div>
+          }
+        </div>
+      }
     </section>
   </main>
 </div>

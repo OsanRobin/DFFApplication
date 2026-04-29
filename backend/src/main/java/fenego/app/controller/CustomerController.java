@@ -6,6 +6,7 @@ import fenego.app.dto.CustomerListResponse;
 import fenego.app.dto.CustomerUserDetailResponse;
 import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.service.CustomerService;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,19 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/customers")
-public class CustomerController
-{
+@CrossOrigin(origins = "http://localhost:4200")
+public class CustomerController {
     private final CustomerService customerService;
 
-    public CustomerController(CustomerService customerService)
-    {
+    public CustomerController(CustomerService customerService) {
         this.customerService = customerService;
-    }
-
-    @GetMapping("/{customerId}/users")
-    public CustomerUserListResponse getCustomerUsers(@PathVariable String customerId)
-    {
-        return customerService.getCustomerUsers(customerId);
     }
 
     @GetMapping
@@ -45,8 +39,7 @@ public class CustomerController
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String segment,
-            @RequestParam(required = false) String email)
-    {
+            @RequestParam(required = false) String email) {
         return customerService.getCustomers(
                 authenticationToken,
                 domain,
@@ -65,9 +58,20 @@ public class CustomerController
     public CustomerDetailResponse getCustomerById(
             @RequestHeader("authentication-token") String authenticationToken,
             @RequestParam("domain") String domain,
-            @PathVariable String customerId)
-    {
+            @PathVariable String customerId) {
         return customerService.getCustomerById(authenticationToken, domain, customerId);
+    }
+
+    @GetMapping("/{customerId}/users")
+    public CustomerUserListResponse getCustomerUsers(@PathVariable String customerId) {
+        return customerService.getCustomerUsers(customerId);
+    }
+
+    @GetMapping("/{customerId}/users/{businessPartnerNo}")
+    public CustomerUserDetailResponse getCustomerUserDetail(
+            @PathVariable String customerId,
+            @PathVariable String businessPartnerNo) {
+        return customerService.getCustomerUserDetail(customerId, businessPartnerNo);
     }
 
     @PostMapping("/{customerId}/attributes")
@@ -75,8 +79,7 @@ public class CustomerController
             @RequestHeader("authentication-token") String authenticationToken,
             @RequestParam("domain") String domain,
             @PathVariable String customerId,
-            @RequestBody CustomerAttributeRequest request)
-    {
+            @RequestBody CustomerAttributeRequest request) {
         customerService.addCustomerAttribute(authenticationToken, domain, customerId, request);
     }
 
@@ -86,8 +89,7 @@ public class CustomerController
             @RequestParam("domain") String domain,
             @PathVariable String customerId,
             @PathVariable String attributeName,
-            @RequestBody CustomerAttributeRequest request)
-    {
+            @RequestBody CustomerAttributeRequest request) {
         customerService.updateCustomerAttribute(authenticationToken, domain, customerId, attributeName, request);
     }
 
@@ -96,15 +98,7 @@ public class CustomerController
             @RequestHeader("authentication-token") String authenticationToken,
             @RequestParam("domain") String domain,
             @PathVariable String customerId,
-            @PathVariable String attributeName)
-    {
+            @PathVariable String attributeName) {
         customerService.deleteCustomerAttribute(authenticationToken, domain, customerId, attributeName);
     }
-    @GetMapping("/{customerId}/users/{businessPartnerNo}")
-public CustomerUserDetailResponse getCustomerUserDetail(
-        @PathVariable String customerId,
-        @PathVariable String businessPartnerNo)
-{
-    return customerService.getCustomerUserDetail(customerId, businessPartnerNo);
-}
 }
