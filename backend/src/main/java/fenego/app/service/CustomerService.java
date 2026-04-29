@@ -682,6 +682,157 @@ public void deleteCustomerUserAttribute(
             "system",
             "User attribute deleted"
     );
+    
+}
+public void addSubCustomerToCluster(
+        String authenticationToken,
+        String domainName,
+        String clusterCustomerNo,
+        String subCustomerNo)
+{
+    if (domainName == null || domainName.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
+    }
+
+    if (clusterCustomerNo == null || clusterCustomerNo.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cluster customer no is required");
+    }
+
+    if (subCustomerNo == null || subCustomerNo.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sub customer no is required");
+    }
+
+    String clusterNo = clusterCustomerNo.trim();
+    String subNo = subCustomerNo.trim();
+
+    List<Customer> clusterResults = customerRepository.findCustomersByCustomerNos(domainName, List.of(clusterNo));
+
+    if (clusterResults.isEmpty())
+    {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cluster customer not found");
+    }
+
+    Customer cluster = clusterResults.get(0);
+
+    if (!"ClusterCustomer".equalsIgnoreCase(cluster.getType()))
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer is not a ClusterCustomer");
+    }
+
+    List<Customer> subResults = customerRepository.findCustomersByCustomerNos(domainName, List.of(subNo));
+
+    if (subResults.isEmpty())
+    {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer to add not found");
+    }
+
+    Customer subCustomer = subResults.get(0);
+
+    if ("ClusterCustomer".equalsIgnoreCase(subCustomer.getType()))
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot add a ClusterCustomer as sub customer");
+    }
+
+    List<String> customerNos = new ArrayList<>(parseCustomerList(cluster.getCustomerList()));
+
+    if (!customerNos.contains(subNo))
+    {
+        customerNos.add(subNo);
+    }
+
+    String newValue = String.join("\t", customerNos);
+
+    customerRepository.saveCustomerAttribute(clusterNo, "CustomerList", newValue);
+
+    auditLogService.logChange(
+            "CUSTOMER_RELATION",
+            clusterNo,
+            "ADD",
+            "CustomerList",
+            "",
+            subNo,
+            "system",
+            "Sub customer added to cluster"
+    );
+
+    try
+    {
+        intershopClient.updateCustomerAttribute(authenticationToken, clusterNo, "CustomerList", newValue);
+    }
+    catch (Exception ex)
+    {
+        System.err.println("Intershop relation update failed, but local DB was updated: " + ex.getMessage());
+    }
+}
+
+public void removeSubCustomerFromCluster(
+        String authenticationToken,
+        String domainName,
+        String clusterCustomerNo,
+        String subCustomerNo)
+{
+    if (domainName == null || domainName.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
+    }
+
+    if (clusterCustomerNo == null || clusterCustomerNo.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cluster customer no is required");
+    }
+
+    if (subCustomerNo == null || subCustomerNo.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sub customer no is required");
+    }
+
+    String clusterNo = clusterCustomerNo.trim();
+    String subNo = subCustomerNo.trim();
+
+    List<Customer> clusterResults = customerRepository.findCustomersByCustomerNos(domainName, List.of(clusterNo));
+
+    if (clusterResults.isEmpty())
+    {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cluster customer not found");
+    }
+
+    Customer cluster = clusterResults.get(0);
+
+    if (!"ClusterCustomer".equalsIgnoreCase(cluster.getType()))
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer is not a ClusterCustomer");
+    }
+
+    List<String> customerNos = parseCustomerList(cluster.getCustomerList()).stream()
+            .filter(value -> !value.equalsIgnoreCase(subNo))
+            .toList();
+
+    String newValue = String.join("\t", customerNos);
+
+    customerRepository.saveCustomerAttribute(clusterNo, "CustomerList", newValue);
+
+    auditLogService.logChange(
+            "CUSTOMER_RELATION",
+            clusterNo,
+            "DELETE",
+            "CustomerList",
+            subNo,
+            newValue,
+            "system",
+            "Sub customer removed from cluster"
+    );
+
+    try
+    {
+        intershopClient.updateCustomerAttribute(authenticationToken, clusterNo, "CustomerList", newValue);
+    }
+    catch (Exception ex)
+    {
+        System.err.println("Intershop relation update failed, but local DB was updated: " + ex.getMessage());
+    }
 }
 
     private List<String> parseCustomerList(String value)

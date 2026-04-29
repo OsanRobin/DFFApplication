@@ -69,6 +69,14 @@ export class CustomerdetailComponent {
   editingAttributeId: string | null = null;
   attributeFormError = '';
   attributeSaving = false;
+  relationSaving = false;
+relationError = '';
+showAddRelationForm = false;
+relationCustomerNoToAdd = '';
+
+showDeleteRelationConfirm = false;
+relationCustomerNoToDelete = '';
+relationDeleteMode: 'sub' | 'parent' | null = null;
 
   showDeleteAttributeConfirm = false;
   attributeNameToDelete = '';
@@ -117,6 +125,13 @@ export class CustomerdetailComponent {
       this.error = '';
       this.showDeleteAttributeConfirm = false;
       this.attributeNameToDelete = '';
+      this.relationSaving = false;
+this.relationError = '';
+this.showAddRelationForm = false;
+this.relationCustomerNoToAdd = '';
+this.showDeleteRelationConfirm = false;
+this.relationCustomerNoToDelete = '';
+this.relationDeleteMode = null;
       this.cancelAttributeEdit();
       this.cancelUserAttributeEdit();
 
@@ -1045,4 +1060,143 @@ export class CustomerdetailComponent {
   hasRelations(): boolean {
     return this.hasParentClusters() || this.hasSubCustomers();
   }
+  isClusterCustomer(): boolean {
+  return this.customer?.type?.toLowerCase() === 'clustercustomer';
+}
+
+relationAddLabel(): string {
+  return this.isClusterCustomer() ? 'Add Customer' : 'Assign ClusterCustomer';
+}
+
+relationInputPlaceholder(): string {
+  return this.isClusterCustomer() ? 'Customer No' : 'ClusterCustomer No';
+}
+
+openAddRelationForm(): void {
+  this.showAddRelationForm = true;
+  this.relationCustomerNoToAdd = '';
+  this.relationError = '';
+}
+
+closeAddRelationForm(): void {
+  if (this.relationSaving) {
+    return;
+  }
+
+  this.showAddRelationForm = false;
+  this.relationCustomerNoToAdd = '';
+  this.relationError = '';
+}
+
+saveRelation(): void {
+  const authenticationToken = this.authService.getAuthenticationToken();
+  const value = this.relationCustomerNoToAdd.trim();
+
+  if (!authenticationToken || !this.customerId || !value) {
+    this.relationError = this.isClusterCustomer()
+      ? 'Customer No is required.'
+      : 'ClusterCustomer No is required.';
+    return;
+  }
+
+  this.relationSaving = true;
+  this.relationError = '';
+
+  const request = this.isClusterCustomer()
+    ? this.customerApi.addSubCustomerToCluster(authenticationToken, this.domainName, this.customerId, value)
+    : this.customerApi.assignCustomerToCluster(authenticationToken, this.domainName, this.customerId, value);
+
+  request.subscribe({
+    next: () => {
+      this.relationSaving = false;
+      this.showAddRelationForm = false;
+      this.relationCustomerNoToAdd = '';
+      this.loadCustomer();
+    },
+    error: err => {
+      console.error(err);
+      this.relationSaving = false;
+
+      if (err.status === 401 || err.status === 403) {
+        this.relationError = 'Your session expired. Please log in again.';
+        this.router.navigate(['/login']);
+        return;
+      }
+
+      this.relationError = 'Failed to save relation.';
+    }
+  });
+}
+
+openDeleteRelationConfirm(customerNo: string, mode: 'sub' | 'parent', event?: Event): void {
+  event?.preventDefault();
+  event?.stopPropagation();
+
+  if (this.relationSaving) {
+    return;
+  }
+
+  this.relationCustomerNoToDelete = customerNo;
+  this.relationDeleteMode = mode;
+  this.showDeleteRelationConfirm = true;
+}
+closeDeleteRelationConfirm(): void {
+  if (this.relationSaving) {
+    return;
+  }
+
+  this.showDeleteRelationConfirm = false;
+  this.relationCustomerNoToDelete = '';
+  this.relationDeleteMode = null;
+}
+
+confirmDeleteRelation(): void {
+  const authenticationToken = this.authService.getAuthenticationToken();
+
+  if (!authenticationToken || !this.customerId || !this.relationCustomerNoToDelete || !this.relationDeleteMode) {
+    this.relationError = 'Unable to remove relation.';
+    this.closeDeleteRelationConfirm();
+    return;
+  }
+
+  this.relationSaving = true;
+  this.relationError = '';
+
+  const request = this.relationDeleteMode === 'sub'
+    ? this.customerApi.removeSubCustomerFromCluster(
+        authenticationToken,
+        this.domainName,
+        this.customerId,
+        this.relationCustomerNoToDelete
+      )
+    : this.customerApi.unassignCustomerFromCluster(
+        authenticationToken,
+        this.domainName,
+        this.customerId,
+        this.relationCustomerNoToDelete
+      );
+
+  request.subscribe({
+    next: () => {
+      this.relationSaving = false;
+      this.closeDeleteRelationConfirm();
+      this.loadCustomer();
+    },
+    error: err => {
+      console.error(err);
+      this.relationSaving = false;
+      this.showDeleteRelationConfirm = false;
+      this.relationCustomerNoToDelete = '';
+      this.relationDeleteMode = null;
+
+      if (err.status === 401 || err.status === 403) {
+        this.relationError = 'Your session expired. Please log in again.';
+        this.router.navigate(['/login']);
+        return;
+      }
+
+      this.relationError = 'Failed to remove relation.';
+    }
+  });
+}
 }

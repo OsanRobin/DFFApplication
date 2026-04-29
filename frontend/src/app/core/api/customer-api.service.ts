@@ -434,4 +434,77 @@ export class CustomerApiService {
 
     return this.http.put<void>(`${this.savedSearchBaseUrl}/${id}/name`, name, { headers });
   }
+  addSubCustomerToCluster(
+  authenticationToken: string,
+  domain: string,
+  clusterCustomerNo: string,
+  subCustomerNo: string
+): Observable<void> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  const params = new HttpParams().set('domain', domain);
+
+  return this.http.post<void>(
+    `${this.baseUrl}/${encodeURIComponent(clusterCustomerNo)}/relations/sub-customers/${encodeURIComponent(subCustomerNo)}`,
+    null,
+    { headers, params }
+  );
+}
+
+removeSubCustomerFromCluster(
+  authenticationToken: string,
+  domain: string,
+  clusterCustomerNo: string,
+  subCustomerNo: string
+): Observable<void> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  const params = new HttpParams().set('domain', domain);
+
+  return this.http.delete<void>(
+    `${this.baseUrl}/${encodeURIComponent(clusterCustomerNo)}/relations/sub-customers/${encodeURIComponent(subCustomerNo)}`,
+    { headers, params }
+  );
+}
+
+assignCustomerToCluster(
+  authenticationToken: string,
+  domain: string,
+  customerNo: string,
+  clusterCustomerNo: string
+): Observable<void> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  const params = new HttpParams().set('domain', domain);
+
+  return this.http.post<void>(
+    `${this.baseUrl}/${encodeURIComponent(customerNo)}/relations/parent-clusters/${encodeURIComponent(clusterCustomerNo)}`,
+    null,
+    { headers, params }
+  );
+}
+
+unassignCustomerFromCluster(
+  authenticationToken: string,
+  domain: string,
+  customerNo: string,
+  clusterCustomerNo: string
+): Observable<void> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  const params = new HttpParams().set('domain', domain);
+
+  return this.http.delete<void>(
+    `${this.baseUrl}/${encodeURIComponent(customerNo)}/relations/parent-clusters/${encodeURIComponent(clusterCustomerNo)}`,
+    { headers, params }
+  );
+}
 }

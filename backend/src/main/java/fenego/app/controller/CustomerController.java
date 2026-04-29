@@ -145,4 +145,39 @@ public class CustomerController {
             @PathVariable String customerNo) {
         customerService.removeCustomerFromUserCustomerList(customerId, businessPartnerNo, customerNo);
     }
+  @PostMapping("/{customerId}/relations/sub-customers/{subCustomerNo}")
+public void addSubCustomerToCluster(
+        @RequestHeader("authentication-token") String authenticationToken,
+        @RequestParam("domain") String domain,
+        @PathVariable String customerId,
+        @PathVariable String subCustomerNo) {
+    customerService.addSubCustomerToCluster(authenticationToken, domain, customerId, subCustomerNo);
+}
+
+@DeleteMapping("/{customerId}/relations/sub-customers/{subCustomerNo}")
+public void removeSubCustomerFromCluster(
+        @RequestHeader("authentication-token") String authenticationToken,
+        @RequestParam("domain") String domain,
+        @PathVariable String customerId,
+        @PathVariable String subCustomerNo) {
+    customerService.removeSubCustomerFromCluster(authenticationToken, domain, customerId, subCustomerNo);
+}
+
+@PostMapping("/{customerId}/relations/parent-clusters/{clusterCustomerNo}")
+public void assignCustomerToCluster(
+        @RequestHeader("authentication-token") String authenticationToken,
+        @RequestParam("domain") String domain,
+        @PathVariable String customerId,
+        @PathVariable String clusterCustomerNo) {
+    customerService.addSubCustomerToCluster(authenticationToken, domain, clusterCustomerNo, customerId);
+}
+
+@DeleteMapping("/{customerId}/relations/parent-clusters/{clusterCustomerNo}")
+public void unassignCustomerFromCluster(
+        @RequestHeader("authentication-token") String authenticationToken,
+        @RequestParam("domain") String domain,
+        @PathVariable String customerId,
+        @PathVariable String clusterCustomerNo) {
+    customerService.removeSubCustomerFromCluster(authenticationToken, domain, clusterCustomerNo, customerId);
+}
 }

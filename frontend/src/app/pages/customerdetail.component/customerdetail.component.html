@@ -706,7 +706,48 @@
 
       @if (activeTab === 'relations') {
         <section class="card panel wide">
-          <div class="panel-title">Customer Relations</div>
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Customer Relations</div>
+              <div class="panel-sub">
+                @if (isClusterCustomer()) {
+                  Manage customers linked to this ClusterCustomer.
+                } @else {
+                  Manage the ClusterCustomer assignments for this customer.
+                }
+              </div>
+            </div>
+
+            @if (!showAddRelationForm) {
+              <button class="btn-primary btn-add-customer" type="button" (click)="openAddRelationForm()" [disabled]="relationSaving">
+                {{ relationAddLabel() }}
+              </button>
+            }
+          </div>
+
+          @if (showAddRelationForm) {
+            <div class="inline-add">
+              <input
+                class="input add-customer-input"
+                type="text"
+                [(ngModel)]="relationCustomerNoToAdd"
+                [placeholder]="relationInputPlaceholder()"
+                [disabled]="relationSaving"
+              />
+
+              <button class="btn-primary btn-add-customer" type="button" (click)="saveRelation()" [disabled]="relationSaving">
+                {{ relationSaving ? 'Saving...' : 'Save' }}
+              </button>
+
+              <button class="btn-outline btn-add-customer" type="button" (click)="closeAddRelationForm()" [disabled]="relationSaving">
+                Cancel
+              </button>
+            </div>
+          }
+
+          @if (relationError) {
+            <div class="state error">{{ relationError }}</div>
+          }
 
           @if (hasParentClusters()) {
             <div class="panel-sub">This customer belongs to this cluster customer</div>
@@ -718,7 +759,7 @@
                     <th>Cluster Customer</th>
                     <th>Customer No</th>
                     <th>Type</th>
-                    <th class="col-actions"></th>
+                    <th class="col-actions">Actions</th>
                   </tr>
                 </thead>
 
@@ -729,14 +770,29 @@
                       <td>{{ displayText(cluster.customerNo) }}</td>
                       <td>{{ displayText(cluster.type) }}</td>
                       <td class="col-actions">
-                        <a
-                          class="link"
-                          [routerLink]="['/customers', cluster.customerNo]"
-                          [queryParams]="{ returnCustomerId: customerId, tab: 'relations' }"
-                        >
-                          <span>View Details</span>
-                          <span class="chev-r" aria-hidden="true">›</span>
-                        </a>
+                        <div class="row-actions">
+                          <a
+                            class="link"
+                            [routerLink]="['/customers', cluster.customerNo]"
+                            [queryParams]="{ returnCustomerId: customerId, tab: 'relations' }"
+                          >
+                            <span>View Details</span>
+                            <span class="chev-r" aria-hidden="true">›</span>
+                          </a>
+
+                          <button
+                            class="icon-danger"
+                            type="button"
+                            title="Unassign cluster"
+                            aria-label="Unassign cluster"
+                            (click)="openDeleteRelationConfirm(cluster.customerNo, 'parent', $event)"
+                            [disabled]="relationSaving"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   }
@@ -755,7 +811,7 @@
                     <th>Subcustomer</th>
                     <th>Customer No</th>
                     <th>Type</th>
-                    <th class="col-actions"></th>
+                    <th class="col-actions">Actions</th>
                   </tr>
                 </thead>
 
@@ -766,14 +822,29 @@
                       <td>{{ displayText(sub.customerNo) }}</td>
                       <td>{{ displayText(sub.type) }}</td>
                       <td class="col-actions">
-                        <a
-                          class="link"
-                          [routerLink]="['/customers', sub.customerNo]"
-                          [queryParams]="{ returnCustomerId: customerId, tab: 'relations' }"
-                        >
-                          <span>View Details</span>
-                          <span class="chev-r" aria-hidden="true">›</span>
-                        </a>
+                        <div class="row-actions">
+                          <a
+                            class="link"
+                            [routerLink]="['/customers', sub.customerNo]"
+                            [queryParams]="{ returnCustomerId: customerId, tab: 'relations' }"
+                          >
+                            <span>View Details</span>
+                            <span class="chev-r" aria-hidden="true">›</span>
+                          </a>
+
+                          <button
+                            class="icon-danger"
+                            type="button"
+                            title="Remove customer"
+                            aria-label="Remove customer"
+                            (click)="openDeleteRelationConfirm(sub.customerNo, 'sub', $event)"
+                            [disabled]="relationSaving"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   }
@@ -889,6 +960,44 @@
             [disabled]="userAttributeSaving"
           >
             {{ userAttributeSaving ? 'Deleting...' : 'Yes, delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showDeleteRelationConfirm) {
+    <div class="modal-backdrop" (click)="closeDeleteRelationConfirm()">
+      <div class="confirm-modal" (click)="$event.stopPropagation()">
+        <div class="confirm-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+          </svg>
+        </div>
+
+        <h3>Remove relation?</h3>
+        <p>
+          Are you sure you want to remove relation
+          <strong>{{ relationCustomerNoToDelete }}</strong>?
+        </p>
+
+        <div class="confirm-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="closeDeleteRelationConfirm()"
+            [disabled]="relationSaving"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            class="btn-danger"
+            (click)="confirmDeleteRelation()"
+            [disabled]="relationSaving"
+          >
+            {{ relationSaving ? 'Removing...' : 'Yes, remove' }}
           </button>
         </div>
       </div>
