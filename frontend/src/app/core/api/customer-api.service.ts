@@ -321,4 +321,39 @@ getCustomerUserDetail(
     { headers }
   );
 }
+addCustomerToUserCustomerList(
+  authenticationToken: string,
+  customerId: string,
+  businessPartnerNo: string,
+  customerNo: string
+): Observable<void> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  return this.http.post<void>(
+    `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}/customer-list`,
+    {
+      name: 'CustomerList',
+      value: customerNo
+    },
+    { headers }
+  );
+}
+
+removeCustomerFromUserCustomerList(
+  authenticationToken: string,
+  customerId: string,
+  businessPartnerNo: string,
+  customerNo: string
+): Observable<void> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  return this.http.delete<void>(
+    `${this.baseUrl}/${customerId}/users/${encodeURIComponent(businessPartnerNo)}/customer-list/${encodeURIComponent(customerNo)}`,
+    { headers }
+  );
+}
 }

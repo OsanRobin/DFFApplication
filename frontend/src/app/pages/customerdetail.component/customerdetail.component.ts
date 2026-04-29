@@ -51,6 +51,13 @@ export class CustomerdetailComponent {
 
   userCustomerListCustomers: CustomerDto[] = [];
   userCustomerListLoading = false;
+  userCustomerListSaving = false;
+  userCustomerListError = '';
+  userCustomerNoToAdd = '';
+  showUserCustomerAddForm = false;
+
+  showDeleteUserCustomerConfirm = false;
+  userCustomerNoToDelete = '';
 
   customerId = '';
   customer: CustomerDetailResponse | null = null;
@@ -88,6 +95,12 @@ export class CustomerdetailComponent {
       this.selectedUserDetail = null;
       this.userCustomerListCustomers = [];
       this.userCustomerListLoading = false;
+      this.userCustomerListSaving = false;
+      this.userCustomerListError = '';
+      this.userCustomerNoToAdd = '';
+      this.showUserCustomerAddForm = false;
+      this.showDeleteUserCustomerConfirm = false;
+      this.userCustomerNoToDelete = '';
       this.error = '';
       this.showDeleteAttributeConfirm = false;
       this.attributeNameToDelete = '';
@@ -260,6 +273,11 @@ export class CustomerdetailComponent {
     this.selectedUserDetail = null;
     this.userCustomerListCustomers = [];
     this.userCustomerListLoading = false;
+    this.userCustomerListError = '';
+    this.userCustomerNoToAdd = '';
+    this.showUserCustomerAddForm = false;
+    this.showDeleteUserCustomerConfirm = false;
+    this.userCustomerNoToDelete = '';
     this.userDetailLoading = true;
     this.userDetailError = '';
 
@@ -356,6 +374,7 @@ export class CustomerdetailComponent {
       error: err => {
         console.error(err);
         this.userCustomerListLoading = false;
+        this.userCustomerListError = 'Failed to load CustomerList customers.';
       }
     });
   }
@@ -366,6 +385,12 @@ export class CustomerdetailComponent {
     this.userDetailError = '';
     this.userCustomerListCustomers = [];
     this.userCustomerListLoading = false;
+    this.userCustomerListSaving = false;
+    this.userCustomerListError = '';
+    this.userCustomerNoToAdd = '';
+    this.showUserCustomerAddForm = false;
+    this.showDeleteUserCustomerConfirm = false;
+    this.userCustomerNoToDelete = '';
   }
 
   userDetailTitle(): string {
@@ -612,6 +637,98 @@ export class CustomerdetailComponent {
         }
 
         this.attributeFormError = 'Failed to delete attribute.';
+      }
+    });
+  }
+
+  addUserCustomerListCustomer(): void {
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken || !this.selectedUserDetail?.user.businessPartnerNo) {
+      this.userCustomerListError = 'Unable to add customer.';
+      return;
+    }
+
+    const customerNo = this.userCustomerNoToAdd.trim();
+
+    if (!customerNo) {
+      this.userCustomerListError = 'Customer No is required.';
+      return;
+    }
+
+    this.userCustomerListSaving = true;
+    this.userCustomerListError = '';
+
+    this.customerApi.addCustomerToUserCustomerList(
+      authenticationToken,
+      this.customerId,
+      this.selectedUserDetail.user.businessPartnerNo,
+      customerNo
+    ).subscribe({
+      next: () => {
+        const user = this.selectedUserDetail!.user;
+        this.userCustomerNoToAdd = '';
+        this.showUserCustomerAddForm = false;
+        this.userCustomerListSaving = false;
+        this.viewUserDetails(user);
+      },
+      error: err => {
+        console.error(err);
+        this.userCustomerListSaving = false;
+        this.userCustomerListError = 'Failed to add customer.';
+      }
+    });
+  }
+
+  openDeleteUserCustomerConfirm(customerNo: string): void {
+    if (this.userCustomerListSaving) {
+      return;
+    }
+
+    this.userCustomerNoToDelete = customerNo;
+    this.showDeleteUserCustomerConfirm = true;
+  }
+
+  closeDeleteUserCustomerConfirm(): void {
+    if (this.userCustomerListSaving) {
+      return;
+    }
+
+    this.showDeleteUserCustomerConfirm = false;
+    this.userCustomerNoToDelete = '';
+  }
+
+  confirmRemoveUserCustomerListCustomer(): void {
+    const customerNo = this.userCustomerNoToDelete;
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken || !this.selectedUserDetail?.user.businessPartnerNo || !customerNo) {
+      this.userCustomerListError = 'Unable to remove customer.';
+      return;
+    }
+
+    this.userCustomerListSaving = true;
+    this.userCustomerListError = '';
+
+    this.customerApi.removeCustomerFromUserCustomerList(
+      authenticationToken,
+      this.customerId,
+      this.selectedUserDetail.user.businessPartnerNo,
+      customerNo
+    ).subscribe({
+      next: () => {
+        const user = this.selectedUserDetail!.user;
+        this.userCustomerListSaving = false;
+        this.showDeleteUserCustomerConfirm = false;
+        this.userCustomerNoToDelete = '';
+        this.viewUserDetails(user);
+      },
+      error: err => {
+        console.error(err);
+        this.userCustomerListSaving = false;
+        this.showDeleteUserCustomerConfirm = false;
+        this.userCustomerNoToDelete = '';
+        this.userCustomerListError = 'Failed to remove customer.';
       }
     });
   }

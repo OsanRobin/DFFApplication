@@ -775,6 +775,89 @@ public List<CustomerUserAttributeDTO> findUserAttributesByCustomerIdAndBusinessP
         return dto;
     });
 }
+public void saveUserAttribute(String businessPartnerNo, String name, String value)
+{
+    String updateSql = """
+        update av
+        set
+            av.STRINGVALUE = :value,
+            av.TEXTVALUE = null,
+            av.LASTMODIFIED = getdate(),
+            av.OCA = av.OCA + 1
+        from BASICPROFILE_AV av
+        join BASICPROFILE bp
+            on av.OWNERID = bp.UUID
+        where bp.BUSINESSPARTNERNO = :businessPartnerNo
+          and av.NAME = :name
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("businessPartnerNo", businessPartnerNo)
+            .addValue("name", name)
+            .addValue("value", value);
+
+    int updated = jdbcTemplate.update(updateSql, params);
+
+    if (updated > 0)
+    {
+        return;
+    }
+
+    String insertSql = """
+        insert into BASICPROFILE_AV
+            (
+                OWNERID,
+                NAME,
+                STRINGVALUE,
+                TEXTVALUE,
+                LOCALIZEDFLAG,
+                LOCALEID,
+                LASTMODIFIED,
+                TYPE,
+                OCA
+            )
+        select
+            bp.UUID,
+            :name,
+            :value,
+            null,
+            0,
+            '',
+            getdate(),
+            1,
+            0
+        from BASICPROFILE bp
+        where bp.BUSINESSPARTNERNO = :businessPartnerNo
+        """;
+
+    int inserted = jdbcTemplate.update(insertSql, params);
+
+    if (inserted == 0)
+    {
+        throw new IllegalStateException("No BASICPROFILE found with BUSINESSPARTNERNO: " + businessPartnerNo);
+    }
+}
+
+public String findUserAttributeValue(String businessPartnerNo, String name)
+{
+    String sql = """
+        select top 1
+            coalesce(av.STRINGVALUE, convert(nvarchar(max), av.TEXTVALUE)) as value
+        from BASICPROFILE bp
+        join BASICPROFILE_AV av
+            on av.OWNERID = bp.UUID
+        where bp.BUSINESSPARTNERNO = :businessPartnerNo
+          and av.NAME = :name
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("businessPartnerNo", businessPartnerNo)
+            .addValue("name", name);
+
+    List<String> results = jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("value"));
+
+    return results.isEmpty() ? "" : results.get(0);
+}
     private Customer mapCustomer(ResultSet rs) throws SQLException
     {
         Customer customer = new Customer();

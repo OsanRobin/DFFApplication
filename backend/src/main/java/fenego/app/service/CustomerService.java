@@ -432,6 +432,99 @@ public class CustomerService
             customer.setSegment(segmentNames.isBlank() ? "-" : segmentNames);
         }
     }
+    public void addCustomerToUserCustomerList(
+        String customerId,
+        String businessPartnerNo,
+        CustomerAttributeRequest request)
+{
+    if (customerId == null || customerId.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+    }
+
+    if (businessPartnerNo == null || businessPartnerNo.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Business partner no is required");
+    }
+
+    if (request == null || request.getValue() == null || request.getValue().isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer no is required");
+    }
+
+    String normalizedBusinessPartnerNo = normalizeBusinessPartnerNo(businessPartnerNo);
+    String customerNoToAdd = request.getValue().trim();
+
+    CustomerUserDTO user = customerRepository.findUserByCustomerIdAndBusinessPartnerNo(
+            customerId,
+            normalizedBusinessPartnerNo
+    );
+
+    if (user == null)
+    {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found for this customer");
+    }
+
+    List<String> customerNos = new ArrayList<>(
+            parseCustomerList(customerRepository.findUserAttributeValue(normalizedBusinessPartnerNo, "CustomerList"))
+    );
+
+    if (!customerNos.contains(customerNoToAdd))
+    {
+        customerNos.add(customerNoToAdd);
+    }
+
+    customerRepository.saveUserAttribute(
+            normalizedBusinessPartnerNo,
+            "CustomerList",
+            String.join("\t", customerNos)
+    );
+}
+
+public void removeCustomerFromUserCustomerList(
+        String customerId,
+        String businessPartnerNo,
+        String customerNo)
+{
+    if (businessPartnerNo == null || businessPartnerNo.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Business partner no is required");
+    }
+
+    if (customerNo == null || customerNo.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer no is required");
+    }
+
+    String normalizedBusinessPartnerNo = normalizeBusinessPartnerNo(businessPartnerNo);
+    String normalizedCustomerNo = customerNo.trim();
+
+    String currentValue = customerRepository.findUserAttributeValue(
+            normalizedBusinessPartnerNo,
+            "CustomerList"
+    );
+
+    List<String> customerNos = parseCustomerList(currentValue).stream()
+            .filter(value -> !value.equalsIgnoreCase(normalizedCustomerNo))
+            .toList();
+
+    customerRepository.saveUserAttribute(
+            normalizedBusinessPartnerNo,
+            "CustomerList",
+            String.join("\t", customerNos)
+    );
+
+    auditLogService.logChange(
+            "USER_CUSTOMERLIST",
+            normalizedBusinessPartnerNo,
+            "DELETE",
+            "CustomerList",
+            normalizedCustomerNo,
+            String.join("\t", customerNos),
+            "system",
+            "Customer removed from user CustomerList"
+    );
+}
 
     private String normalizeBusinessPartnerNo(String value)
     {

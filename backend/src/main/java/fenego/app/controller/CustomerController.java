@@ -101,4 +101,19 @@ public class CustomerController {
             @PathVariable String attributeName) {
         customerService.deleteCustomerAttribute(authenticationToken, domain, customerId, attributeName);
     }
+    @PostMapping("/{customerId}/users/{businessPartnerNo}/customer-list")
+public void addCustomerToUserCustomerList(
+        @PathVariable String customerId,
+        @PathVariable String businessPartnerNo,
+        @RequestBody CustomerAttributeRequest request) {
+    customerService.addCustomerToUserCustomerList(customerId, businessPartnerNo, request);
+}
+
+@DeleteMapping("/{customerId}/users/{businessPartnerNo}/customer-list/{customerNo}")
+public void removeCustomerFromUserCustomerList(
+        @PathVariable String customerId,
+        @PathVariable String businessPartnerNo,
+        @PathVariable String customerNo) {
+    customerService.removeCustomerFromUserCustomerList(customerId, businessPartnerNo, customerNo);
+}
 }

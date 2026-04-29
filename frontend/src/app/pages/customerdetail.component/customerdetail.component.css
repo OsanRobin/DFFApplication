@@ -41,6 +41,7 @@
   padding: 10px 0;
   color: #111827;
 }
+
 .crumb-link,
 .crumb-link:visited,
 .crumb-link:hover,
@@ -290,20 +291,46 @@
 }
 
 .btn-danger.btn-small {
-  height: auto;
+  height: 34px;
   border: 1px solid #fecaca;
   background: #fff;
   color: #991b1b;
-  border-radius: 12px;
-  padding: 7px 10px;
+  border-radius: 9px;
+  padding: 0 10px;
   font-size: 13px;
   font-weight: 900;
   box-shadow: none;
   min-width: auto;
+  white-space: nowrap;
 }
 
 .btn-danger.btn-small:hover {
   background: #fff7f7;
+}
+
+.icon-danger {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: #991b1b;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.icon-danger svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+.icon-danger:hover:not(:disabled) {
+  background: #fff1f2;
+  color: #b91c1c;
 }
 
 button:disabled {
@@ -346,15 +373,17 @@ tbody tr:last-child td {
 }
 
 .col-actions {
-  width: 135px;
+  width: 170px;
   text-align: right;
+  white-space: nowrap;
 }
 
 .row-actions {
-  display: flex;
+  display: inline-flex;
+  align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex-wrap: nowrap;
 }
 
 .link,
@@ -447,6 +476,38 @@ tbody tr:last-child td {
   color: #64748b;
   font-size: 13px;
   font-weight: 700;
+}
+
+.inline-add-start {
+  margin: 18px 0;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.inline-add {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 18px 0;
+  padding: 12px;
+  border: 1px solid #eef0f6;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.add-customer-input {
+  max-width: 220px;
+  height: 38px;
+  padding: 8px 11px;
+  font-size: 13px;
+}
+
+.btn-add-customer {
+  height: 38px;
+  padding: 0 13px;
+  font-size: 13px;
+  border-radius: 10px;
+  min-width: auto;
 }
 
 .hint,
@@ -616,5 +677,26 @@ tbody tr:last-child td {
   .user-attributes-section {
     margin-top: 48px;
     padding-top: 32px;
+  }
+
+  .inline-add {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-customer-input {
+    max-width: 100%;
+  }
+
+  .btn-add-customer {
+    width: 100%;
+  }
+
+  .col-actions {
+    width: auto;
+  }
+
+  .row-actions {
+    justify-content: flex-start;
   }
 }
