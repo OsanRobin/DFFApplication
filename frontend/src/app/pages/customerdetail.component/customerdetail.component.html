@@ -2,10 +2,13 @@
   <app-header class="component"></app-header>
 
   <main class="content">
-    <div class="crumb">
-      Home <span class="sep">›</span> Customers <span class="sep">›</span>
-      <span class="current">Customer Detail</span>
-    </div>
+   <div class="crumb">
+  <a class="crumb-link" routerLink="/dashboard">Home</a>
+  <span class="sep">›</span>
+  <a class="crumb-link" routerLink="/customers">Customers</a>
+  <span class="sep">›</span>
+  <span class="current">Customer Detail</span>
+</div>
 
     <button class="back" type="button" (click)="goBack()">
       <span class="back-ico" aria-hidden="true">←</span>

@@ -3,11 +3,17 @@
 
   <main class="content">
     <div class="crumb">
-      Home <span class="sep">›</span>
-      <a routerLink="/customers" class="crumb-link">Customers</a>
+      <a class="crumb-link" routerLink="/dashboard">Home</a>
+      <span class="sep">›</span>
+      <a class="crumb-link" routerLink="/customers">Customers</a>
       <span class="sep">›</span>
       <span class="current">Bulk Actions</span>
     </div>
+
+    <button class="back" type="button" (click)="goBack()">
+      <span class="back-ico" aria-hidden="true">←</span>
+      Back
+    </button>
 
     <h1 class="title">Customer Bulk Actions</h1>
 
@@ -127,6 +133,7 @@
                 <th>Locations</th>
               </tr>
             </thead>
+
             <tbody>
               @for (customer of customers; track customer.id) {
                 <tr>

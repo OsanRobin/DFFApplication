@@ -3,8 +3,15 @@
 
   <main class="content">
     <div class="crumb">
-      Home <span class="sep">›</span> <span class="current">Customers</span>
+      <a class="crumb-link" routerLink="/dashboard">Home</a>
+      <span class="sep">›</span>
+      <span class="current">Customers</span>
     </div>
+
+    <button class="back" type="button" (click)="goBack()">
+      <span class="back-ico" aria-hidden="true">←</span>
+      Back
+    </button>
 
     <div class="page-head">
       <div>
@@ -91,12 +98,7 @@
             <div class="filter-panel">
               <div class="field">
                 <label class="field-label">Customer number</label>
-                <input
-                  class="input"
-                  type="text"
-                  placeholder="Customer number..."
-                  [(ngModel)]="customerNoFilter"
-                />
+                <input class="input" type="text" placeholder="Customer number..." [(ngModel)]="customerNoFilter" />
               </div>
 
               <div class="field">
@@ -120,39 +122,22 @@
 
               <div class="field">
                 <label class="field-label">Segment</label>
-                <input
-                  class="input"
-                  type="text"
-                  placeholder="Segment..."
-                  [(ngModel)]="segmentFilter"
-                />
+                <input class="input" type="text" placeholder="Segment..." [(ngModel)]="segmentFilter" />
               </div>
 
               <div class="filter-actions">
-                <button
-                  class="btn-primary"
-                  type="button"
-                  (click)="onApplyFilters(); filterMenu.removeAttribute('open')"
-                >
+                <button class="btn-primary" type="button" (click)="onApplyFilters(); filterMenu.removeAttribute('open')">
                   Apply filters
                 </button>
 
-                <button
-                  class="btn-outline"
-                  type="button"
-                  (click)="onClearFilters(); filterMenu.removeAttribute('open')"
-                >
+                <button class="btn-outline" type="button" (click)="onClearFilters(); filterMenu.removeAttribute('open')">
                   Clear
                 </button>
               </div>
             </div>
           </details>
 
-          <button
-            class="btn-primary compact"
-            type="button"
-            (click)="onApplyFilters()"
-          >
+          <button class="btn-primary compact" type="button" (click)="onApplyFilters()">
             Search
           </button>
         </div>
@@ -171,16 +156,10 @@
           <div>
             <div class="table-head">
               <div class="pagination-info">
-                Showing {{ pageStart() }} - {{ pageEnd() }} of
-                {{ totalCount }} customers
+                Showing {{ pageStart() }} - {{ pageEnd() }} of {{ totalCount }} customers
               </div>
 
-              <button
-                class="btn-primary compact"
-                type="button"
-                (click)="selectAll()"
-                [disabled]="totalCount === 0 || selectingAll"
-              >
+              <button class="btn-primary compact" type="button" (click)="selectAll()" [disabled]="totalCount === 0 || selectingAll">
                 {{ selectingAll ? 'Selecting...' : 'Select all' }}
               </button>
             </div>
@@ -197,7 +176,6 @@
                         (change)="toggleVisibleSelection()"
                       />
                     </th>
-
                     <th class="col-name">Customer Name</th>
                     <th class="col-no">Customer No</th>
                     <th class="col-type">Type</th>
@@ -254,11 +232,7 @@
                       <td [title]="row.type">{{ row.type }}</td>
 
                       <td>
-                        <span
-                          class="badge"
-                          [class.active]="row.status === 'Active'"
-                          [class.inactive]="row.status === 'Inactive'"
-                        >
+                        <span class="badge" [class.active]="row.status === 'Active'" [class.inactive]="row.status === 'Inactive'">
                           {{ row.status }}
                         </span>
                       </td>
@@ -266,9 +240,7 @@
                       <td>{{ row.locations }}</td>
 
                       <td>
-                        <span class="segment-cell" [title]="row.segment">
-                          {{ row.segment }}
-                        </span>
+                        <span class="segment-cell" [title]="row.segment">{{ row.segment }}</span>
                       </td>
 
                       <td>
@@ -285,11 +257,7 @@
                       </td>
 
                       <td class="col-actions">
-                        <a
-                          class="link"
-                          [routerLink]="['/customers', row.customerNo]"
-                          (click)="$event.stopPropagation()"
-                        >
+                        <a class="link" [routerLink]="['/customers', row.customerNo]" (click)="$event.stopPropagation()">
                           View Details
                           <span class="chev-r" aria-hidden="true">›</span>
                         </a>
@@ -301,12 +269,7 @@
             </div>
 
             <div class="pagination">
-              <button
-                class="btn-outline pagination-btn"
-                type="button"
-                (click)="previousPage()"
-                [disabled]="offset === 0"
-              >
+              <button class="btn-outline pagination-btn" type="button" (click)="previousPage()" [disabled]="offset === 0">
                 ‹ Previous
               </button>
 
@@ -314,12 +277,7 @@
                 Page {{ currentPage() }} of {{ totalPages() }}
               </div>
 
-              <button
-                class="btn-outline pagination-btn"
-                type="button"
-                (click)="nextPage()"
-                [disabled]="offset + limit >= totalCount"
-              >
+              <button class="btn-outline pagination-btn" type="button" (click)="nextPage()" [disabled]="offset + limit >= totalCount">
                 Next ›
               </button>
             </div>
@@ -330,18 +288,11 @@
 
     <div class="bulk" [class.show]="selectedIds.size > 0">
       <div class="bulk-inner">
-        <div class="bulk-count">
-          {{ selectedIds.size }} customers selected
-        </div>
+        <div class="bulk-count">{{ selectedIds.size }} customers selected</div>
 
         <div class="bulk-actions">
-          <button class="btn-white" type="button" (click)="goToBulkActions()">
-            Go to Bulk Actions
-          </button>
-
-          <button class="bulk-clear" type="button" (click)="clearSelection()">
-            Clear Selection
-          </button>
+          <button class="btn-white" type="button" (click)="goToBulkActions()">Go to Bulk Actions</button>
+          <button class="bulk-clear" type="button" (click)="clearSelection()">Clear Selection</button>
         </div>
       </div>
     </div>
@@ -365,9 +316,7 @@
             </p>
           </div>
 
-          <button class="modal-close" type="button" (click)="closeSearchModal()">
-            ×
-          </button>
+          <button class="modal-close" type="button" (click)="closeSearchModal()">×</button>
         </div>
 
         @if (saveSearchError) {
@@ -377,42 +326,22 @@
         <div class="modal-grid">
           <div class="field full">
             <label class="field-label">Search name</label>
-            <input
-              class="input"
-              type="text"
-              placeholder="Search name..."
-              [(ngModel)]="modalName"
-            />
+            <input class="input" type="text" placeholder="Search name..." [(ngModel)]="modalName" />
           </div>
 
           <div class="field full">
             <label class="field-label">Search query</label>
-            <input
-              class="input"
-              type="text"
-              placeholder="Name, customer number or segment..."
-              [(ngModel)]="modalQuery"
-            />
+            <input class="input" type="text" placeholder="Name, customer number or segment..." [(ngModel)]="modalQuery" />
           </div>
 
           <div class="field">
             <label class="field-label">Customer number</label>
-            <input
-              class="input"
-              type="text"
-              placeholder="Customer number..."
-              [(ngModel)]="modalCustomerNo"
-            />
+            <input class="input" type="text" placeholder="Customer number..." [(ngModel)]="modalCustomerNo" />
           </div>
 
           <div class="field">
             <label class="field-label">Segment</label>
-            <input
-              class="input"
-              type="text"
-              placeholder="Segment..."
-              [(ngModel)]="modalSegment"
-            />
+            <input class="input" type="text" placeholder="Segment..." [(ngModel)]="modalSegment" />
           </div>
 
           <div class="field">
@@ -436,9 +365,7 @@
         </div>
 
         <div class="modal-actions">
-          <button class="btn-outline" type="button" (click)="closeSearchModal()">
-            Cancel
-          </button>
+          <button class="btn-outline" type="button" (click)="closeSearchModal()">Cancel</button>
 
           <button class="btn-primary" type="button" (click)="submitSearchModal()">
             {{ searchModalMode === 'edit' ? 'Save changes' : 'Save search' }}

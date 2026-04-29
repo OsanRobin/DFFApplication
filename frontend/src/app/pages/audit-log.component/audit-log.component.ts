@@ -1,5 +1,6 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { HeaderComponent } from '../../shell/header.component/header.component';
 import {
   AuditLogApiService,
@@ -8,12 +9,13 @@ import {
 
 @Component({
   selector: 'app-audit-log.component',
-  imports: [CommonModule, HeaderComponent],
+  imports: [CommonModule, RouterLink, HeaderComponent],
   templateUrl: './audit-log.component.html',
   styleUrl: './audit-log.component.css',
 })
 export class AuditLogComponent implements OnInit {
   private auditLogApi = inject(AuditLogApiService);
+  private location = inject(Location);
 
   auditLogs: AuditLogDto[] = [];
 
@@ -22,6 +24,10 @@ export class AuditLogComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAuditLogs();
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   loadAuditLogs(): void {

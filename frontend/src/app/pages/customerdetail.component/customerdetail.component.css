@@ -41,6 +41,19 @@
   padding: 10px 0;
   color: #111827;
 }
+.crumb-link,
+.crumb-link:visited,
+.crumb-link:hover,
+.crumb-link:active,
+.crumb-link:focus {
+  color: #64748b;
+  text-decoration: none;
+  outline: none;
+}
+
+.crumb-link:hover {
+  color: #111827;
+}
 
 .back-ico {
   color: #64748b;

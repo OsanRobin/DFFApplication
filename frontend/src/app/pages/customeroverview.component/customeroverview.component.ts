@@ -519,6 +519,9 @@ export class CustomeroverviewComponent {
     this.selectedIds.clear();
     this.selectedRows.clear();
   }
+  goBack(): void {
+  this.router.navigate(['/dashboard']);
+}
 
   deleteSavedSearch(searchId: number): void {
     const authenticationToken = this.authService.getAuthenticationToken();
