@@ -1,4 +1,5 @@
 package fenego.app.intershop;
+
 import fenego.app.dto.CustomerDetailResponse;
 import fenego.app.dto.CustomerSegmentDTO;
 import fenego.app.dto.IntershopLoginResult;
@@ -77,7 +78,9 @@ public class IntershopClient
                 throw new RuntimeException("Intershop validation succeeded but no authentication-token was returned");
             }
 
-            return new IntershopLoginResult(username, organization, authenticationToken);
+            List<String> roles = loadUserRoles(username);
+
+            return new IntershopLoginResult(username, organization, authenticationToken, roles);
         }
         catch (HttpStatusCodeException ex)
         {
@@ -153,31 +156,6 @@ public class IntershopClient
         }
     }
 
-    private CustomerAddress mapAddress(Map address)
-    {
-        CustomerAddress dto = new CustomerAddress();
-        dto.setId((String) address.get("id"));
-        dto.setAddressName((String) address.get("addressName"));
-        dto.setFirstName((String) address.get("firstName"));
-        dto.setLastName((String) address.get("lastName"));
-        dto.setCompanyName1((String) address.get("companyName1"));
-        dto.setAddressLine1((String) address.get("addressLine1"));
-        dto.setPostalCode((String) address.get("postalCode"));
-        dto.setCountry((String) address.get("country"));
-        dto.setCountryCode((String) address.get("countryCode"));
-        dto.setCity((String) address.get("city"));
-        dto.setStreet((String) address.get("street"));
-        dto.setCompany((String) address.get("company"));
-
-        dto.setShipFromAddress(Boolean.TRUE.equals(address.get("shipFromAddress")));
-        dto.setServiceToAddress(Boolean.TRUE.equals(address.get("serviceToAddress")));
-        dto.setInstallToAddress(Boolean.TRUE.equals(address.get("installToAddress")));
-        dto.setInvoiceToAddress(Boolean.TRUE.equals(address.get("invoiceToAddress")));
-        dto.setShipToAddress(Boolean.TRUE.equals(address.get("shipToAddress")));
-
-        return dto;
-    }
-
     public void addCustomerAttribute(String authenticationToken, String customerId, String attributeName, String attributeValue)
     {
         try
@@ -250,92 +228,125 @@ public class IntershopClient
         }
     }
 
-
-public List<CustomerSegmentDTO> getAllCustomerSegments(String authenticationToken)
-{
-    try
+    public List<CustomerSegmentDTO> getAllCustomerSegments(String authenticationToken)
     {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("authentication-token", authenticationToken);
-        headers.set("Accept", customerSegmentsAccept);
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-        ResponseEntity<Map> response = restTemplate.exchange(
-                customerSegmentsUrl,
-                HttpMethod.GET,
-                entity,
-                Map.class
-        );
-
-        Map body = response.getBody();
-        if (body == null)
+        try
         {
-            return List.of();
-        }
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("authentication-token", authenticationToken);
+            headers.set("Accept", customerSegmentsAccept);
 
-        Object dataObject = body.get("data");
-        if (!(dataObject instanceof List<?> dataList))
-        {
-            return List.of();
-        }
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-        List<CustomerSegmentDTO> result = new ArrayList<>();
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    customerSegmentsUrl,
+                    HttpMethod.GET,
+                    entity,
+                    Map.class
+            );
 
-        for (Object item : dataList)
-        {
-            if (!(item instanceof Map<?, ?> entry))
+            Map body = response.getBody();
+            if (body == null)
             {
-                continue;
+                return List.of();
             }
 
-            CustomerSegmentDTO dto = new CustomerSegmentDTO();
-            dto.setId(stringValue(entry.get("id")));
-
-            Object data = entry.get("data");
-            if (data instanceof Map<?, ?> dataMap)
+            Object dataObject = body.get("data");
+            if (!(dataObject instanceof List<?> dataList))
             {
-                dto.setName(stringValue(dataMap.get("name")));
-                dto.setDescription(stringValue(dataMap.get("description")));
+                return List.of();
             }
 
-            if (dto.getName() == null || dto.getName().isBlank())
+            List<CustomerSegmentDTO> result = new ArrayList<>();
+
+            for (Object item : dataList)
             {
-                dto.setName(dto.getId());
+                if (!(item instanceof Map<?, ?> entry))
+                {
+                    continue;
+                }
+
+                CustomerSegmentDTO dto = new CustomerSegmentDTO();
+                dto.setId(stringValue(entry.get("id")));
+
+                Object data = entry.get("data");
+                if (data instanceof Map<?, ?> dataMap)
+                {
+                    dto.setName(stringValue(dataMap.get("name")));
+                    dto.setDescription(stringValue(dataMap.get("description")));
+                }
+
+                if (dto.getName() == null || dto.getName().isBlank())
+                {
+                    dto.setName(dto.getId());
+                }
+
+                result.add(dto);
             }
 
-            result.add(dto);
+            return result;
         }
-
-        return result;
-    }
-    catch (HttpStatusCodeException ex)
-    {
-        System.err.println("Intershop getAllCustomerSegments failed: "
-                + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString());
-
-        if (ex.getStatusCode().value() == 403)
+        catch (HttpStatusCodeException ex)
         {
+            System.err.println("Intershop getAllCustomerSegments failed: "
+                    + ex.getStatusCode().value() + " - " + ex.getResponseBodyAsString());
+
+            if (ex.getStatusCode().value() == 403)
+            {
+                return List.of();
+            }
+
+            throw new RuntimeException(
+                    "Fetch all customer segments failed: "
+                            + ex.getStatusCode().value() + " - "
+                            + ex.getResponseBodyAsString(),
+                    ex
+            );
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Intershop getAllCustomerSegments unexpected error: " + ex.getMessage());
             return List.of();
         }
-
-        throw new RuntimeException(
-                "Fetch all customer segments failed: "
-                        + ex.getStatusCode().value() + " - "
-                        + ex.getResponseBodyAsString(),
-                ex
-        );
     }
-    catch (Exception ex)
+
+    private CustomerAddress mapAddress(Map address)
     {
-        System.err.println("Intershop getAllCustomerSegments unexpected error: " + ex.getMessage());
-        return List.of();
-    }
-}
+        CustomerAddress dto = new CustomerAddress();
+        dto.setId((String) address.get("id"));
+        dto.setAddressName((String) address.get("addressName"));
+        dto.setFirstName((String) address.get("firstName"));
+        dto.setLastName((String) address.get("lastName"));
+        dto.setCompanyName1((String) address.get("companyName1"));
+        dto.setAddressLine1((String) address.get("addressLine1"));
+        dto.setPostalCode((String) address.get("postalCode"));
+        dto.setCountry((String) address.get("country"));
+        dto.setCountryCode((String) address.get("countryCode"));
+        dto.setCity((String) address.get("city"));
+        dto.setStreet((String) address.get("street"));
+        dto.setCompany((String) address.get("company"));
 
-private String stringValue(Object value)
-{
-    return value == null ? null : String.valueOf(value);
-}
-    
+        dto.setShipFromAddress(Boolean.TRUE.equals(address.get("shipFromAddress")));
+        dto.setServiceToAddress(Boolean.TRUE.equals(address.get("serviceToAddress")));
+        dto.setInstallToAddress(Boolean.TRUE.equals(address.get("installToAddress")));
+        dto.setInvoiceToAddress(Boolean.TRUE.equals(address.get("invoiceToAddress")));
+        dto.setShipToAddress(Boolean.TRUE.equals(address.get("shipToAddress")));
+
+        return dto;
+    }
+
+    private List<String> loadUserRoles(String username)
+    {
+        if ("fenego".equalsIgnoreCase(username))
+        {
+            return List.of("admin", "manager");
+        }
+
+        return List.of("admin");
+    }
+
+    private String stringValue(Object value)
+    {
+        return value == null ? null : String.valueOf(value);
+    }
 }

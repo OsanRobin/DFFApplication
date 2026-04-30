@@ -1152,6 +1152,25 @@ public void deleteUserAttribute(String businessPartnerNo, String name)
     return new ArrayList<>(segments.values());
 }
 
+public List<String> findAssignedCustomerNosForUser(String businessPartnerNo, String domainName)
+{
+    String sql = """
+        select distinct
+            c.CUSTOMERNO as customerNo
+        from CUSTOMERACCOUNTMGRASSIGNMENT cam
+        join CUSTOMER c
+            on c.UUID = cam.CUSTOMERID
+        join BASICPROFILE bp
+            on bp.UUID = cam.PROFILEID
+        where lower(bp.BUSINESSPARTNERNO) = lower(:businessPartnerNo)
+        order by c.CUSTOMERNO
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("businessPartnerNo", businessPartnerNo);
+
+    return jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("customerNo"));
+}
 public void assignSegmentToCustomer(String customerNo, String segmentId)
 {
     String sql = """

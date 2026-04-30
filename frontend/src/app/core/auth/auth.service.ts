@@ -5,6 +5,8 @@ import { Observable, tap } from 'rxjs';
 export interface CurrentUser {
   user: string;
   organization: string;
+  roles: string[];
+  managerRestricted: boolean;
 }
 
 export interface LoginPayload {
@@ -14,9 +16,10 @@ export interface LoginPayload {
 }
 
 export interface LoginResponse {
-  username: string;
+  user: string;
   organization: string;
-  authenticationToken: string;
+  roles: string[];
+  managerRestricted: boolean;
 }
 
 @Injectable({
@@ -29,9 +32,10 @@ export class AuthService {
   login(payload: LoginPayload): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, payload, { withCredentials: true }).pipe(
       tap(response => {
-        localStorage.setItem('user', response.username);
+        localStorage.setItem('user', response.user);
         localStorage.setItem('organization', response.organization);
-        localStorage.setItem('authentication-token', response.authenticationToken);
+        localStorage.setItem('roles', JSON.stringify(response.roles ?? []));
+        localStorage.setItem('managerRestricted', String(response.managerRestricted));
       })
     );
   }
@@ -41,6 +45,8 @@ export class AuthService {
       tap(user => {
         localStorage.setItem('user', user.user);
         localStorage.setItem('organization', user.organization);
+        localStorage.setItem('roles', JSON.stringify(user.roles ?? []));
+        localStorage.setItem('managerRestricted', String(user.managerRestricted));
       })
     );
   }
@@ -51,6 +57,8 @@ export class AuthService {
         localStorage.removeItem('user');
         localStorage.removeItem('organization');
         localStorage.removeItem('authentication-token');
+        localStorage.removeItem('roles');
+        localStorage.removeItem('managerRestricted');
       })
     );
   }
@@ -61,6 +69,14 @@ export class AuthService {
 
   getAuthenticationToken(): string {
     return localStorage.getItem('authentication-token') ?? '';
+  }
+
+  getRoles(): string[] {
+    return JSON.parse(localStorage.getItem('roles') ?? '[]');
+  }
+
+  isManagerRestricted(): boolean {
+    return localStorage.getItem('managerRestricted') === 'true';
   }
 
   isAuthenticated(): boolean {

@@ -8,24 +8,15 @@ import fenego.app.dto.CustomerSegmentSummaryDTO;
 import fenego.app.dto.CustomerUserDetailResponse;
 import fenego.app.dto.CustomerUserListResponse;
 import fenego.app.service.CustomerService;
+import jakarta.servlet.http.HttpSession;
 
 import java.util.List;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/customers")
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 public class CustomerController {
     private final CustomerService customerService;
 
@@ -44,7 +35,12 @@ public class CustomerController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String segment,
-            @RequestParam(required = false) String email) {
+            @RequestParam(required = false) String email,
+            HttpSession session) {
+
+        String currentUser = (String) session.getAttribute("user");
+        boolean managerRestricted = Boolean.TRUE.equals(session.getAttribute("managerRestricted"));
+
         return customerService.getCustomers(
                 authenticationToken,
                 domain,
@@ -55,7 +51,9 @@ public class CustomerController {
                 type,
                 status,
                 segment,
-                email
+                email,
+                currentUser,
+                managerRestricted
         );
     }
 
@@ -63,8 +61,13 @@ public class CustomerController {
     public CustomerDetailResponse getCustomerById(
             @RequestHeader("authentication-token") String authenticationToken,
             @RequestParam("domain") String domain,
-            @PathVariable String customerId) {
-        return customerService.getCustomerById(authenticationToken, domain, customerId);
+            @PathVariable String customerId,
+            HttpSession session) {
+
+        String currentUser = (String) session.getAttribute("user");
+        boolean managerRestricted = Boolean.TRUE.equals(session.getAttribute("managerRestricted"));
+
+        return customerService.getCustomerById(authenticationToken, domain, customerId, currentUser, managerRestricted);
     }
 
     @GetMapping("/{customerId}/users")
@@ -150,78 +153,81 @@ public class CustomerController {
             @PathVariable String customerNo) {
         customerService.removeCustomerFromUserCustomerList(customerId, businessPartnerNo, customerNo);
     }
-  @PostMapping("/{customerId}/relations/sub-customers/{subCustomerNo}")
-public void addSubCustomerToCluster(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @RequestParam("domain") String domain,
-        @PathVariable String customerId,
-        @PathVariable String subCustomerNo) {
-    customerService.addSubCustomerToCluster(authenticationToken, domain, customerId, subCustomerNo);
-}
 
-@DeleteMapping("/{customerId}/relations/sub-customers/{subCustomerNo}")
-public void removeSubCustomerFromCluster(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @RequestParam("domain") String domain,
-        @PathVariable String customerId,
-        @PathVariable String subCustomerNo) {
-    customerService.removeSubCustomerFromCluster(authenticationToken, domain, customerId, subCustomerNo);
-}
+    @PostMapping("/{customerId}/relations/sub-customers/{subCustomerNo}")
+    public void addSubCustomerToCluster(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @PathVariable String customerId,
+            @PathVariable String subCustomerNo) {
+        customerService.addSubCustomerToCluster(authenticationToken, domain, customerId, subCustomerNo);
+    }
 
-@PostMapping("/{customerId}/relations/parent-clusters/{clusterCustomerNo}")
-public void assignCustomerToCluster(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @RequestParam("domain") String domain,
-        @PathVariable String customerId,
-        @PathVariable String clusterCustomerNo) {
-    customerService.addSubCustomerToCluster(authenticationToken, domain, clusterCustomerNo, customerId);
-}
+    @DeleteMapping("/{customerId}/relations/sub-customers/{subCustomerNo}")
+    public void removeSubCustomerFromCluster(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @PathVariable String customerId,
+            @PathVariable String subCustomerNo) {
+        customerService.removeSubCustomerFromCluster(authenticationToken, domain, customerId, subCustomerNo);
+    }
 
-@DeleteMapping("/{customerId}/relations/parent-clusters/{clusterCustomerNo}")
-public void unassignCustomerFromCluster(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @RequestParam("domain") String domain,
-        @PathVariable String customerId,
-        @PathVariable String clusterCustomerNo) {
-    customerService.removeSubCustomerFromCluster(authenticationToken, domain, clusterCustomerNo, customerId);
-}
-@GetMapping("/segments")
-public List<CustomerSegmentSummaryDTO> getSegments(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @RequestParam("domain") String domain) {
-    return customerService.getSegments(authenticationToken, domain);
-}
+    @PostMapping("/{customerId}/relations/parent-clusters/{clusterCustomerNo}")
+    public void assignCustomerToCluster(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @PathVariable String customerId,
+            @PathVariable String clusterCustomerNo) {
+        customerService.addSubCustomerToCluster(authenticationToken, domain, clusterCustomerNo, customerId);
+    }
 
-@PostMapping("/segments")
-public void createSegment(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @RequestParam("domain") String domain,
-        @RequestBody CustomerSegmentRequest request) {
-    customerService.createSegment(authenticationToken, domain, request);
-}
+    @DeleteMapping("/{customerId}/relations/parent-clusters/{clusterCustomerNo}")
+    public void unassignCustomerFromCluster(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @PathVariable String customerId,
+            @PathVariable String clusterCustomerNo) {
+        customerService.removeSubCustomerFromCluster(authenticationToken, domain, clusterCustomerNo, customerId);
+    }
 
-@DeleteMapping("/segments/{segmentId}")
-public void deleteSegment(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @RequestParam("domain") String domain,
-        @PathVariable String segmentId) {
-    customerService.deleteSegment(authenticationToken, domain, segmentId);
-}
-@PostMapping("/{customerId}/segments")
-public void assignSegmentToCustomer(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @RequestParam("domain") String domain,
-        @PathVariable String customerId,
-        @RequestBody CustomerSegmentRequest request) {
-    customerService.assignSegmentToCustomer(authenticationToken, domain, customerId, request);
-}
+    @GetMapping("/segments")
+    public List<CustomerSegmentSummaryDTO> getSegments(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain) {
+        return customerService.getSegments(authenticationToken, domain);
+    }
 
-@DeleteMapping("/{customerId}/segments/{segmentId}")
-public void removeSegmentFromCustomer(
-        @RequestHeader("authentication-token") String authenticationToken,
-        @RequestParam("domain") String domain,
-        @PathVariable String customerId,
-        @PathVariable String segmentId) {
-    customerService.removeSegmentFromCustomer(authenticationToken, domain, customerId, segmentId);
-}
+    @PostMapping("/segments")
+    public void createSegment(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @RequestBody CustomerSegmentRequest request) {
+        customerService.createSegment(authenticationToken, domain, request);
+    }
+
+    @DeleteMapping("/segments/{segmentId}")
+    public void deleteSegment(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @PathVariable String segmentId) {
+        customerService.deleteSegment(authenticationToken, domain, segmentId);
+    }
+
+    @PostMapping("/{customerId}/segments")
+    public void assignSegmentToCustomer(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @PathVariable String customerId,
+            @RequestBody CustomerSegmentRequest request) {
+        customerService.assignSegmentToCustomer(authenticationToken, domain, customerId, request);
+    }
+
+    @DeleteMapping("/{customerId}/segments/{segmentId}")
+    public void removeSegmentFromCustomer(
+            @RequestHeader("authentication-token") String authenticationToken,
+            @RequestParam("domain") String domain,
+            @PathVariable String customerId,
+            @PathVariable String segmentId) {
+        customerService.removeSegmentFromCustomer(authenticationToken, domain, customerId, segmentId);
+    }
 }

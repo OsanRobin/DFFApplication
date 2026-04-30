@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
@@ -28,12 +30,22 @@ public class AuthController
         {
             IntershopLoginResult result = authService.login(request);
 
+            List<String> roles = result.getRoles() == null ? List.of() : result.getRoles();
+            boolean managerRestricted = roles.stream().anyMatch(role -> "manager".equalsIgnoreCase(role));
+
             session.setAttribute("authenticated", true);
             session.setAttribute("user", result.getUser());
             session.setAttribute("organization", result.getOrganization());
             session.setAttribute("intershopToken", result.getAuthenticationToken());
+            session.setAttribute("roles", roles);
+            session.setAttribute("managerRestricted", managerRestricted);
 
-            return ResponseEntity.ok(new CurrentUserResponse(result.getUser(), result.getOrganization()));
+            return ResponseEntity.ok(new CurrentUserResponse(
+                    result.getUser(),
+                    result.getOrganization(),
+                    roles,
+                    managerRestricted
+            ));
         }
         catch (RuntimeException ex)
         {
@@ -54,7 +66,17 @@ public class AuthController
         String user = (String) session.getAttribute("user");
         String organization = (String) session.getAttribute("organization");
 
-        return ResponseEntity.ok(new CurrentUserResponse(user, organization));
+        @SuppressWarnings("unchecked")
+        List<String> roles = (List<String>) session.getAttribute("roles");
+
+        boolean managerRestricted = Boolean.TRUE.equals(session.getAttribute("managerRestricted"));
+
+        return ResponseEntity.ok(new CurrentUserResponse(
+                user,
+                organization,
+                roles == null ? List.of() : roles,
+                managerRestricted
+        ));
     }
 
     @PostMapping("/logout")
