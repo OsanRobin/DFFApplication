@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { HeaderComponent } from '../../shell/header.component/header.component';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 
@@ -13,18 +14,22 @@ type SegmentRow = {
 
 @Component({
   selector: 'app-segments',
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent],
   templateUrl: './segments.components.html',
   styleUrl: './segments.components.css',
 })
 export class SegmentsComponents {
   private http = inject(HttpClient);
+  private router = inject(Router);
 
   private readonly apiUrl = 'http://localhost:8081/api/customers/segments';
 
   loading = false;
   error = '';
   segments: SegmentRow[] = [];
+
+  showDeleteSegmentConfirm = false;
+  segmentToDelete: SegmentRow | null = null;
 
   newSegment = {
     id: '',
@@ -34,6 +39,10 @@ export class SegmentsComponents {
 
   ngOnInit(): void {
     this.loadSegments();
+  }
+
+  goBack(): void {
+    this.router.navigate(['/dashboard']);
   }
 
   loadSegments(): void {
@@ -96,13 +105,33 @@ export class SegmentsComponents {
       });
   }
 
-  deleteSegment(segment: SegmentRow): void {
-    const confirmed = confirm(`Delete segment "${segment.name}"?`);
-
-    if (!confirmed) {
+  openDeleteSegmentConfirm(segment: SegmentRow): void {
+    if (this.loading) {
       return;
     }
 
+    this.segmentToDelete = segment;
+    this.showDeleteSegmentConfirm = true;
+  }
+
+  closeDeleteSegmentConfirm(): void {
+    if (this.loading) {
+      return;
+    }
+
+    this.segmentToDelete = null;
+    this.showDeleteSegmentConfirm = false;
+  }
+
+  confirmDeleteSegment(): void {
+    if (!this.segmentToDelete) {
+      return;
+    }
+
+    this.deleteSegment(this.segmentToDelete);
+  }
+
+  private deleteSegment(segment: SegmentRow): void {
     this.loading = true;
     this.error = '';
 
@@ -112,10 +141,16 @@ export class SegmentsComponents {
         params: this.params(),
       })
       .subscribe({
-        next: () => this.loadSegments(),
+        next: () => {
+          this.segmentToDelete = null;
+          this.showDeleteSegmentConfirm = false;
+          this.loadSegments();
+        },
         error: (err) => {
           console.error('Failed to delete segment', err);
           this.error = 'Failed to delete segment.';
+          this.segmentToDelete = null;
+          this.showDeleteSegmentConfirm = false;
           this.loading = false;
         },
       });

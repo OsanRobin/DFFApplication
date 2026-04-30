@@ -8,104 +8,181 @@
       <span class="current">Segments</span>
     </div>
 
+    <button class="back" type="button" (click)="goBack()">
+      <span class="back-ico" aria-hidden="true">←</span>
+      Back
+    </button>
+
     <div class="header-row">
       <div>
         <h1 class="title">Segments</h1>
-        <p class="subtitle">Manage customer segments and view customer counts per segment.</p>
+        <div class="sub">Manage customer segments and view customer counts per segment.</div>
       </div>
     </div>
 
     @if (error) {
-      <div class="alert">{{ error }}</div>
+      <section class="card panel wide">
+        <div class="state error">{{ error }}</div>
+      </section>
     }
 
-    <section class="card add-card">
-      <div>
-        <h2>Add Segment</h2>
-        <p>Create a new customer segment.</p>
+    <section class="card panel wide">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Add Segment</div>
+          <div class="panel-sub">Create a new customer segment.</div>
+        </div>
       </div>
 
-      <div class="add-form">
-        <input
-          type="text"
-          placeholder="Segment ID, e.g. cg_new_segment"
-          [(ngModel)]="newSegment.id"
-        />
+      <div class="attr-form">
+        <div class="form-grid segment-form-grid">
+          <div class="field">
+            <label for="segmentId">Segment ID</label>
+            <input
+              id="segmentId"
+              class="input"
+              type="text"
+              placeholder="cg_new_segment"
+              [(ngModel)]="newSegment.id"
+              [disabled]="loading"
+            />
+          </div>
 
-        <input
-          type="text"
-          placeholder="Segment name"
-          [(ngModel)]="newSegment.name"
-        />
+          <div class="field">
+            <label for="segmentName">Name</label>
+            <input
+              id="segmentName"
+              class="input"
+              type="text"
+              placeholder="Segment name"
+              [(ngModel)]="newSegment.name"
+              [disabled]="loading"
+            />
+          </div>
 
-        <input
-          type="text"
-          placeholder="Description"
-          [(ngModel)]="newSegment.description"
-        />
+          <div class="field">
+            <label for="segmentDescription">Description</label>
+            <input
+              id="segmentDescription"
+              class="input"
+              type="text"
+              placeholder="Description"
+              [(ngModel)]="newSegment.description"
+              [disabled]="loading"
+            />
+          </div>
+        </div>
 
-        <button type="button" class="btn-primary" (click)="addSegment()" [disabled]="loading">
-          Add Segment
-        </button>
+        <div class="form-actions">
+          <button type="button" class="btn-primary" (click)="addSegment()" [disabled]="loading">
+            {{ loading ? 'Saving...' : 'Add Segment' }}
+          </button>
+        </div>
       </div>
     </section>
 
-    <section class="card">
-      <div class="table-head">
+    <section class="card panel wide">
+      <div class="panel-head">
         <div>
-          <h2>Segment List</h2>
-          <p>{{ segments.length }} segments found</p>
+          <div class="panel-title">Segment List</div>
+          <div class="panel-sub">{{ segments.length }} segments found</div>
         </div>
       </div>
 
       @if (loading) {
-        <div class="state">Loading segments...</div>
+        <div class="empty-state">Loading segments...</div>
       }
 
       @if (!loading && segments.length === 0) {
-        <div class="state">No segments found.</div>
+        <div class="empty-state">No segments found.</div>
       }
 
       @if (!loading && segments.length > 0) {
-        <div class="table">
-          <div class="row head">
-            <div>Segment</div>
-            <div>Description</div>
-            <div>Customers</div>
-            <div></div>
-          </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Segment</th>
+                <th>Description</th>
+                <th>Customers</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
 
-          @for (segment of segments; track segment.id) {
-            <div class="row">
-              <div>
-                <strong>{{ segment.name }}</strong>
-                <span>{{ segment.id }}</span>
-              </div>
+            <tbody>
+              @for (segment of segments; track segment.id) {
+                <tr>
+                  <td>
+                    <strong>{{ segment.name }}</strong>
+                    <div class="muted">{{ segment.id }}</div>
+                  </td>
 
-              <div>{{ segment.description || '-' }}</div>
+                  <td>{{ segment.description || '-' }}</td>
 
-              <div>
-                <span class="count-pill">{{ segment.customerCount }}</span>
-              </div>
+                  <td>
+                    <span class="count-pill">{{ segment.customerCount }}</span>
+                  </td>
 
-              <div class="actions">
-                <button
-                  type="button"
-                  class="icon-btn danger"
-                  title="Delete segment"
-                  (click)="deleteSegment(segment)"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9h6V9h2v11H7V9z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          }
+                  <td class="col-actions">
+                    <div class="row-actions">
+                      <button
+                        type="button"
+                        class="icon-danger"
+                        title="Delete segment"
+                        aria-label="Delete segment"
+                        (click)="openDeleteSegmentConfirm(segment)"
+                        [disabled]="loading"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
       }
     </section>
   </main>
+
+  @if (showDeleteSegmentConfirm) {
+    <div class="modal-backdrop" (click)="closeDeleteSegmentConfirm()">
+      <div class="confirm-modal" (click)="$event.stopPropagation()">
+        <div class="confirm-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+          </svg>
+        </div>
+
+        <h3>Delete segment?</h3>
+        <p>
+          Are you sure you want to delete segment
+          <strong>{{ segmentToDelete?.name }}</strong>?
+        </p>
+
+        <div class="confirm-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="closeDeleteSegmentConfirm()"
+            [disabled]="loading"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            class="btn-danger"
+            (click)="confirmDeleteSegment()"
+            [disabled]="loading"
+          >
+            {{ loading ? 'Deleting...' : 'Yes, delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>
