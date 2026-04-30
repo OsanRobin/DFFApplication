@@ -48,6 +48,7 @@ export interface CustomerSegmentDto {
   id: string;
   name: string | null;
   description: string | null;
+  customerCount?: number;
 }
 
 export interface CustomerAttributeDto {

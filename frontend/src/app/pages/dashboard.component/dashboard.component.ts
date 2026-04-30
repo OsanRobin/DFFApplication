@@ -36,6 +36,7 @@ export class DashboardComponent implements OnInit {
 
   totalCustomers = 0;
   activeCustomers = 0;
+  totalSegments = 0;
   auditEvents = 0;
   latestActivity = '-';
 
@@ -67,6 +68,18 @@ export class DashboardComponent implements OnInit {
           })
         ),
 
+      segments: this.customerApi
+        .getSegments(authenticationToken, this.domainName)
+        .pipe(
+          catchError(error => {
+            console.error(error);
+            this.errorMessage = this.errorMessage
+              ? `${this.errorMessage} Segments could not be loaded.`
+              : 'Segments could not be loaded.';
+            return of([]);
+          })
+        ),
+
       auditLogs: this.auditLogApi.getAuditLogs().pipe(
         catchError(error => {
           console.error(error);
@@ -79,10 +92,14 @@ export class DashboardComponent implements OnInit {
     }).subscribe({
       next: result => {
         const customers = result.customers?.data ?? [];
+        const segments = result.segments ?? [];
         const auditLogs = result.auditLogs ?? [];
 
         this.totalCustomers = result.customers?.count ?? customers.length;
-        this.activeCustomers = customers.filter(customer => this.isActiveCustomer(customer)).length;
+        this.activeCustomers = customers.filter(customer =>
+          this.isActiveCustomer(customer)
+        ).length;
+        this.totalSegments = segments.length;
 
         this.auditEvents = auditLogs.length;
         this.latestActivity = this.getLatestActivityTime(auditLogs);

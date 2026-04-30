@@ -7,7 +7,7 @@
     <section class="hero card">
       <div>
         <h1>Dashboard Overview</h1>
-        <p>Manage customers and track audit activity.</p>
+        <p>Manage customers, segments and track audit activity.</p>
       </div>
 
       <button class="refresh-btn" type="button" (click)="loadDashboard()">
@@ -30,6 +30,12 @@
         <div class="kpi-title">Active Customers</div>
         <div class="kpi-value">{{ isLoading ? '...' : activeCustomers }}</div>
         <div class="kpi-sub">currently active</div>
+      </div>
+
+      <div class="kpi card">
+        <div class="kpi-title">Segments</div>
+        <div class="kpi-value">{{ isLoading ? '...' : totalSegments }}</div>
+        <div class="kpi-sub">available customer segments</div>
       </div>
 
       <div class="kpi card">
@@ -69,6 +75,26 @@
       <div class="panel card">
         <div class="panel-head">
           <div>
+            <div class="panel-title">Segments</div>
+            <div class="panel-sub">Create, view and manage customer segments.</div>
+          </div>
+
+          <div class="panel-icon">◼</div>
+        </div>
+
+        <a class="action" routerLink="/segments">
+          <span>Open Segments</span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </a>
+
+        <div class="panel-foot">
+          Manage segment definitions and customer segment assignments.
+        </div>
+      </div>
+
+      <div class="panel card">
+        <div class="panel-head">
+          <div>
             <div class="panel-title">Audit Log</div>
             <div class="panel-sub">Review changes, actions and system activity.</div>
           </div>
@@ -91,10 +117,8 @@
       <div class="recent-head">
         <div>
           <div class="recent-title">Recent Activity</div>
-          <div class="recent-sub">Latest customer and audit updates</div>
+          <div class="recent-sub">Latest customer, segment and audit updates</div>
         </div>
-
-      
       </div>
 
       @if (isLoading) {
@@ -115,7 +139,6 @@
               </div>
 
               <div class="activity-meta">
-                
                 <span class="activity-time">{{ a.at }}</span>
               </div>
             </div>
