@@ -8,36 +8,38 @@
       <span class="current">Audit Log</span>
     </div>
 
-<button class="back" type="button" (click)="goBack()">
+    <button class="back" type="button" (click)="goBack()">
       <span class="back-ico" aria-hidden="true">←</span>
       Back
     </button>
 
-    <div class="header-row">
+    <div class="page-head">
       <div>
         <h1 class="title">Audit Log</h1>
-        <p class="subtitle">
-          Overview of all changes made by users in the application
-        </p>
+        <div class="sub">Overview of all changes made by users in the application.</div>
       </div>
 
-      <button class="refresh-btn" type="button" (click)="loadAuditLogs()">
+      <button class="btn-primary compact" type="button" (click)="loadAuditLogs()">
         Refresh
       </button>
     </div>
 
-    <section class="card panel">
-      <div class="panel-title">All Changes</div>
-      <div class="panel-sub">
-        Track which user changed what and when
+    <section class="main card">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">All Changes</div>
+          <div class="panel-sub">Track which user changed what and when.</div>
+        </div>
       </div>
+
+      <div class="divider"></div>
 
       @if (isLoading) {
         <div class="state">Loading audit logs...</div>
       }
 
       @if (errorMessage) {
-        <div class="error">{{ errorMessage }}</div>
+        <div class="state error">{{ errorMessage }}</div>
       }
 
       @if (!isLoading && !errorMessage && auditLogs.length === 0) {
@@ -49,23 +51,25 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>User</th>
-                <th>Action</th>
-                <th>Entity</th>
-                <th>Field</th>
-                <th>Old Value</th>
-                <th>New Value</th>
-                <th>Message</th>
+                <th class="col-date">Date</th>
+                <th class="col-user">User</th>
+                <th class="col-action">Action</th>
+                <th class="col-entity">Entity</th>
+                <th class="col-field">Field</th>
+                <th class="col-value">Old Value</th>
+                <th class="col-value">New Value</th>
+                <th class="col-message">Message</th>
               </tr>
             </thead>
 
             <tbody>
               @for (log of auditLogs; track log.id) {
                 <tr>
-                  <td>{{ formatDate(log.changedAt) }}</td>
+                  <td [title]="formatDate(log.changedAt)">
+                    {{ formatDate(log.changedAt) }}
+                  </td>
 
-                  <td class="user-cell">
+                  <td class="user-cell" [title]="displayValue(log.changedBy)">
                     {{ displayValue(log.changedBy) }}
                   </td>
 
@@ -75,22 +79,24 @@
                     </span>
                   </td>
 
-                  <td>
+                  <td [title]="displayValue(log.entityType) + ' #' + displayValue(log.entityId)">
                     {{ displayValue(log.entityType) }}
                     #{{ displayValue(log.entityId) }}
                   </td>
 
-                  <td>{{ displayValue(log.fieldName) }}</td>
+                  <td [title]="displayValue(log.fieldName)">
+                    {{ displayValue(log.fieldName) }}
+                  </td>
 
-                  <td class="muted">
+                  <td class="muted" [title]="displayValue(log.oldValue)">
                     {{ displayValue(log.oldValue) }}
                   </td>
 
-                  <td class="strong">
+                  <td class="strong" [title]="displayValue(log.newValue)">
                     {{ displayValue(log.newValue) }}
                   </td>
 
-                  <td class="muted">
+                  <td class="muted" [title]="displayValue(log.message)">
                     {{ displayValue(log.message) }}
                   </td>
                 </tr>

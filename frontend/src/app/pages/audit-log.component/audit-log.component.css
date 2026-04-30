@@ -68,7 +68,7 @@
   font-size: 18px;
 }
 
-.header-row {
+.page-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -85,43 +85,30 @@
   color: #111827;
 }
 
-.subtitle {
-  margin: 6px 0 0;
+.sub {
+  margin-top: 6px;
   color: #64748b;
   font-size: 14px;
   font-weight: 700;
 }
 
-.refresh-btn {
-  height: 44px;
-  padding: 0 16px;
-  border: 1px solid #111827;
-  background: #111827;
-  color: #ffffff;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 900;
-  cursor: pointer;
-  transition:
-    background 0.16s ease,
-    transform 0.16s ease,
-    box-shadow 0.16s ease;
-}
-
-.refresh-btn:hover {
-  background: #030712;
-  transform: translateY(-1px);
-}
-
-.card.panel {
+.card {
   background: #ffffff;
   border: 1px solid #e8eaf1;
   border-radius: 16px;
   box-shadow: 0 14px 30px rgba(18, 24, 40, 0.06);
 }
 
-.panel {
+.main {
   padding: 16px;
+  min-width: 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .panel-title {
@@ -137,29 +124,77 @@
   margin-top: 6px;
 }
 
-.state {
-  margin-top: 18px;
-  padding: 20px;
-  border-radius: 12px;
-  background: #f9fafb;
-  color: #4b5563;
-  font-size: 14px;
-  font-weight: 700;
+.divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 16px 0;
 }
 
-.error {
-  margin-top: 18px;
-  padding: 14px 16px;
+.btn-primary,
+.btn-outline {
+  height: 44px;
+  padding: 0 16px;
   border-radius: 12px;
-  background: #fef2f2;
-  color: #991b1b;
+  font-weight: 900;
   font-size: 14px;
-  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.btn-primary {
+  border: 1px solid #111827;
+  background: #111827;
+  color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #030712;
+  transform: translateY(-1px);
+}
+
+.btn-primary.compact {
+  min-width: 96px;
+}
+
+.btn-outline {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.state {
+  padding: 20px;
+  font-size: 14px;
+  color: #4b5563;
+  font-weight: 700;
+  border-radius: 12px;
+  background: #f9fafb;
+}
+
+.state.error {
+  color: #991b1b;
+  background: #fef2f2;
   border: 1px solid #fecaca;
 }
 
 .table-wrap {
-  margin-top: 14px;
   overflow-x: auto;
   overflow-y: visible;
   border-radius: 14px;
@@ -169,45 +204,74 @@
 
 .table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
-  table-layout: fixed;
-  min-width: 1100px;
+  min-width: 1180px;
 }
 
-.table thead th {
+th,
+td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #eef0f3;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+th {
   position: sticky;
   top: 0;
   z-index: 1;
-  text-align: left;
-  font-size: 12px;
   color: #374151;
   font-weight: 900;
-  padding: 12px 10px;
-  border-bottom: 1px solid #eef0f3;
+  text-align: left;
   background: #f9fafb;
   white-space: nowrap;
 }
 
-.table tbody td {
-  padding: 12px 10px;
-  border-bottom: 1px solid #eef0f3;
+td {
   color: #111827;
-  font-size: 13px;
   font-weight: 700;
-  vertical-align: middle;
   background: #ffffff;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.table tbody tr:hover td {
+tbody tr:hover td {
   background: #f9fafb;
 }
 
-.table tbody tr:last-child td {
+tbody tr:last-child td {
   border-bottom: 0;
+}
+
+.col-date {
+  width: 14%;
+}
+
+.col-user {
+  width: 13%;
+}
+
+.col-action {
+  width: 10%;
+}
+
+.col-entity {
+  width: 15%;
+}
+
+.col-field {
+  width: 12%;
+}
+
+.col-value {
+  width: 13%;
+}
+
+.col-message {
+  width: 20%;
 }
 
 .user-cell {
@@ -222,14 +286,15 @@
   font-weight: 900;
 }
 
-.pill {
+.pill,
+.audit {
   display: inline-flex;
   align-items: center;
-  height: 20px;
-  padding: 0 8px;
+  height: 22px;
+  padding: 0 9px;
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 850;
+  font-weight: 900;
   border: 1px solid transparent;
   line-height: 1;
 }
@@ -269,11 +334,11 @@
     padding: 14px 14px 96px;
   }
 
-  .header-row {
+  .page-head {
     flex-direction: column;
   }
 
-  .refresh-btn {
+  .btn-primary.compact {
     width: 100%;
   }
 

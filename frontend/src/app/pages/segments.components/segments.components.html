@@ -13,26 +13,31 @@
       Back
     </button>
 
-    <div class="header-row">
+    <div class="page-head">
       <div>
         <h1 class="title">Segments</h1>
-        <div class="sub">Manage customer segments and view customer counts per segment.</div>
+        <div class="sub">
+          Manage customer segments and view customer counts per segment.
+        </div>
       </div>
     </div>
 
     @if (error) {
-      <section class="card panel wide">
+      <section class="main card error-card">
         <div class="state error">{{ error }}</div>
       </section>
     }
 
-    <section class="card panel wide">
+    <!-- ADD SEGMENT -->
+    <section class="main card">
       <div class="panel-head">
         <div>
           <div class="panel-title">Add Segment</div>
           <div class="panel-sub">Create a new customer segment.</div>
         </div>
       </div>
+
+      <div class="divider"></div>
 
       <div class="attr-form">
         <div class="form-grid segment-form-grid">
@@ -74,27 +79,35 @@
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn-primary" (click)="addSegment()" [disabled]="loading">
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="addSegment()"
+            [disabled]="loading"
+          >
             {{ loading ? 'Saving...' : 'Add Segment' }}
           </button>
         </div>
       </div>
     </section>
 
-    <section class="card panel wide">
+    <!-- SEGMENT LIST -->
+    <section class="main card">
       <div class="panel-head">
         <div>
           <div class="panel-title">Segment List</div>
-          <div class="panel-sub">{{ segments.length }} segments found</div>
+          <div class="panel-sub">{{ segments.length }} segments found.</div>
         </div>
       </div>
 
+      <div class="divider"></div>
+
       @if (loading) {
-        <div class="empty-state">Loading segments...</div>
+        <div class="state">Loading segments...</div>
       }
 
       @if (!loading && segments.length === 0) {
-        <div class="empty-state">No segments found.</div>
+        <div class="state">No segments found.</div>
       }
 
       @if (!loading && segments.length > 0) {
@@ -102,9 +115,9 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Segment</th>
-                <th>Description</th>
-                <th>Customers</th>
+                <th class="col-segment">Segment</th>
+                <th class="col-description">Description</th>
+                <th class="col-customers">Customers</th>
                 <th class="col-actions">Actions</th>
               </tr>
             </thead>
@@ -113,30 +126,39 @@
               @for (segment of segments; track segment.id) {
                 <tr>
                   <td>
-                    <strong>{{ segment.name }}</strong>
-                    <div class="muted">{{ segment.id }}</div>
+                    <div class="segment-name" [title]="segment.name">
+                      {{ segment.name }}
+                    </div>
+                    <div class="muted" [title]="segment.id">
+                      {{ segment.id }}
+                    </div>
                   </td>
 
-                  <td>{{ segment.description || '-' }}</td>
+                  <td [title]="segment.description || '-'">
+                    {{ segment.description || '-' }}
+                  </td>
 
                   <td>
-                    <span class="count-pill">{{ segment.customerCount }}</span>
+                    <span class="count-pill">
+                      {{ segment.customerCount }}
+                    </span>
                   </td>
 
                   <td class="col-actions">
                     <div class="row-actions">
-                      <button
-                        type="button"
+                      <!-- ❌ GEEN BUTTON MEER -->
+                      <div
                         class="icon-danger"
                         title="Delete segment"
-                        aria-label="Delete segment"
-                        (click)="openDeleteSegmentConfirm(segment)"
-                        [disabled]="loading"
+                        (click)="!loading && openDeleteSegmentConfirm(segment)"
+                        [class.disabled]="loading"
                       >
                         <svg viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+                          <path
+                            d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z"
+                          />
                         </svg>
-                      </button>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -148,16 +170,20 @@
     </section>
   </main>
 
+  <!-- DELETE MODAL -->
   @if (showDeleteSegmentConfirm) {
     <div class="modal-backdrop" (click)="closeDeleteSegmentConfirm()">
       <div class="confirm-modal" (click)="$event.stopPropagation()">
         <div class="confirm-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
-            <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+            <path
+              d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z"
+            />
           </svg>
         </div>
 
         <h3>Delete segment?</h3>
+
         <p>
           Are you sure you want to delete segment
           <strong>{{ segmentToDelete?.name }}</strong>?
