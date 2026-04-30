@@ -22,12 +22,6 @@
         <div class="side-title">Selected Customers</div>
         <div class="side-count">{{ customers.length }} selected</div>
 
-        @if (customers.length === 0) {
-          <div class="empty-state">
-            No customers selected.
-          </div>
-        }
-
         @for (customer of customers; track customer.id) {
           <div class="selected-item">
             <div class="selected-name">{{ customer.name }}</div>
@@ -58,7 +52,7 @@
           </div>
         </div>
 
-        @if (loadingOptions) {
+        @if (loadingAttributes) {
           <div class="message">Loading available attributes...</div>
         }
 
@@ -69,10 +63,18 @@
               <option value="">Choose an action</option>
               <option value="add-attribute">Add Attribute</option>
               <option value="update-attribute">Update Attribute</option>
+              <option value="delete-attribute">Delete Attribute</option>
+              <option value="assign-segment">Assign to Segment</option>
+              <option value="update-segment">Update Segment</option>
+              <option value="delete-segment">Delete Segment</option>
             </select>
           </div>
 
-          @if (selectedAction === 'add-attribute' || selectedAction === 'update-attribute') {
+          @if (
+            selectedAction === 'add-attribute' ||
+            selectedAction === 'update-attribute' ||
+            selectedAction === 'delete-attribute'
+          ) {
             <div class="field">
               <label class="field-label">Attribute</label>
               <select class="select" [(ngModel)]="attributeName">
@@ -84,7 +86,9 @@
                 }
               </select>
             </div>
+          }
 
+          @if (selectedAction === 'add-attribute' || selectedAction === 'update-attribute') {
             <div class="field">
               <label class="field-label">Attribute Value</label>
               <input
@@ -93,6 +97,30 @@
                 [(ngModel)]="attributeValue"
                 placeholder="Enter attribute value"
               />
+            </div>
+          }
+
+          @if (isSegmentAction()) {
+            @if (loadingSegments) {
+              <div class="message">Loading available segments...</div>
+            }
+
+            <div class="field">
+              <label class="field-label">Segment</label>
+              <select class="select" [(ngModel)]="segmentId" [disabled]="loadingSegments">
+                <option value="">Choose a segment</option>
+                @for (segment of availableSegments; track segment.id) {
+                  <option [value]="segment.id">
+                    {{ segment.name || segment.id }}
+                  </option>
+                }
+              </select>
+            </div>
+          }
+
+          @if (selectedAction === 'update-segment') {
+            <div class="message">
+              Update Segment removes the current segment assignments from the selected customers and assigns the chosen segment.
             </div>
           }
 
@@ -113,7 +141,7 @@
               class="btn-primary"
               type="button"
               (click)="applyBulkAction()"
-              [disabled]="loading || loadingOptions"
+              [disabled]="loading || loadingAttributes || loadingSegments"
             >
               {{ loading ? 'Processing...' : 'Continue' }}
             </button>

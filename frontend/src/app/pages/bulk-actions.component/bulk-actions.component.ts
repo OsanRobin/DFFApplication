@@ -8,6 +8,7 @@ import {
   BulkActionRequest,
   BulkActionResponse,
   BulkSelectionService,
+  SegmentOption,
   SelectedCustomerRow
 } from '../../core/api/bulk-selection.service';
 
@@ -27,11 +28,14 @@ export class BulkActionsComponent {
 
   attributeName = '';
   attributeValue = '';
+  segmentId = '';
 
   availableAttributes: AttributeOption[] = [];
+  availableSegments: SegmentOption[] = [];
 
   loading = false;
-  loadingOptions = false;
+  loadingAttributes = false;
+  loadingSegments = false;
   errorMessage = '';
   successMessage = '';
 
@@ -43,7 +47,7 @@ export class BulkActionsComponent {
       return;
     }
 
-    this.loadOptions();
+    this.loadAttributes();
   }
 
   goBack(): void {
@@ -61,6 +65,11 @@ export class BulkActionsComponent {
     this.successMessage = '';
     this.attributeName = '';
     this.attributeValue = '';
+    this.segmentId = '';
+
+    if (this.isSegmentAction() && this.availableSegments.length === 0) {
+      this.loadSegments();
+    }
   }
 
   applyBulkAction(): void {
@@ -74,7 +83,8 @@ export class BulkActionsComponent {
       customerIds: this.customers.map(customer => customer.id),
       action: this.selectedAction,
       attributeName: this.attributeName,
-      attributeValue: this.attributeValue.trim()
+      attributeValue: this.attributeValue.trim(),
+      segmentId: this.segmentId
     };
 
     this.loading = true;
@@ -90,6 +100,7 @@ export class BulkActionsComponent {
           this.selectedAction = '';
           this.attributeName = '';
           this.attributeValue = '';
+          this.segmentId = '';
         } else {
           this.errorMessage = this.buildErrorMessage(response);
         }
@@ -104,19 +115,43 @@ export class BulkActionsComponent {
     });
   }
 
-  private loadOptions(): void {
-    this.loadingOptions = true;
-    this.errorMessage = '';
+  isSegmentAction(): boolean {
+    return (
+      this.selectedAction === 'assign-segment' ||
+      this.selectedAction === 'update-segment' ||
+      this.selectedAction === 'delete-segment'
+    );
+  }
+
+  private loadAttributes(): void {
+    this.loadingAttributes = true;
 
     this.bulkSelectionService.getAvailableAttributes().subscribe({
       next: (attributes) => {
         this.availableAttributes = attributes;
-        this.loadingOptions = false;
+        this.loadingAttributes = false;
       },
       error: () => {
         this.availableAttributes = [];
         this.errorMessage = 'Failed to load available attributes.';
-        this.loadingOptions = false;
+        this.loadingAttributes = false;
+      }
+    });
+  }
+
+  private loadSegments(): void {
+    this.loadingSegments = true;
+    this.errorMessage = '';
+
+    this.bulkSelectionService.getAvailableSegments().subscribe({
+      next: (segments) => {
+        this.availableSegments = segments;
+        this.loadingSegments = false;
+      },
+      error: () => {
+        this.availableSegments = [];
+        this.errorMessage = 'Failed to load available segments.';
+        this.loadingSegments = false;
       }
     });
   }
@@ -132,22 +167,43 @@ export class BulkActionsComponent {
       return false;
     }
 
-    if (this.selectedAction !== 'add-attribute' && this.selectedAction !== 'update-attribute') {
-      this.errorMessage = 'Unsupported bulk action.';
-      return false;
+    if (
+      this.selectedAction === 'add-attribute' ||
+      this.selectedAction === 'update-attribute'
+    ) {
+      if (!this.attributeName) {
+        this.errorMessage = 'Please select an attribute.';
+        return false;
+      }
+
+      if (!this.attributeValue.trim()) {
+        this.errorMessage = 'Attribute value is required.';
+        return false;
+      }
+
+      return true;
     }
 
-    if (!this.attributeName) {
-      this.errorMessage = 'Please select an attribute.';
-      return false;
+    if (this.selectedAction === 'delete-attribute') {
+      if (!this.attributeName) {
+        this.errorMessage = 'Please select an attribute.';
+        return false;
+      }
+
+      return true;
     }
 
-    if (!this.attributeValue.trim()) {
-      this.errorMessage = 'Attribute value is required.';
-      return false;
+    if (this.isSegmentAction()) {
+      if (!this.segmentId) {
+        this.errorMessage = 'Please select a segment.';
+        return false;
+      }
+
+      return true;
     }
 
-    return true;
+    this.errorMessage = 'Unsupported bulk action.';
+    return false;
   }
 
   private buildErrorMessage(response: BulkActionResponse): string {

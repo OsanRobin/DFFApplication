@@ -2,7 +2,9 @@ package fenego.app.service;
 
 import fenego.app.dto.BulkActionRequest;
 import fenego.app.dto.BulkActionResponse;
+import fenego.app.dto.CustomerSegmentDTO;
 import fenego.app.jpa.AttributeOption;
+import fenego.app.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -12,10 +14,14 @@ import java.util.List;
 public class BulkActionService
 {
     private final AuditLogService auditLogService;
+    private final CustomerRepository customerRepository;
 
-    public BulkActionService(AuditLogService auditLogService)
+    public BulkActionService(
+            AuditLogService auditLogService,
+            CustomerRepository customerRepository)
     {
         this.auditLogService = auditLogService;
+        this.customerRepository = customerRepository;
     }
 
     public List<AttributeOption> getAvailableAttributes()
@@ -26,6 +32,11 @@ public class BulkActionService
                 new AttributeOption("customerType", "Customer Type"),
                 new AttributeOption("type", "Type")
         );
+    }
+
+    public List<CustomerSegmentDTO> getAvailableSegments()
+    {
+        return customerRepository.findAvailableSegments();
     }
 
     public BulkActionResponse executeBulkAction(BulkActionRequest request)
@@ -57,6 +68,12 @@ public class BulkActionService
                     case "add-attribute":
                         validateAttributeAction(request);
 
+                        customerRepository.saveCustomerAttribute(
+                                customerId,
+                                request.getAttributeName(),
+                                request.getAttributeValue()
+                        );
+
                         auditLogService.logChange(
                                 "CUSTOMER_ATTRIBUTE",
                                 customerId,
@@ -74,6 +91,12 @@ public class BulkActionService
                     case "update-attribute":
                         validateAttributeAction(request);
 
+                        customerRepository.saveCustomerAttribute(
+                                customerId,
+                                request.getAttributeName(),
+                                request.getAttributeValue()
+                        );
+
                         auditLogService.logChange(
                                 "CUSTOMER_ATTRIBUTE",
                                 customerId,
@@ -83,6 +106,95 @@ public class BulkActionService
                                 request.getAttributeValue(),
                                 "system",
                                 "Bulk attribute updated"
+                        );
+
+                        response.getProcessedCustomerIds().add(customerId);
+                        break;
+
+                    case "delete-attribute":
+                        validateAttributeName(request);
+
+                        customerRepository.deleteCustomerAttribute(
+                                customerId,
+                                request.getAttributeName()
+                        );
+
+                        auditLogService.logChange(
+                                "CUSTOMER_ATTRIBUTE",
+                                customerId,
+                                "BULK_DELETE",
+                                request.getAttributeName(),
+                                "",
+                                "",
+                                "system",
+                                "Bulk attribute deleted"
+                        );
+
+                        response.getProcessedCustomerIds().add(customerId);
+                        break;
+
+                    case "assign-segment":
+                        validateSegmentAction(request);
+
+                        customerRepository.assignSegmentToCustomer(
+                                customerId,
+                                request.getSegmentId()
+                        );
+
+                        auditLogService.logChange(
+                                "CUSTOMER_SEGMENT",
+                                customerId,
+                                "BULK_ASSIGN",
+                                "segment",
+                                "",
+                                request.getSegmentId(),
+                                "system",
+                                "Bulk segment assigned"
+                        );
+
+                        response.getProcessedCustomerIds().add(customerId);
+                        break;
+
+                    case "update-segment":
+                        validateSegmentAction(request);
+
+                        customerRepository.removeAllSegmentsFromCustomer(customerId);
+                        customerRepository.assignSegmentToCustomer(
+                                customerId,
+                                request.getSegmentId()
+                        );
+
+                        auditLogService.logChange(
+                                "CUSTOMER_SEGMENT",
+                                customerId,
+                                "BULK_UPDATE",
+                                "segment",
+                                "",
+                                request.getSegmentId(),
+                                "system",
+                                "Bulk segment updated"
+                        );
+
+                        response.getProcessedCustomerIds().add(customerId);
+                        break;
+
+                    case "delete-segment":
+                        validateSegmentAction(request);
+
+                        customerRepository.removeSegmentFromCustomer(
+                                customerId,
+                                request.getSegmentId()
+                        );
+
+                        auditLogService.logChange(
+                                "CUSTOMER_SEGMENT",
+                                customerId,
+                                "BULK_DELETE",
+                                "segment",
+                                request.getSegmentId(),
+                                "",
+                                "system",
+                                "Bulk segment deleted"
                         );
 
                         response.getProcessedCustomerIds().add(customerId);
@@ -120,14 +232,27 @@ public class BulkActionService
 
     private void validateAttributeAction(BulkActionRequest request)
     {
-        if (request.getAttributeName() == null || request.getAttributeName().isBlank())
-        {
-            throw new RuntimeException("Attribute name is missing");
-        }
+        validateAttributeName(request);
 
         if (request.getAttributeValue() == null || request.getAttributeValue().isBlank())
         {
             throw new RuntimeException("Attribute value is missing");
+        }
+    }
+
+    private void validateAttributeName(BulkActionRequest request)
+    {
+        if (request.getAttributeName() == null || request.getAttributeName().isBlank())
+        {
+            throw new RuntimeException("Attribute name is missing");
+        }
+    }
+
+    private void validateSegmentAction(BulkActionRequest request)
+    {
+        if (request.getSegmentId() == null || request.getSegmentId().isBlank())
+        {
+            throw new RuntimeException("Segment ID is missing");
         }
     }
 }

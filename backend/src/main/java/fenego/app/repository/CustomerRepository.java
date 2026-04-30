@@ -14,6 +14,8 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 @Repository
@@ -1087,4 +1089,121 @@ public void deleteUserAttribute(String businessPartnerNo, String name)
     {
         return value == null || value.trim().isEmpty();
     }
+    public List<CustomerSegmentDTO> findAvailableSegments()
+{
+    String createTableSql = """
+        if object_id('LOCAL_CUSTOMER_SEGMENT', 'U') is null
+        begin
+            create table LOCAL_CUSTOMER_SEGMENT (
+                ID nvarchar(255) not null primary key,
+                NAME nvarchar(255) not null,
+                DESCRIPTION nvarchar(max) null,
+                CREATED_AT datetime not null default getdate()
+            )
+        end
+        """;
+
+    jdbcTemplate.getJdbcTemplate().execute(createTableSql);
+
+    LinkedHashMap<String, CustomerSegmentDTO> segments = new LinkedHashMap<>();
+
+    String localSql = """
+        select
+            cast(ID as nvarchar(255)) as ID,
+            cast(NAME as nvarchar(255)) as NAME,
+            cast(DESCRIPTION as nvarchar(4000)) as DESCRIPTION
+        from LOCAL_CUSTOMER_SEGMENT
+        order by NAME
+        """;
+
+    jdbcTemplate.query(localSql, new MapSqlParameterSource(), rs -> {
+        String id = rs.getString("ID");
+
+        if (id != null && !id.isBlank()) {
+            CustomerSegmentDTO dto = new CustomerSegmentDTO();
+            dto.setId(id);
+            dto.setName(rs.getString("NAME"));
+            dto.setDescription(rs.getString("DESCRIPTION"));
+            segments.put(id, dto);
+        }
+    });
+
+    String intershopSql = """
+        select distinct
+            cast(USERGROUPID as nvarchar(255)) as ID
+        from USERGROUPUSERASSIGNMENT
+        where USERGROUPID is not null
+          and USERGROUPID <> ''
+        order by cast(USERGROUPID as nvarchar(255))
+        """;
+
+    jdbcTemplate.query(intershopSql, new MapSqlParameterSource(), rs -> {
+        String id = rs.getString("ID");
+
+        if (id != null && !id.isBlank() && !segments.containsKey(id)) {
+            CustomerSegmentDTO dto = new CustomerSegmentDTO();
+            dto.setId(id);
+            dto.setName(id);
+            dto.setDescription(null);
+            segments.put(id, dto);
+        }
+    });
+
+    return new ArrayList<>(segments.values());
+}
+
+public void assignSegmentToCustomer(String customerNo, String segmentId)
+{
+    String sql = """
+        insert into USERGROUPUSERASSIGNMENT
+            (
+                USERID,
+                USERGROUPID,
+                USERGROUPDOMAINID,
+                LASTMODIFIED,
+                OCA
+            )
+        select distinct
+            cpa.PROFILEID,
+            :segmentId,
+            c.DOMAINID,
+            getdate(),
+            0
+        from CUSTOMER c
+        join CUSTOMERPROFILEASSIGNMENT cpa
+            on c.UUID = cpa.CUSTOMERID
+        where c.CUSTOMERNO = :customerNo
+          and not exists (
+              select 1
+              from USERGROUPUSERASSIGNMENT ugua
+              where ugua.USERID = cpa.PROFILEID
+                and ugua.USERGROUPID = :segmentId
+                and ugua.USERGROUPDOMAINID = c.DOMAINID
+          )
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("customerNo", customerNo)
+            .addValue("segmentId", segmentId);
+
+    jdbcTemplate.update(sql, params);
+}
+
+public void removeAllSegmentsFromCustomer(String customerNo)
+{
+    String sql = """
+        delete ugua
+        from USERGROUPUSERASSIGNMENT ugua
+        join CUSTOMERPROFILEASSIGNMENT cpa
+            on ugua.USERID = cpa.PROFILEID
+        join CUSTOMER c
+            on c.UUID = cpa.CUSTOMERID
+        where c.CUSTOMERNO = :customerNo
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("customerNo", customerNo);
+
+    jdbcTemplate.update(sql, params);
+}
 }
