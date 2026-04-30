@@ -953,6 +953,66 @@ public List<CustomerSegmentDTO> findLocalSegments()
         return dto;
     });
 }
+public void assignSegmentToCustomer(String domainName, String customerNo, String segmentId)
+{
+    String sql = """
+        insert into USERGROUPUSERASSIGNMENT
+            (
+                USERID,
+                USERGROUPID,
+                USERGROUPDOMAINID,
+                LASTMODIFIED,
+                OCA
+            )
+        select distinct
+            cpa.PROFILEID,
+            :segmentId,
+            di.DOMAINID,
+            getdate(),
+            0
+        from DOMAININFORMATION di
+        join CUSTOMER c
+            on c.DOMAINID = di.DOMAINID
+        join CUSTOMERPROFILEASSIGNMENT cpa
+            on c.UUID = cpa.CUSTOMERID
+        where di.DOMAINNAME = :domainName
+          and c.CUSTOMERNO = :customerNo
+          and not exists (
+              select 1
+              from USERGROUPUSERASSIGNMENT ugua
+              where ugua.USERID = cpa.PROFILEID
+                and ugua.USERGROUPID = :segmentId
+                and ugua.USERGROUPDOMAINID = di.DOMAINID
+          )
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("domainName", domainName)
+            .addValue("customerNo", customerNo)
+            .addValue("segmentId", segmentId);
+
+    jdbcTemplate.update(sql, params);
+}
+
+public void removeSegmentFromCustomer(String customerNo, String segmentId)
+{
+    String sql = """
+        delete ugua
+        from USERGROUPUSERASSIGNMENT ugua
+        join CUSTOMERPROFILEASSIGNMENT cpa
+            on ugua.USERID = cpa.PROFILEID
+        join CUSTOMER c
+            on c.UUID = cpa.CUSTOMERID
+        where c.CUSTOMERNO = :customerNo
+          and ugua.USERGROUPID = :segmentId
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("customerNo", customerNo)
+            .addValue("segmentId", segmentId);
+
+    jdbcTemplate.update(sql, params);
+}
 
 public String findUserAttributeValue(String businessPartnerNo, String name)
 {

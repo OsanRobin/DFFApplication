@@ -207,4 +207,21 @@ public void deleteSegment(
         @PathVariable String segmentId) {
     customerService.deleteSegment(authenticationToken, domain, segmentId);
 }
+@PostMapping("/{customerId}/segments")
+public void assignSegmentToCustomer(
+        @RequestHeader("authentication-token") String authenticationToken,
+        @RequestParam("domain") String domain,
+        @PathVariable String customerId,
+        @RequestBody CustomerSegmentRequest request) {
+    customerService.assignSegmentToCustomer(authenticationToken, domain, customerId, request);
+}
+
+@DeleteMapping("/{customerId}/segments/{segmentId}")
+public void removeSegmentFromCustomer(
+        @RequestHeader("authentication-token") String authenticationToken,
+        @RequestParam("domain") String domain,
+        @PathVariable String customerId,
+        @PathVariable String segmentId) {
+    customerService.removeSegmentFromCustomer(authenticationToken, domain, customerId, segmentId);
+}
 }

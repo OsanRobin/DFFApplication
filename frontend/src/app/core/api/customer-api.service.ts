@@ -507,4 +507,53 @@ unassignCustomerFromCluster(
     { headers, params }
   );
 }
+getSegments(authenticationToken: string, domain: string): Observable<CustomerSegmentDto[]> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  const params = new HttpParams().set('domain', domain);
+
+  return this.http.get<CustomerSegmentDto[]>(`${this.baseUrl}/segments`, {
+    headers,
+    params
+  });
+}
+
+assignSegmentToCustomer(
+  authenticationToken: string,
+  domain: string,
+  customerId: string,
+  segmentId: string
+): Observable<void> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  const params = new HttpParams().set('domain', domain);
+
+  return this.http.post<void>(
+    `${this.baseUrl}/${encodeURIComponent(customerId)}/segments`,
+    { id: segmentId },
+    { headers, params }
+  );
+}
+
+removeSegmentFromCustomer(
+  authenticationToken: string,
+  domain: string,
+  customerId: string,
+  segmentId: string
+): Observable<void> {
+  const headers = new HttpHeaders({
+    'authentication-token': authenticationToken
+  });
+
+  const params = new HttpParams().set('domain', domain);
+
+  return this.http.delete<void>(
+    `${this.baseUrl}/${encodeURIComponent(customerId)}/segments/${encodeURIComponent(segmentId)}`,
+    { headers, params }
+  );
+}
 }

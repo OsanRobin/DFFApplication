@@ -882,7 +882,93 @@ public List<CustomerSegmentSummaryDTO> getSegments(String authenticationToken, S
             .sorted((a, b) -> a.getId().compareToIgnoreCase(b.getId()))
             .toList();
 }
+public void assignSegmentToCustomer(
+        String authenticationToken,
+        String domainName,
+        String customerId,
+        CustomerSegmentRequest request)
+{
+    if (domainName == null || domainName.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
+    }
 
+    if (customerId == null || customerId.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+    }
+
+    if (request == null || request.getId() == null || request.getId().isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Segment id is required");
+    }
+
+    String segmentId = request.getId().trim();
+
+    CustomerDetailResponse customer = customerRepository.findCustomerDetailById(customerId);
+
+    if (customer == null)
+    {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found");
+    }
+
+    customerRepository.assignSegmentToCustomer(domainName, customerId, segmentId);
+
+    auditLogService.logChange(
+            "CUSTOMER_SEGMENT",
+            customerId,
+            "ASSIGN",
+            "segment",
+            "",
+            segmentId,
+            "system",
+            "Segment assigned to customer"
+    );
+}
+
+public void removeSegmentFromCustomer(
+        String authenticationToken,
+        String domainName,
+        String customerId,
+        String segmentId)
+{
+    if (domainName == null || domainName.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Domain is required");
+    }
+
+    if (customerId == null || customerId.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Customer id is required");
+    }
+
+    if (segmentId == null || segmentId.isBlank())
+    {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Segment id is required");
+    }
+
+    CustomerDetailResponse customer = customerRepository.findCustomerDetailById(customerId);
+
+    if (customer == null)
+    {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found");
+    }
+
+    String normalizedSegmentId = segmentId.trim();
+
+    customerRepository.removeSegmentFromCustomer(customerId, normalizedSegmentId);
+
+    auditLogService.logChange(
+            "CUSTOMER_SEGMENT",
+            customerId,
+            "REMOVE",
+            "segment",
+            normalizedSegmentId,
+            "",
+            "system",
+            "Segment removed from customer"
+    );
+}
 public void createSegment(String authenticationToken, String domainName, CustomerSegmentRequest request)
 {
     if (request == null || request.getId() == null || request.getId().isBlank())

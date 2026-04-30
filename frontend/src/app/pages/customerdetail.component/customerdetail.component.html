@@ -677,32 +677,83 @@
       }
 
       @if (activeTab === 'segments') {
-        <section class="card panel wide">
-          <div class="panel-title">Segments</div>
+  <section class="card panel wide">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Segments</div>
+        <div class="panel-sub">Assign or remove customer segments.</div>
+      </div>
 
-          @if (customer?.segments?.length) {
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                  </tr>
-                </thead>
+      <div class="inline-add">
+        <select
+          class="input add-customer-input"
+          [(ngModel)]="segmentToAdd"
+          [disabled]="segmentSaving"
+        >
+          <option value="">Select segment</option>
 
-                <tbody>
-                  @for (segment of customer!.segments; track segment.id) {
-                    <tr>
-                      <td>{{ displayText(segment.name) }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          } @else {
-            <div class="empty-state">No segments found for this customer.</div>
+          @for (segment of availableSegments(); track segment.id) {
+            <option [value]="segment.id">
+              {{ displayText(segment.name || segment.id) }}
+            </option>
           }
-        </section>
-      }
+        </select>
+
+        <button
+          class="btn-primary btn-add-customer"
+          type="button"
+          (click)="assignSegment()"
+          [disabled]="segmentSaving || !segmentToAdd"
+        >
+          {{ segmentSaving ? 'Saving...' : 'Assign' }}
+        </button>
+      </div>
+    </div>
+
+    @if (segmentError) {
+      <div class="state error">{{ segmentError }}</div>
+    }
+
+    @if (customer?.segments?.length) {
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>ID</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (segment of customer!.segments; track segment.id) {
+              <tr>
+                <td>{{ displayText(segment.name) }}</td>
+                <td>{{ displayText(segment.id) }}</td>
+                <td class="col-actions">
+                  <button
+                    class="icon-danger"
+                    type="button"
+                    title="Remove segment"
+                    aria-label="Remove segment"
+                    (click)="removeSegment(segment.id)"
+                    [disabled]="segmentSaving"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">No segments found for this customer.</div>
+    }
+  </section>
+}
 
       @if (activeTab === 'relations') {
         <section class="card panel wide">

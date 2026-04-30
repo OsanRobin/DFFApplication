@@ -9,6 +9,7 @@ import {
   CustomerAttributeDto,
   CustomerDetailResponse,
   CustomerDto,
+  CustomerSegmentDto,
   CustomerUserAttributeDto,
   CustomerUserDetailResponse,
   CustomerUserDto
@@ -80,6 +81,10 @@ relationDeleteMode: 'sub' | 'parent' | null = null;
 
   showDeleteAttributeConfirm = false;
   attributeNameToDelete = '';
+  segmentsAll: CustomerSegmentDto[] = [];
+segmentToAdd = '';
+segmentSaving = false;
+segmentError = '';
 
   attributeForm = {
     name: '',
@@ -136,6 +141,8 @@ this.relationDeleteMode = null;
       this.cancelUserAttributeEdit();
 
       this.loadCustomer();
+      this.loadSegments();
+
 
       if (this.activeTab === 'users') {
         this.loadUsers();
@@ -252,6 +259,107 @@ this.relationDeleteMode = null;
       }
     });
   }
+  loadSegments(): void {
+  const authenticationToken = this.authService.getAuthenticationToken();
+
+  if (!authenticationToken) {
+    this.segmentError = 'No authentication token found.';
+    return;
+  }
+
+  this.customerApi.getSegments(authenticationToken, this.domainName).subscribe({
+    next: response => {
+      this.segmentsAll = response ?? [];
+    },
+    error: err => {
+      console.error(err);
+      this.segmentError = 'Failed to load segments.';
+    }
+  });
+}
+
+availableSegments(): CustomerSegmentDto[] {
+  const assignedIds = new Set(
+    (this.customer?.segments ?? []).map(segment => segment.id)
+  );
+
+  return this.segmentsAll.filter(segment => !assignedIds.has(segment.id));
+}
+
+assignSegment(): void {
+  const authenticationToken = this.authService.getAuthenticationToken();
+
+  if (!authenticationToken || !this.customerId || !this.segmentToAdd) {
+    this.segmentError = 'Select a segment first.';
+    return;
+  }
+
+  this.segmentSaving = true;
+  this.segmentError = '';
+
+  this.customerApi.assignSegmentToCustomer(
+    authenticationToken,
+    this.domainName,
+    this.customerId,
+    this.segmentToAdd
+  ).subscribe({
+    next: () => {
+      this.segmentSaving = false;
+      this.segmentToAdd = '';
+      this.loadCustomer();
+      this.loadSegments();
+    },
+    error: err => {
+      console.error(err);
+      this.segmentSaving = false;
+
+      if (err.status === 401 || err.status === 403) {
+        this.segmentError = 'Your session expired. Please log in again.';
+        this.router.navigate(['/login']);
+        return;
+      }
+
+      this.segmentError = 'Failed to assign segment.';
+    }
+  });
+}
+
+removeSegment(segmentId: string): void {
+  const authenticationToken = this.authService.getAuthenticationToken();
+
+  if (!authenticationToken || !this.customerId || !segmentId) {
+    this.segmentError = 'Unable to remove segment.';
+    return;
+  }
+
+  this.segmentSaving = true;
+  this.segmentError = '';
+
+  this.customerApi.removeSegmentFromCustomer(
+    authenticationToken,
+    this.domainName,
+    this.customerId,
+    segmentId
+  ).subscribe({
+    next: () => {
+      this.segmentSaving = false;
+      this.loadCustomer();
+      this.loadSegments();
+    },
+    error: err => {
+      console.error(err);
+      this.segmentSaving = false;
+
+      if (err.status === 401 || err.status === 403) {
+        this.segmentError = 'Your session expired. Please log in again.';
+        this.router.navigate(['/login']);
+        return;
+      }
+
+      this.segmentError = 'Failed to remove segment.';
+    }
+  });
+}
 
   loadUsers(): void {
     const authenticationToken = this.authService.getAuthenticationToken();
