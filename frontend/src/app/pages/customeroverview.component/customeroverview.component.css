@@ -118,6 +118,7 @@
 }
 
 .saved-row {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr;
   gap: 6px;
@@ -130,6 +131,8 @@
 }
 
 .saved {
+  position: relative;
+  z-index: 1;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -141,6 +144,7 @@
   font-weight: 850;
   color: #111827;
   text-align: left;
+  font-family: inherit;
 }
 
 .saved-name {
@@ -150,11 +154,17 @@
 }
 
 .saved-actions {
+  position: relative;
+  z-index: 5;
   display: flex;
   gap: 6px;
+  pointer-events: auto;
 }
 
 .saved-action-btn {
+  position: relative;
+  z-index: 6;
+  pointer-events: auto;
   height: 28px;
   padding: 0 8px;
   border: 1px solid #d1d5db;
@@ -164,6 +174,7 @@
   cursor: pointer;
   font-size: 11px;
   font-weight: 800;
+  font-family: inherit;
 }
 
 .saved-action-btn:hover {
@@ -341,6 +352,7 @@
   font-weight: 900;
   font-size: 14px;
   cursor: pointer;
+  font-family: inherit;
   transition:
     background 0.16s ease,
     border-color 0.16s ease,
@@ -795,21 +807,23 @@ input[type='checkbox'] {
   cursor: pointer;
   padding: 10px 12px;
   border-radius: 10px;
+  font-family: inherit;
 }
 
 .bulk-clear:hover {
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* Save/edit modal */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(17, 24, 39, 0.46);
-  z-index: 80;
+  background: rgba(15, 23, 42, 0.38);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 22px;
+  z-index: 100;
+  padding: 20px;
 }
 
 .modal-card {
@@ -855,6 +869,7 @@ input[type='checkbox'] {
   font-size: 24px;
   font-weight: 700;
   line-height: 1;
+  font-family: inherit;
 }
 
 .modal-close:hover {
@@ -887,6 +902,115 @@ input[type='checkbox'] {
   border: 1px solid #fecaca;
   border-radius: 12px;
   font-weight: 800;
+}
+
+/* Delete confirmation modal, zelfde stijl als attributes/segments */
+.confirm-modal {
+  width: 100%;
+  max-width: 400px;
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+  padding: 26px 24px 22px;
+  text-align: center;
+  animation: popIn 0.18s ease-out;
+}
+
+.confirm-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 14px;
+  border-radius: 16px;
+  background: #fee2e2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-icon svg {
+  width: 26px;
+  height: 26px;
+  fill: #dc2626;
+}
+
+.confirm-modal h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.confirm-modal p {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.confirm-modal p strong {
+  color: #64748b;
+  font-weight: 900;
+}
+
+.confirm-actions {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.btn-secondary,
+.btn-danger {
+  border: none;
+  border-radius: 12px;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  min-width: 130px;
+  height: 44px;
+  font-family: inherit;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.btn-secondary {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #eef2f7;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(220, 38, 38, 0.24);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.btn-secondary:active,
+.btn-danger:active {
+  transform: scale(0.98);
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @media (max-width: 1200px) {
@@ -967,6 +1091,15 @@ input[type='checkbox'] {
 
   .modal-actions .btn-primary,
   .modal-actions .btn-outline {
+    width: 100%;
+  }
+
+  .confirm-actions {
+    flex-direction: column;
+  }
+
+  .btn-secondary,
+  .btn-danger {
     width: 100%;
   }
 }

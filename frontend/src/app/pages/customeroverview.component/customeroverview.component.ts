@@ -69,6 +69,10 @@ export class CustomeroverviewComponent {
   searchModalMode: 'create' | 'edit' = 'create';
   editingSavedSearch: SavedCustomerSearchDto | null = null;
 
+  deleteModalOpen = false;
+  deleteSavedSearchId: number | null = null;
+  deleteSavedSearchName = '';
+
   modalName = '';
   modalQuery = '';
   modalCustomerNo = '';
@@ -312,6 +316,42 @@ export class CustomeroverviewComponent {
     this.flagFilter = savedSearch.flagFilter ?? '';
 
     this.onApplyFilters();
+  }
+
+  openDeleteSavedSearchModal(savedSearch: SavedCustomerSearchDto): void {
+    this.deleteSavedSearchId = savedSearch.id;
+    this.deleteSavedSearchName = savedSearch.name ?? '';
+    this.deleteModalOpen = true;
+    this.saveSearchError = '';
+    this.saveSearchSuccess = '';
+  }
+
+  closeDeleteSavedSearchModal(): void {
+    this.deleteModalOpen = false;
+    this.deleteSavedSearchId = null;
+    this.deleteSavedSearchName = '';
+  }
+
+  confirmDeleteSavedSearch(): void {
+    const authenticationToken = this.authService.getAuthenticationToken();
+
+    if (!authenticationToken || this.deleteSavedSearchId === null) {
+      return;
+    }
+
+    this.customerApi.deleteSavedSearch(authenticationToken, this.deleteSavedSearchId)
+      .subscribe({
+        next: () => {
+          this.saveSearchSuccess = 'Saved search deleted successfully.';
+          this.closeDeleteSavedSearchModal();
+          this.loadSavedSearches();
+        },
+        error: err => {
+          console.error(err);
+          this.saveSearchError = 'Failed to delete saved search.';
+          this.closeDeleteSavedSearchModal();
+        }
+      });
   }
 
   private mapCustomersToRows(customers: CustomerDto[]): CustomerRow[] {
@@ -558,30 +598,6 @@ export class CustomeroverviewComponent {
 
   goBack(): void {
     this.router.navigate(['/dashboard']);
-  }
-
-  deleteSavedSearch(searchId: number): void {
-    const authenticationToken = this.authService.getAuthenticationToken();
-
-    if (!authenticationToken) {
-      return;
-    }
-
-    const confirmDelete = window.confirm('Delete this saved search?');
-
-    if (!confirmDelete) {
-      return;
-    }
-
-    this.customerApi.deleteSavedSearch(authenticationToken, searchId)
-      .subscribe({
-        next: () => {
-          this.loadSavedSearches();
-        },
-        error: err => {
-          console.error(err);
-        }
-      });
   }
 
   previousPage(): void {
