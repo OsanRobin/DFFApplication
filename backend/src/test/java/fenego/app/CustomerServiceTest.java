@@ -108,7 +108,7 @@ class CustomerServiceTest
     void getCustomersShouldApplyManagerFilter()
     {
         Customer allowed = customer("1", "C100", "StandardCustomer", "Allowed customer", true);
-        Customer hidden = customer("2", "C200", "StandardCustomer", "Hidden customer", true);
+       
 
         when(customerRepository.findAssignedCustomerNosForUser("manager", "domain"))
                 .thenReturn(List.of("C100"));
