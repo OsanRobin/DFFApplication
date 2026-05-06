@@ -7,7 +7,6 @@ public class BulkActionResponse
 {
     private boolean success;
     private String message;
-    private int processedCount;
     private List<String> processedCustomerIds = new ArrayList<>();
     private List<String> errors = new ArrayList<>();
 
@@ -33,31 +32,45 @@ public class BulkActionResponse
 
     public int getProcessedCount()
     {
-        return processedCount;
+        return processedCustomerIds == null ? 0 : processedCustomerIds.size();
     }
 
     public void setProcessedCount(int processedCount)
     {
-        this.processedCount = processedCount;
+        // bewust leeg: count wordt berekend uit processedCustomerIds
     }
 
     public List<String> getProcessedCustomerIds()
     {
+        if (processedCustomerIds == null)
+        {
+            processedCustomerIds = new ArrayList<>();
+        }
+
         return processedCustomerIds;
     }
 
     public void setProcessedCustomerIds(List<String> processedCustomerIds)
     {
-        this.processedCustomerIds = processedCustomerIds;
+        this.processedCustomerIds = processedCustomerIds == null
+                ? new ArrayList<>()
+                : processedCustomerIds;
     }
 
     public List<String> getErrors()
     {
+        if (errors == null)
+        {
+            errors = new ArrayList<>();
+        }
+
         return errors;
     }
 
     public void setErrors(List<String> errors)
     {
-        this.errors = errors;
+        this.errors = errors == null
+                ? new ArrayList<>()
+                : errors;
     }
 }
